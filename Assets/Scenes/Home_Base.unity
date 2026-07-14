@@ -547,7 +547,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 4d1f8847fcaad46499f85679d17231d3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -5.5299997
+      value: -4.0299997
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 4d1f8847fcaad46499f85679d17231d3, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1166,7 +1166,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 4d1f8847fcaad46499f85679d17231d3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -5.5299997
+      value: -4.0299997
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 4d1f8847fcaad46499f85679d17231d3, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1686,8 +1686,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
-  m_TransparencySortMode: 2
-  m_TransparencySortAxis: {x: 0, y: 0, z: 1}
 --- !u!4 &961739753
 Transform:
   m_ObjectHideFlags: 0
@@ -2497,7 +2495,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 4d1f8847fcaad46499f85679d17231d3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -5.5299997
+      value: -4.0299997
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 4d1f8847fcaad46499f85679d17231d3, type: 3}
       propertyPath: m_LocalRotation.w
