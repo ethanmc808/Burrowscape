@@ -713,6 +713,40 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 399445776876835591, guid: 8d7c25d5a622c9542b999b35f34a36fd, type: 3}
   m_PrefabInstance: {fileID: 427782517}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &427964887
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 427964888}
+  m_Layer: 0
+  m_Name: Testers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &427964888
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 427964887}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 343.6322, y: 95.17392, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2101178218}
+  - {fileID: 1394355136}
+  - {fileID: 1330431576}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &430627074
 GameObject:
   m_ObjectHideFlags: 0
@@ -1011,6 +1045,53 @@ MonoBehaviour:
   isEatingParam: IsEating
   bunnyScaleRoot: {fileID: 1062010289}
   bunnyFacesLeftByDefault: 1
+  wanderPauseDuration: 3
+--- !u!1 &629919518
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 629919520}
+  - component: {fileID: 629919519}
+  m_Layer: 0
+  m_Name: Entrance Gate
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &629919519
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 629919518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6c03abe5b3b3164ba719f9930e71f24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntranceGate
+  openDuration: 3
+  closeDuration: 3
+--- !u!4 &629919520
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 629919518}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1218.4976, y: 266.91702, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &686161603
 GameObject:
   m_ObjectHideFlags: 0
@@ -1291,6 +1372,7 @@ MonoBehaviour:
   isEatingParam: IsEating
   bunnyScaleRoot: {fileID: 617988970}
   bunnyFacesLeftByDefault: 1
+  wanderPauseDuration: 3
 --- !u!1 &919876965
 GameObject:
   m_ObjectHideFlags: 0
@@ -1942,6 +2024,7 @@ MonoBehaviour:
   isEatingParam: IsEating
   bunnyScaleRoot: {fileID: 2098088867}
   bunnyFacesLeftByDefault: 1
+  wanderPauseDuration: 3
 --- !u!4 &1046018589 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6741216569666800682, guid: 58dc4c966de65e4469574e6637dacfca, type: 3}
@@ -2034,6 +2117,52 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39016ec7264fed04da96b652f1a67ba7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EntranceRoom
+--- !u!1 &1330431575
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1330431576}
+  - component: {fileID: 1330431577}
+  m_Layer: 0
+  m_Name: Wander Test Trigger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1330431576
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1330431575}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 427964888}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1330431577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1330431575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40935d83b8e29f64bb0ea493495b998c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WanderTestTrigger
+  bunnyToTest: {fileID: 1017556688}
+  triggerOnStart: 1
 --- !u!1 &1342992173
 GameObject:
   m_ObjectHideFlags: 0
@@ -2211,12 +2340,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1394355134}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 7.70369, y: 1.98878, z: -0.5245}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -335.9285, y: -93.18514, z: -0.5245}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 427964888}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1424637531 stripped
 Transform:
@@ -2894,12 +3023,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2101178217}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.94979, y: -4.21084, z: 0.12215}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -348.582, y: -99.38476, z: 0.12215}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 427964888}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2101178219
 MonoBehaviour:
@@ -3036,10 +3165,10 @@ SceneRoots:
   - {fileID: 203844589}
   - {fileID: 995728564}
   - {fileID: 953679138}
+  - {fileID: 629919520}
   - {fileID: 1945512141}
   - {fileID: 430627076}
-  - {fileID: 2101178218}
-  - {fileID: 1394355136}
+  - {fileID: 427964888}
   - {fileID: 323420529}
   - {fileID: 1620583802}
   - {fileID: 1917958251}

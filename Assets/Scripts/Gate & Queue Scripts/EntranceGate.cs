@@ -103,5 +103,13 @@ public class EntranceGate : MonoBehaviour
     private void DebugNotifyComplete()
     {
         NotifyPassageComplete();
+
+
+    }
+
+    [ContextMenu("Debug: Log Current State")]
+    private void DebugLogState()
+    {
+        Debug.Log($"Gate current state: {CurrentState}, activeTraffic: {activeTraffic}");
     }
 }

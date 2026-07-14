@@ -6,6 +6,8 @@ public class RoomBase : MonoBehaviour
     [Header("Entrances")]
     [SerializeField] protected Transform leftEntrance;
     [SerializeField] protected Transform rightEntrance;
+    [SerializeField] protected Transform middleLeft;
+    [SerializeField] protected Transform middleRight;
 
     [Header("Pass-Through Path (for bunnies just walking through this room)")]
     [SerializeField] protected List<Transform> passThroughWaypoints; // ordered left-to-right
@@ -18,6 +20,18 @@ public class RoomBase : MonoBehaviour
 
     public Transform LeftEntrance => leftEntrance;
     public Transform RightEntrance => rightEntrance;
+    public Transform MiddleLeft => middleLeft;
+    public Transform MiddleRight => middleRight;
+    public List<Transform> PassThroughWaypoints => passThroughWaypoints;
+    public List<Transform> GetWanderPoints()
+    {
+        List<Transform> points = new List<Transform>();
+        if (leftEntrance != null) points.Add(leftEntrance);
+        if (rightEntrance != null) points.Add(rightEntrance);
+        if (middleLeft != null) points.Add(middleLeft);
+        if (middleRight != null) points.Add(middleRight);
+        return points;
+    }
     public int FloorIndex => floorIndex;
     public int GridX => Mathf.RoundToInt(transform.position.x);
 

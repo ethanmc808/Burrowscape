@@ -110,4 +110,60 @@ public class BaseLayoutManager : MonoBehaviour
 
         return fullPath;
     }
+
+    public List<Transform> GetRouteToWanderPoint(RoomBase startRoom, RoomSpot startSpot, RoomBase targetRoom, Transform destination)
+    {
+        List<Transform> fullPath = new List<Transform>();
+
+        if (startRoom == null)
+        {
+            List<RoomBase> orderedFromEntrance = GetOrderedRooms(targetRoom.FloorIndex);
+            int targetIdx = orderedFromEntrance.IndexOf(targetRoom);
+            if (targetIdx == -1) return fullPath;
+
+            fullPath.Add(baseEntrance);
+            for (int i = orderedFromEntrance.Count - 1; i > targetIdx; i--)
+                fullPath.AddRange(orderedFromEntrance[i].GetPassThroughPath(enteringFromLeft: true));
+
+            if (destination != targetRoom.LeftEntrance)
+                fullPath.Add(targetRoom.LeftEntrance);
+            fullPath.Add(destination);
+            return fullPath;
+        }
+
+        if (startRoom == targetRoom)
+        {
+            fullPath.Add(startSpot != null ? startSpot.transform : startRoom.transform);
+            fullPath.Add(destination);
+            return fullPath;
+        }
+
+        List<RoomBase> ordered = GetOrderedRooms(startRoom.FloorIndex);
+        int startIndex = ordered.IndexOf(startRoom);
+        int targetIndex = ordered.IndexOf(targetRoom);
+        if (startIndex == -1 || targetIndex == -1) return fullPath;
+
+        bool movingRight = targetIndex > startIndex;
+        int step = movingRight ? 1 : -1;
+
+        Transform exitEntrance = movingRight ? startRoom.LeftEntrance : startRoom.RightEntrance;
+        if (startSpot != null)
+            fullPath.AddRange(startRoom.GetPathFromSpotToEntrance(startSpot, exitEntrance));
+        else
+            fullPath.Add(exitEntrance);
+
+        for (int i = startIndex + step; i != targetIndex; i += step)
+            fullPath.AddRange(ordered[i].GetPassThroughPath(enteringFromLeft: !movingRight));
+
+        Transform entryEntrance = movingRight ? targetRoom.RightEntrance : targetRoom.LeftEntrance;
+        if (destination != entryEntrance)
+            fullPath.Add(entryEntrance);
+        fullPath.Add(destination);
+
+        return fullPath;
+    }
+    public List<RoomBase> GetAllRoomsOnFloor(int floor)
+    {
+        return GetOrderedRooms(floor);
+    }
 }

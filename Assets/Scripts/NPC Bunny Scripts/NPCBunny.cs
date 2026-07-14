@@ -6,7 +6,8 @@ public enum BunnyState
     Idle,
     MovingToSpot,
     Working,
-    Eating
+    Eating,
+    Wandering
 }
 
 [RequireComponent(typeof(Animator))]
@@ -32,6 +33,11 @@ public class NPCBunny : MonoBehaviour
     [Header("Facing Direction")]
     [SerializeField] private Transform bunnyScaleRoot;
     [SerializeField] private bool bunnyFacesLeftByDefault = true;
+
+    [Header("Wandering")]
+    [SerializeField] private float wanderPauseDuration = 3f; // how long to idle at each stop before moving again
+    private bool isWanderingEnabled = false;
+    private float wanderTimer = 0f;
 
     public BunnyState CurrentState { get; private set; } = BunnyState.Idle;
     public bool IsHungry => hunger < hungerThresholdLow;
@@ -75,6 +81,8 @@ public class NPCBunny : MonoBehaviour
         {
             case BunnyState.Idle:
                 HandleIdle();
+                if (isWanderingEnabled && IsHungry)
+                    LeaveWanderingForCafeteria();
                 break;
 
             case BunnyState.MovingToSpot:
@@ -120,6 +128,41 @@ public class NPCBunny : MonoBehaviour
         {
             RequestNewJobSpot();
         }
+        else if (isWanderingEnabled)
+        {
+            wanderTimer += Time.deltaTime;
+            if (wanderTimer >= wanderPauseDuration)
+            {
+                wanderTimer = 0f;
+                PickNewWanderDestination();
+            }
+        }
+    }
+
+    private void PickNewWanderDestination()
+    {
+        int floor = currentRoom != null ? currentRoom.FloorIndex : 0;
+        List<RoomBase> rooms = BaseLayoutManager.Instance.GetAllRoomsOnFloor(floor);
+        if (rooms.Count == 0) return;
+
+        RoomBase target = rooms[Random.Range(0, rooms.Count)];
+        List<Transform> wanderPoints = target.GetWanderPoints();
+        if (wanderPoints.Count == 0) return;
+
+        Transform destination = wanderPoints[Random.Range(0, wanderPoints.Count)];
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToWanderPoint(currentRoom, currentSpot, target, destination);
+
+        if (path.Count == 0) return;
+
+        currentTargetSpot = null; // wandering has no RoomSpot destination
+        currentPath = new Queue<Transform>(path);
+        pendingStateOnArrival = BunnyState.Wandering;
+        CurrentState = BunnyState.MovingToSpot;
+        AdvanceToNextWaypoint();
+
+        // Track which room we're heading toward, for next time
+        currentRoom = target;
+        currentSpot = null;
     }
 
     // ---------- MOVEMENT ----------
@@ -144,16 +187,17 @@ public class NPCBunny : MonoBehaviour
     {
         if (currentWaypointTarget == null)
         {
-            // No more waypoints — fully arrived
             CurrentState = pendingStateOnArrival;
 
             if (currentTargetSpot != null)
-                SetFacing(currentTargetSpot.FacesRight);   // ADD THIS
+                SetFacing(currentTargetSpot.FacesRight);
 
             if (pendingStateOnArrival == BunnyState.Working)
                 OnArrivedAtWorkSpot();
             else if (pendingStateOnArrival == BunnyState.Eating)
                 OnArrivedAtEatingSpot();
+            else if (pendingStateOnArrival == BunnyState.Wandering)
+                CurrentState = BunnyState.Idle; // pause, then HandleIdle picks the next destination after wanderPauseDuration
 
             return;
         }
@@ -174,6 +218,22 @@ public class NPCBunny : MonoBehaviour
 
         if (Mathf.Abs(direction.x) > 0.01f)
             SetFacing(direction.x < 0f);
+    }
+    public void EnterBaseAndWander()
+    {
+        isWanderingEnabled = true;
+        currentRoom = null;
+        currentSpot = null;
+        CurrentState = BunnyState.Idle; // triggers HandleIdle -> picks first wander destination
+    }
+    public void MoveToQueueSpot(Transform queueSpot)
+    {
+        List<Transform> path = new List<Transform> { queueSpot };
+        currentTargetSpot = null; // queue spots aren't RoomSpots, just plain waypoints
+        currentPath = new Queue<Transform>(path);
+        pendingStateOnArrival = BunnyState.Idle; // just stand there once arrived, waiting in queue
+        CurrentState = BunnyState.MovingToSpot;
+        AdvanceToNextWaypoint();
     }
 
     // ---------- WORKING (GARDEN) ----------
@@ -228,6 +288,23 @@ public class NPCBunny : MonoBehaviour
 
         MoveAlongPath(path, eatSpot, BunnyState.Eating);
     }
+    private void LeaveWanderingForCafeteria()
+    {
+        RoomBase departingRoom = currentRoom;
+        RoomSpot departingSpot = currentSpot;
+
+        CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteria(transform.position);
+        if (cafeteria != null)
+        {
+            RoomSpot eatSpot = cafeteria.RequestSpot(this);
+            if (eatSpot != null)
+            {
+                cafeteriaBeingUsed = cafeteria;
+                List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, cafeteria, eatSpot);
+                MoveAlongPath(path, eatSpot, BunnyState.Eating);
+            }
+        }
+    }
 
     // Called by CafeteriaRoom each time a carrot-consumption tick happens
     public void ReceiveCarrotNutrition()
@@ -240,36 +317,40 @@ public class NPCBunny : MonoBehaviour
         return hunger >= hungerThresholdFull;
     }
 
-// Called by CafeteriaRoom once bunny is full (or can't get more carrots)
-public void FinishEatingAndReturnToWork()
-{
-    if (cafeteriaBeingUsed != null)
+    // Called by CafeteriaRoom once bunny is full (or can't get more carrots)
+    public void FinishEatingAndReturnToWork()
     {
-        cafeteriaBeingUsed.ReleaseSpot(currentTargetSpot, this);
-        cafeteriaBeingUsed = null;
-    }
-
-    if (assignedJobRoom != null)
-    {
-        if (claimedWorkSpot != null)
+        if (cafeteriaBeingUsed != null)
         {
-            // Spot was never released while eating — walk straight back to it.
-            List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, (RoomBase)assignedJobRoom, claimedWorkSpot);
-            MoveAlongPath(path, claimedWorkSpot, BunnyState.Working);
+            cafeteriaBeingUsed.ReleaseSpot(currentTargetSpot, this);
+            cafeteriaBeingUsed = null;
+        }
+
+        if (assignedJobRoom != null)
+        {
+            if (claimedWorkSpot != null)
+            {
+                // Spot was never released while eating — walk straight back to it.
+                List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, (RoomBase)assignedJobRoom, claimedWorkSpot);
+                MoveAlongPath(path, claimedWorkSpot, BunnyState.Working);
+            }
+            else
+            {
+                RequestNewJobSpot();
+            }
+        }
+        else if (isWanderingEnabled)
+        {
+            CurrentState = BunnyState.Idle; // resumes wandering via HandleIdle
         }
         else
         {
-            RequestNewJobSpot();
+            CurrentState = BunnyState.Idle;
         }
     }
-    else
-    {
-        CurrentState = BunnyState.Idle;
-    }
-}
-// ---------- ANIMATION ----------
+    // ---------- ANIMATION ----------
 
-private void UpdateAnimator()
+    private void UpdateAnimator()
     {
         if (animator == null) return;
 
