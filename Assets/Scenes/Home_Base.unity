@@ -1459,7 +1459,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WildBunnySpawner
   bunnyPrefab: {fileID: 3142430252561249029, guid: 4d1f8847fcaad46499f85679d17231d3, type: 3}
-  spawnOnStart: 0
+  spawnOnStart: 1
   offscreenSpawnOffsetX: 15
 --- !u!1 &919876965
 GameObject:
