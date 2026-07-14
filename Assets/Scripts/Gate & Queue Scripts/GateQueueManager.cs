@@ -7,12 +7,14 @@ public class GateQueueManager : MonoBehaviour
 
     [SerializeField] private List<Transform> queueSpots; // ordered: index 0 = front (closest to gate)
     [SerializeField] private Transform gateExitPoint; // where a bunny walks to once the gate lets it through
+    [SerializeField] private Transform rejectExitPoint; // where a rejected bunny walks to before despawning
     [SerializeField] private RoomBase entranceRoom; // the room gateExitPoint physically sits in, so bunnies know where they are after passing throug
     [SerializeField] private bool autoRequestGatePassage = true; // turn off to test queuing/waiting without the gate auto-opening
 
     private List<NPCBunny> currentQueue = new List<NPCBunny>();
     private Queue<NPCBunny> waitingBunnies = new Queue<NPCBunny>(); // bunnies waiting for a queue spot to free up
     private NPCBunny pendingRequestBunny; // front-of-queue bunny we've already requested passage for
+    private bool frontBunnyCleared; // true once the CURRENT front bunny specifically has been cleared to walk through
 
     private void Awake()
     {
@@ -78,24 +80,55 @@ public class GateQueueManager : MonoBehaviour
     private void Update()
     {
         NPCBunny front = GetFrontOfQueue();
-        if (front == null)
-        {
-            pendingRequestBunny = null;
-            return;
-        }
 
-        if (autoRequestGatePassage && front != pendingRequestBunny)
+        if (front != pendingRequestBunny)
         {
-            // New bunny reached the front — request the gate open (or reopen if it's mid-close)
-            EntranceGate.Instance.RequestPassage();
+            pendingRequestBunny?.SetAwaitingApproval(false);
             pendingRequestBunny = front;
+            frontBunnyCleared = false; // a new bunny at the front needs its own clearance, regardless of gate state
+
+            if (front != null)
+            {
+                if (autoRequestGatePassage)
+                {
+                    EntranceGate.Instance.RequestPassage();
+                    frontBunnyCleared = true;
+                }
+                else
+                {
+                    front.SetAwaitingApproval(true);
+                }
+            }
         }
 
-        if (EntranceGate.Instance.CurrentState == GateState.Open)
+        if (front != null && frontBunnyCleared && EntranceGate.Instance.CurrentState == GateState.Open)
         {
             Dequeue(front);
+            front.SetAwaitingApproval(false);
             pendingRequestBunny = null;
+            frontBunnyCleared = false;
             front.ProceedThroughGate(gateExitPoint, entranceRoom);
         }
+    }
+
+    public void ApproveFrontBunny()
+    {
+        NPCBunny front = GetFrontOfQueue();
+        if (front == null) return;
+
+        front.SetAwaitingApproval(false);
+        frontBunnyCleared = true;
+        EntranceGate.Instance.RequestPassage();
+    }
+
+    public void RejectFrontBunny()
+    {
+        NPCBunny front = GetFrontOfQueue();
+        if (front == null) return;
+
+        Dequeue(front);
+        front.SetAwaitingApproval(false);
+        pendingRequestBunny = null;
+        front.RejectAndDespawn(rejectExitPoint);
     }
 }

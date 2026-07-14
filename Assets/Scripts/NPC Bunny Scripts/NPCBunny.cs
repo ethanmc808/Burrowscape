@@ -8,7 +8,8 @@ public enum BunnyState
     Working,
     Eating,
     Wandering,
-    PassingGate
+    PassingGate,
+    Despawning
 }
 
 [RequireComponent(typeof(Animator))]
@@ -43,6 +44,7 @@ public class NPCBunny : MonoBehaviour
     public BunnyState CurrentState { get; private set; } = BunnyState.Idle;
     public bool IsHungry => hunger < hungerThresholdLow;
     public bool IsAssignedToJob => assignedJobRoom != null;
+    public bool IsAwaitingApproval { get; private set; }
 
     private RoomSpot currentTargetSpot;
     private Queue<Transform> currentPath;
@@ -112,6 +114,11 @@ public class NPCBunny : MonoBehaviour
     {
         assignedJobRoom = jobRoom;
         RequestNewJobSpot();
+    }
+
+    public void SetAwaitingApproval(bool value)
+    {
+        IsAwaitingApproval = value;
     }
 
     private void RequestNewJobSpot()
@@ -214,6 +221,8 @@ public class NPCBunny : MonoBehaviour
                 CurrentState = BunnyState.Idle; // pause, then HandleIdle picks the next destination after wanderPauseDuration
             else if (pendingStateOnArrival == BunnyState.PassingGate)
                 OnArrivedAtGateExit();
+            else if (pendingStateOnArrival == BunnyState.Despawning)
+                OnArrivedAtDespawnPoint();
 
             return;
         }
@@ -265,6 +274,17 @@ public class NPCBunny : MonoBehaviour
         CurrentState = BunnyState.MovingToSpot;
         AdvanceToNextWaypoint();
     }
+    public void RejectAndDespawn(Transform exitPoint)
+    {
+        List<Transform> path = new List<Transform> { exitPoint };
+        currentTargetSpot = null;
+        pendingFacingOverride = null; // let facing follow travel direction back out
+        pendingArrivalRoom = null;
+        currentPath = new Queue<Transform>(path);
+        pendingStateOnArrival = BunnyState.Despawning;
+        CurrentState = BunnyState.MovingToSpot;
+        AdvanceToNextWaypoint();
+    }
 
     // ---------- WORKING (GARDEN) ----------
 
@@ -288,6 +308,11 @@ public class NPCBunny : MonoBehaviour
     {
         GateQueueManager.Instance.NotifyBunnyPassedGate(this);
         EnterBaseAndWander(pendingArrivalRoom, pendingArrivalPoint);
+    }
+
+    private void OnArrivedAtDespawnPoint()
+    {
+        Destroy(gameObject);
     }
 
     private void HandleHungerCheckWhileWorking()
