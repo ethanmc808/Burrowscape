@@ -38,7 +38,7 @@ public class BaseLayoutManager : MonoBehaviour
         return roomsByFloor[floor].OrderBy(r => r.GridX).ToList();
     }
 
-    public List<Transform> GetRouteToSpot(RoomBase startRoom, RoomSpot startSpot, RoomBase targetRoom, RoomSpot targetSpot)
+    public List<Transform> GetRouteToSpot(RoomBase startRoom, RoomSpot startSpot, Transform startWanderPoint, RoomBase targetRoom, RoomSpot targetSpot)
     {
         List<Transform> fullPath = new List<Transform>();
 
@@ -70,7 +70,10 @@ public class BaseLayoutManager : MonoBehaviour
 
         if (startRoom == targetRoom)
         {
-            fullPath.Add(startSpot != null ? startSpot.transform : startRoom.transform);
+            // Prefer a known RoomSpot, then a remembered wander point, and only fall back to the
+            // room's own root Transform (its grid-alignment pivot, NOT a walkable point) as a last resort.
+            Transform startPoint = startSpot != null ? startSpot.transform : (startWanderPoint != null ? startWanderPoint : startRoom.transform);
+            fullPath.Add(startPoint);
             fullPath.Add(targetSpot.transform);
             return fullPath;
         }
@@ -111,7 +114,7 @@ public class BaseLayoutManager : MonoBehaviour
         return fullPath;
     }
 
-    public List<Transform> GetRouteToWanderPoint(RoomBase startRoom, RoomSpot startSpot, RoomBase targetRoom, Transform destination)
+    public List<Transform> GetRouteToWanderPoint(RoomBase startRoom, RoomSpot startSpot, Transform startWanderPoint, RoomBase targetRoom, Transform destination)
     {
         List<Transform> fullPath = new List<Transform>();
 
@@ -133,7 +136,10 @@ public class BaseLayoutManager : MonoBehaviour
 
         if (startRoom == targetRoom)
         {
-            fullPath.Add(startSpot != null ? startSpot.transform : startRoom.transform);
+            // Prefer a known RoomSpot, then a remembered wander point, and only fall back to the
+            // room's own root Transform (its grid-alignment pivot, NOT a walkable point) as a last resort.
+            Transform startPoint = startSpot != null ? startSpot.transform : (startWanderPoint != null ? startWanderPoint : startRoom.transform);
+            fullPath.Add(startPoint);
             fullPath.Add(destination);
             return fullPath;
         }
