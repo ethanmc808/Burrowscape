@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la '/c/Users/Ethan/.claude/projects/C--Users-Ethan-Desktop-Burrowscape-Burrowscape/memory/')"
+    ]
+  }
+}
