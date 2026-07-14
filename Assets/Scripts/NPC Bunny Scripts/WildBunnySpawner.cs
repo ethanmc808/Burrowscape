@@ -32,6 +32,7 @@ public class WildBunnySpawner : MonoBehaviour
 
         Vector3 spawnPosition = baseEntrance.position + new Vector3(offscreenSpawnOffsetX, 0f, 0f);
         NPCBunny newBunny = Instantiate(bunnyPrefab, spawnPosition, baseEntrance.rotation);
+        newBunny.SetArrivalType(BunnyArrivalType.Wild);
 
         Transform queueSpot = GateQueueManager.Instance.Enqueue(newBunny);
         if (queueSpot == null)

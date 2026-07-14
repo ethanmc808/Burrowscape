@@ -9,7 +9,12 @@ public enum BunnyState
     Eating,
     Wandering,
     PassingGate,
-    Despawning
+    Despawning,
+}
+public enum BunnyArrivalType
+{
+    Wild,
+    ReturningFromQuest
 }
 
 [RequireComponent(typeof(Animator))]
@@ -17,6 +22,7 @@ public class NPCBunny : MonoBehaviour
 {
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 0.5f;
+    [SerializeField] private float wanderSpeedMultiplier = 0.5f; // wandering bunnies move slower than working/eating bunnies
     [SerializeField] private float arrivalThreshold = 0.05f;
 
     [Header("Hunger")]
@@ -45,6 +51,7 @@ public class NPCBunny : MonoBehaviour
     public bool IsHungry => hunger < hungerThresholdLow;
     public bool IsAssignedToJob => assignedJobRoom != null;
     public bool IsAwaitingApproval { get; private set; }
+    public BunnyArrivalType ArrivalType { get; private set; } = BunnyArrivalType.Wild;
 
     private RoomSpot currentTargetSpot;
     private Queue<Transform> currentPath;
@@ -119,6 +126,10 @@ public class NPCBunny : MonoBehaviour
     public void SetAwaitingApproval(bool value)
     {
         IsAwaitingApproval = value;
+    }
+    public void SetArrivalType(BunnyArrivalType type)
+    {
+        ArrivalType = type;
     }
 
     private void RequestNewJobSpot()
@@ -239,7 +250,8 @@ public class NPCBunny : MonoBehaviour
         }
 
         Vector3 direction = toTarget.normalized;
-        transform.position += direction * moveSpeed * Time.deltaTime;
+        float currentMoveSpeed = pendingStateOnArrival == BunnyState.Wandering ? moveSpeed * wanderSpeedMultiplier : moveSpeed;
+        transform.position += direction * currentMoveSpeed * Time.deltaTime;
 
         if (Mathf.Abs(direction.x) > 0.01f)
             SetFacing(direction.x < 0f);
@@ -420,6 +432,9 @@ public class NPCBunny : MonoBehaviour
         animator.SetBool(isMovingParam, CurrentState == BunnyState.MovingToSpot);
         animator.SetBool(isWorkingParam, CurrentState == BunnyState.Working);
         animator.SetBool(isEatingParam, CurrentState == BunnyState.Eating);
+
+        bool isSlowWander = CurrentState == BunnyState.MovingToSpot && pendingStateOnArrival == BunnyState.Wandering;
+        animator.speed = isSlowWander ? wanderSpeedMultiplier : 1f;
     }
 
     // ---------- FACING (reused from BunnyMovement) ----------
