@@ -109,6 +109,8 @@ GameObject:
   - component: {fileID: 7343445830199000462}
   - component: {fileID: 304395093455722040}
   - component: {fileID: 6520201171032361809}
+  - component: {fileID: 7456066198188187074}
+  - component: {fileID: 524001764607224754}
   m_Layer: 0
   m_Name: Rabbit_Neutral_Default_3D
   m_TagString: Untagged
@@ -250,6 +252,34 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.4146986, y: 0.773643, z: 0.07130742}
   m_Center: {x: -0.5098951, y: -0.5143895, z: -1.1352416}
+--- !u!210 &7456066198188187074
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601990158651218953}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 1
+--- !u!114 &524001764607224754
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601990158651218953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e55a817d21e627446a40a6d7bb626e06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BunnyDepthSorter
+  sortAxis: 1
+  sortingResolution: 0.1
+  invertSortDirection: 1
 --- !u!1 &6907352548157617940
 GameObject:
   m_ObjectHideFlags: 0

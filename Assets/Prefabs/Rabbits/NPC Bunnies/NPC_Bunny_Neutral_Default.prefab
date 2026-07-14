@@ -76,6 +76,8 @@ GameObject:
   - component: {fileID: 3503941455076676025}
   - component: {fileID: 4874084175557988876}
   - component: {fileID: 6520201171032361809}
+  - component: {fileID: -7664088655160912761}
+  - component: {fileID: 2411426728429763008}
   m_Layer: 0
   m_Name: NPC_Bunny_Neutral_Default
   m_TagString: Untagged
@@ -154,6 +156,34 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.4146986, y: 0.773643, z: 0.07130742}
   m_Center: {x: -0.5098951, y: -0.5143895, z: -1.1352416}
+--- !u!210 &-7664088655160912761
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601990158651218953}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 1
+--- !u!114 &2411426728429763008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601990158651218953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e55a817d21e627446a40a6d7bb626e06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BunnyDepthSorter
+  sortAxis: 1
+  sortingResolution: 0.1
+  invertSortDirection: 1
 --- !u!1001 &3917498231033039267
 PrefabInstance:
   m_ObjectHideFlags: 0

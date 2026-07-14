@@ -115,10 +115,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BunnyMovement
   moveSpeed: 0.75
+  runSpeed: 1.5
+  jumpForce: 5
+  lowJumpMultiplier: 2.5
+  groundCheck: {fileID: 0}
+  groundCheckRadius: 0.05
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  ceilingCheck: {fileID: 0}
+  ceilingCheckRadius: 0.05
+  stuckTimeThreshold: 2
   animator: {fileID: 7361019321298564417}
   isMovingParameterName: IsMoving
+  isRunningParameterName: IsRunning
+  isCrouchingParameterName: IsCrouching
+  isJumpingParameterName: IsJumping
+  isFallingParameterName: IsFalling
+  isLandingParameterName: IsLanding
   bunnyScaleRoot: {fileID: 6119946462147161334}
-  bunnyFacesLeftByDefault: 0
+  bunnyFacesLeftByDefault: 1
   logPositionOnFlip: 1
 --- !u!54 &2742163775214789205
 Rigidbody:

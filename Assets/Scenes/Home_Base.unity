@@ -646,6 +646,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: EntranceRoom_3x4x6
       objectReference: {fileID: 0}
+    - target: {fileID: 4489546531400349566, guid: 58dc4c966de65e4469574e6637dacfca, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.553
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1682,6 +1686,8 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+  m_TransparencySortMode: 2
+  m_TransparencySortAxis: {x: 0, y: 0, z: 1}
 --- !u!4 &961739753
 Transform:
   m_ObjectHideFlags: 0
