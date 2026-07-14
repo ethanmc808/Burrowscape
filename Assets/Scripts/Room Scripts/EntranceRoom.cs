@@ -34,4 +34,9 @@ public class EntranceRoom : RoomBase, IJobRoom
     {
         // No production loop for guarding — hook for future combat/alert logic
     }
+
+    public void NotifyBunnyLeavingToEat(NPCBunny bunny)
+    {
+        // No per-bunny routine to pause for guarding
+    }
 }

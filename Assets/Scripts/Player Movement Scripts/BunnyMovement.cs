@@ -87,8 +87,6 @@ public class BunnyMovement : MonoBehaviour
             jumpQueued = true;
             Debug.Log("Space pressed - crouching triggered");
         }
-
-        UpdateAnimatorParameters();
     }
 
     private void FixedUpdate()
@@ -160,8 +158,6 @@ public class BunnyMovement : MonoBehaviour
         animator.SetBool(isJumpingParameterName, !isGrounded && rb.linearVelocity.y > 0f);
         animator.SetBool(isFallingParameterName, !isGrounded && rb.linearVelocity.y <= 0f);
         animator.SetBool("IsGrounded", isGrounded);
-
-        Debug.Log($"Grounded: {isGrounded}, VelY: {rb.linearVelocity.y:F2}, Jumping: {!isGrounded && rb.linearVelocity.y > 0f}, Falling: {!isGrounded && rb.linearVelocity.y <= 0f}");
 
     }
 

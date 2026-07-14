@@ -69,7 +69,18 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
     public void ReleaseSpot(RoomSpot spot, NPCBunny bunny)
     {
         spot.Release(bunny);
+        StopProductionRoutine(bunny);
+    }
 
+    // Bunny is heading off to eat but keeps its reserved spot — the room shouldn't
+    // hand that spot to anyone else while it's gone, just pause production.
+    public void NotifyBunnyLeavingToEat(NPCBunny bunny)
+    {
+        StopProductionRoutine(bunny);
+    }
+
+    private void StopProductionRoutine(NPCBunny bunny)
+    {
         if (activeProductionRoutines.TryGetValue(bunny, out Coroutine routine))
         {
             StopCoroutine(routine);

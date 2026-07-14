@@ -172,8 +172,6 @@ public class NPCBunny : MonoBehaviour
         Vector3 direction = toTarget.normalized;
         transform.position += direction * moveSpeed * Time.deltaTime;
 
-        Debug.Log($"direction.x = {direction.x}");
-
         if (Mathf.Abs(direction.x) > 0.01f)
             SetFacing(direction.x < 0f);
     }
@@ -207,35 +205,28 @@ public class NPCBunny : MonoBehaviour
         RoomBase departingRoom = (RoomBase)assignedJobRoom;
         RoomSpot departingSpot = claimedWorkSpot;
 
-        if (claimedWorkSpot != null)
-        {
-            assignedJobRoom.ReleaseSpot(claimedWorkSpot, this);
-            claimedWorkSpot = null;
-        }
-
         CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteria(transform.position);
         Debug.Log($"Cafeteria found: {cafeteria}");
+        if (cafeteria == null)
+            return; // no cafeteria available — stay working, hunger check retries next frame
 
-        if (cafeteria != null)
-        {
-            RoomSpot eatSpot = cafeteria.RequestSpot(this);
-            Debug.Log($"Eat spot found: {eatSpot}");
+        RoomSpot eatSpot = cafeteria.RequestSpot(this);
+        Debug.Log($"Eat spot found: {eatSpot}");
+        if (eatSpot == null)
+            return; // cafeteria full — stay working, hunger check retries next frame
 
-            if (eatSpot != null)
-            {
-                cafeteriaBeingUsed = cafeteria;
-                List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, cafeteria, eatSpot);
+        // Pause work but keep claimedWorkSpot reserved — otherwise the room could hand
+        // this bunny's spot to someone else while it's off eating.
+        assignedJobRoom?.NotifyBunnyLeavingToEat(this);
 
-                Debug.Log($"Path built with {path.Count} points:");
-                foreach (Transform t in path)
-                    Debug.Log($" - {(t != null ? t.name : "NULL")} at {(t != null ? t.position.ToString() : "N/A")}");
+        cafeteriaBeingUsed = cafeteria;
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, cafeteria, eatSpot);
 
-                MoveAlongPath(path, eatSpot, BunnyState.Eating);
-                return;
-            }
-        }
+        Debug.Log($"Path built with {path.Count} points:");
+        foreach (Transform t in path)
+            Debug.Log($" - {(t != null ? t.name : "NULL")} at {(t != null ? t.position.ToString() : "N/A")}");
 
-        CurrentState = BunnyState.Idle;
+        MoveAlongPath(path, eatSpot, BunnyState.Eating);
     }
 
     // Called by CafeteriaRoom each time a carrot-consumption tick happens
@@ -259,9 +250,22 @@ public void FinishEatingAndReturnToWork()
     }
 
     if (assignedJobRoom != null)
-        RequestNewJobSpot();
+    {
+        if (claimedWorkSpot != null)
+        {
+            // Spot was never released while eating — walk straight back to it.
+            List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, (RoomBase)assignedJobRoom, claimedWorkSpot);
+            MoveAlongPath(path, claimedWorkSpot, BunnyState.Working);
+        }
+        else
+        {
+            RequestNewJobSpot();
+        }
+    }
     else
+    {
         CurrentState = BunnyState.Idle;
+    }
 }
 // ---------- ANIMATION ----------
 
@@ -290,8 +294,6 @@ private void UpdateAnimator()
 
     private void SetFacing(bool shouldFaceRight)
     {
-        Debug.Log($"SetFacing called: shouldFaceRight={shouldFaceRight}, current facingRight={facingRight}, hasInitialized={hasInitializedFacing}");
-
         if (bunnyScaleRoot == null) return;
 
         if (!hasInitializedFacing)
@@ -300,7 +302,6 @@ private void UpdateAnimator()
         }
         else if (shouldFaceRight == facingRight)
         {
-            Debug.Log("SetFacing returned early - already facing that direction");
             return;
         }
 
