@@ -418,9 +418,20 @@ public class NPCBunny : MonoBehaviour
     // ---------- CROSS-FLOOR (LIFT) ----------
 
     // Routes to the nearest floor-appropriate lift, then hands the trip off to it. Returns false
-    // if no lift services both floors, so the caller can back out cleanly (release a claimed spot, etc).
+    // if no lift services both floors (or a trip is already in flight), so the caller can back out
+    // cleanly (release a claimed spot, etc).
     private bool TryBeginCrossFloorTripToSpot(RoomBase targetRoom, RoomSpot targetSpot, BunnyState finalState)
     {
+        if (pendingLift != null)
+        {
+            // Already mid-trip (waiting for / riding / walking off a lift) from an earlier assignment.
+            // Starting a second trip here would overwrite pendingFinalRoom/Spot/Lift out from under the
+            // first one, so that when IT finishes it resolves against the wrong (this) destination —
+            // the bunny ends up "arriving" somewhere that doesn't match where it actually is.
+            Debug.LogWarning($"{name}: already mid-lift-trip, ignoring new cross-floor request to floor {targetRoom.FloorIndex}.");
+            return false;
+        }
+
         int myFloor = currentFloorIndex;
         LiftRoom lift = BaseLayoutManager.Instance.FindLiftServicing(myFloor, targetRoom.FloorIndex);
         if (lift == null)
@@ -439,6 +450,13 @@ public class NPCBunny : MonoBehaviour
 
     private bool TryBeginCrossFloorTripToWanderPoint(RoomBase targetRoom, Transform destination)
     {
+        if (pendingLift != null)
+        {
+            // See TryBeginCrossFloorTripToSpot — refuse to clobber an in-flight trip's pending state.
+            Debug.LogWarning($"{name}: already mid-lift-trip, ignoring new cross-floor wander request to floor {targetRoom.FloorIndex}.");
+            return false;
+        }
+
         int myFloor = currentFloorIndex;
         LiftRoom lift = BaseLayoutManager.Instance.FindLiftServicing(myFloor, targetRoom.FloorIndex);
         if (lift == null)
