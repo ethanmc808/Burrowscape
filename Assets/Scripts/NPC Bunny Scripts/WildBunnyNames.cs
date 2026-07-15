@@ -1,0 +1,27 @@
+using UnityEngine;
+
+public class WildBunnyNames : MonoBehaviour
+{
+    public static WildBunnyNames Instance { get; private set; }
+
+    [SerializeField] private string[] maleNames = { "Clover", "Thistle", "Bramble", "Fern", "Pip", "Sprout", "Acorn", "Twig", "Nibbles", "Buttons", "Waffle", "Biscuit", "Pancake", "Pebble", "Muffin", "Cricket", "Dash", "Scout", "Buddy", "Peanut", "Chip", "Cocoa", "Toffee", "Bingo", "Jasper", "Rusty", "Copper", "Oakley", "Basil", "Sage", "Reed", "Birch", "Cedar", "Pumpkin", "Marshmallow", "Gizmo", "Buster", "Nugget", "Pretzel", "Waffles", "Snickers", "Doodle", "Squiggle", "Puddle", "Marbles", "Fuzzball", "Snuggles", "Wiggles", "Bouncer", "Sprocket", "Tumbles", "Speckle", "Dumpling", "Noodle", "Cobbler", "Sherbet", "Bramblet", "Fudge", "Pistachio", "Marzipan", "Sir Hops-a-Lot", "Duke Dandelion", "Baron Fluffington", "Professor Nibbles", "Captain Carrot", "General Fuzz", "Doctor Floppy", "Mayor McHopper", "King Cottontail", "Private Pellet", "Buckminster", "Thumperton", "Hopscotch", "Bunsen", "Furlong", "Whiskerton", "Nibblesworth", "Buckshot", "Hopalot", "Bunbury", "Hareold", "Buckaroo", "Hoptimist", "Fernando", "Radish Rex", "Salad Dodger", "Cabbage Bandit", "Lettuce Leaper", "Carrot Cruncher", "Chewy McChewface", "Fluffernutter", "Sir Reginald Hops", "Earl Grey", "Count Fuzzula", "Sir Loin", "Baron Von Floof", "Duke of Dandelion", "Marquis de Carrot", "Viscount Veggie", "Admiral Cottontail", "Fang", "Venom", "Shadow", "Blade", "Reaper", "Ravage", "Havoc", "Bane", "Talon", "Vex", "Grim", "Rex", "Rogue", "Ash", "Chaos", "Diesel", "Ripper", "Slasher", "Maverick", "Skulk", "Bruiser", "Renegade", "Viper", "Cobra", "Zero", "Nitro", "Kane", "Onyx", "Skull", "Toxic", "Menace", "Riot", "Wraith", "Savage", "Brawler", "Switchblade", "Executioner", "Doom", "Grimwood", "Vandal", "Outlaw", "Ghoul", "Feral", "Anarchy", "Vortex", "Sinister", "Malice", "Reckless", "Berserk", "Corvus", "Thorne", "Draven", "Orin", "Fenwick", "Corwin", "Alderic", "Galahad", "Merlin", "Percival", "Tristan", "Kael", "Doran", "Aldric", "Emrys", "Faelan", "Griffin", "Thane", "Orsino", "Caspian", "Bramwell", "Lysander", "Osric", "Ronan", "Fenrir", "Aldous", "Cormac", "Dorian", "Evander", "Faelor", "Garrick", "Halric", "Ithran", "Joran", "Kellan", "Loric", "Maddox", "Nyx", "Osgood", "Perrin", "Quill", "Roderick", "Silas", "Thoron", "Ulric", "Varin", "Wystan", "Xanther", "Yorick", "Zephyrin", "Aramis" };
+    [SerializeField] private string[] femaleNames = { "Poppy", "Willow", "Dandelion", "Briar", "Juniper", "Daisy", "Petal", "Marigold", "Blossom", "Honey", "Buttercup", "Clementine", "Cupcake", "Sprinkle", "Cookie", "Sugar", "Ginger", "Cinnamon", "Hazelnut", "Pudding", "Tulip", "Rosie", "Lily", "Iris", "Violet", "Sunny", "Star", "Twinkle", "Sparkle", "Bubbles", "Fluffy", "Cottonball", "Snowball", "Marshmallow", "Peaches", "Berry", "Plum", "Apricot", "Cherry", "Mochi", "Dumplin", "Biscotti", "Praline", "Nougat", "Caramel", "Butterscotch", "Meringue", "Frosting", "Glimmer", "Twirl", "Giggles", "Bounce", "Puddles", "Freckle", "Speckles", "Snuggle", "Nibblet", "Pipsqueak", "Tumble", "Flopsy", "Lady Hops-a-Lot", "Duchess Dandelion", "Baroness Fluffington", "Professor Whiskers", "Countess Cottontail", "Queen of Clover", "Miss Nibbles", "Madame Floof", "Dame Fuzzalot", "Lieutenant Lettuce", "Princess Pellet", "Bunnyetta", "Harelequin", "Fuzzlequin", "Hoparella", "Buttercream", "Radishette", "Salad Sprite", "Carrotina", "Thumperella", "Fernanda", "Cabbage Rose", "Bunbury Belle", "Whiskerella", "Chewbella", "Fluffington", "Hare-iet", "Bunapple", "Cottontina", "Nibblesina", "Baroness Von Floof", "Duchess of Dandelion", "Marchioness Marigold", "Viscountess Violet", "Lady Buttercup", "Countess Clover", "Empress Ember", "Sultana Sage", "Contessa Cotton", "Vixenella", "Raven", "Vixen", "Shade", "Vesper", "Nyxie", "Onyxette", "Huntress", "Reaperine", "Venomina", "Feral", "Riot", "Vex", "Rebel", "Havoc", "Wraithe", "Banshee", "Talon", "Blade", "Chaos", "Savage", "Maverick", "Nitro", "Vandal", "Ghoul", "Toxic", "Menace", "Sinister", "Malice", "Bruiser", "Switchblade", "Fury", "Vengeance", "Grim", "Diesel", "Cobra", "Viper", "Zero", "Sable", "Onyx", "Skulk", "Anarchy", "Vortex", "Reckless", "Berserka", "Requiem", "Nemesis", "Ravena", "Doom", "Morrigan", "Corvina", "Aeliana", "Isolde", "Rhiannon", "Elowen", "Seraphina", "Guinevere", "Freya", "Elysia", "Ravenna", "Odessa", "Calla", "Thalia", "Nerissa", "Wren", "Selene", "Lyra", "Ondine", "Faelynn", "Briallen", "Ithlyn", "Sorrel", "Maren", "Ysolde", "Aurelia", "Cressida", "Delphine", "Evangeline", "Fiora", "Galanthe", "Hespera", "Ilyana", "Junia", "Kyrie", "Liora", "Meliora", "Nyssa", "Oriana", "Persephone", "Quilla", "Rosalind", "Solenne", "Thessaly", "Umbriel", "Valeska", "Wisteria", "Xanthe", "Yseult", "Zinnia", "Amoret", "Branwen" };
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
+
+    public BunnyGender GetRandomGender()
+    {
+        return Random.value < 0.5f ? BunnyGender.Male : BunnyGender.Female;
+    }
+
+    public string GetRandomName(BunnyGender gender)
+    {
+        string[] pool = gender == BunnyGender.Male ? maleNames : femaleNames;
+        if (pool == null || pool.Length == 0) return "Unnamed";
+        return pool[Random.Range(0, pool.Length)];
+    }
+}

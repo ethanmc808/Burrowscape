@@ -16,6 +16,11 @@ public enum BunnyArrivalType
     Wild,
     ReturningFromQuest
 }
+public enum BunnyGender
+{
+    Male,
+    Female
+}
 
 [RequireComponent(typeof(Animator))]
 public class NPCBunny : MonoBehaviour
@@ -52,6 +57,8 @@ public class NPCBunny : MonoBehaviour
     public bool IsAssignedToJob => assignedJobRoom != null;
     public bool IsAwaitingApproval { get; private set; }
     public BunnyArrivalType ArrivalType { get; private set; } = BunnyArrivalType.Wild;
+    public BunnyGender Gender { get; private set; } = BunnyGender.Male;
+    public string BunnyName { get; private set; } = "Unnamed";
 
     private RoomSpot currentTargetSpot;
     private Queue<Transform> currentPath;
@@ -130,6 +137,12 @@ public class NPCBunny : MonoBehaviour
     public void SetArrivalType(BunnyArrivalType type)
     {
         ArrivalType = type;
+    }
+    public void SetIdentity(BunnyGender gender, string name)
+    {
+        Gender = gender;
+        BunnyName = name;
+        gameObject.name = name; // keeps Hierarchy/debugging readable too
     }
 
     private void RequestNewJobSpot()
