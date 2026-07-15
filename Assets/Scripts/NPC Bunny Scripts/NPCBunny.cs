@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -55,6 +56,12 @@ public class NPCBunny : MonoBehaviour
     [SerializeField] private float crossFloorWanderChance = 0.2f; // chance a wander pick is on a different floor (via lift) instead of the current one
     private bool isWanderingEnabled = false;
     private float wanderTimer = 0f;
+
+    [Header("Lift Visual Timing")]
+    [Tooltip("Delay after reaching the boarding spot before vanishing, so a doors-closing animation has time to play first.")]
+    [SerializeField] private float liftBoardHideDelay = 0.5f;
+    [Tooltip("Delay after arriving at the destination floor before reappearing and walking out, so a doors-opening animation has time to play first.")]
+    [SerializeField] private float liftDisembarkRevealDelay = 0.5f;
 
     public BunnyState CurrentState { get; private set; } = BunnyState.Idle;
     public bool IsHungry => hunger < hungerThresholdLow;
@@ -487,7 +494,7 @@ public class NPCBunny : MonoBehaviour
         if (boardingSpot == null)
         {
             CurrentState = BunnyState.RidingLift;
-            SetVisible(false);
+            StartCoroutine(HideAfterDelay(liftBoardHideDelay));
             return;
         }
 
@@ -502,14 +509,22 @@ public class NPCBunny : MonoBehaviour
 
     private void OnArrivedAtBoardingSpot()
     {
-        // Doors are already open (that's why boarding started) — hide right behind them, as if
-        // stepping fully inside. No car to sync position with; the trip is just a timed wait from here.
+        // Doors are already open (that's why boarding started), but stay visible a moment longer so a
+        // doors-closing animation has time to play before the bunny vanishes into the shaft — otherwise
+        // it pops out of existence before the doors even start closing.
+        StartCoroutine(HideAfterDelay(liftBoardHideDelay));
+    }
+
+    private IEnumerator HideAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
         SetVisible(false);
     }
 
     // Called by LiftRoom once it's arrived at this bunny's destination floor. Reappears at the
-    // boarding point (doors just opened here), then walks the short distance back out to the
-    // landing/waiting spot before resuming whatever trip was in progress.
+    // boarding point right away (doors just opened here, revealing the bunny standing inside), waits
+    // a beat, then walks the short distance back out to the landing/waiting spot before resuming
+    // whatever trip was in progress.
     public void DisembarkFromLift(Transform landingSpot, Transform boardingSpot, int floorIndex)
     {
         currentFloorIndex = floorIndex;
@@ -518,6 +533,16 @@ public class NPCBunny : MonoBehaviour
         Transform arrivalPoint = boardingSpot != null ? boardingSpot : landingSpot;
         if (arrivalPoint != null)
             transform.position = arrivalPoint.position;
+
+        StartCoroutine(WalkOutAfterDelay(landingSpot, boardingSpot, liftDisembarkRevealDelay));
+    }
+
+    // Waits before actually setting off so a doors-opening animation has time to finish first — the
+    // bunny is already visible and standing still during this wait (see DisembarkFromLift), matching
+    // the same visible pause boarding gets before it vanishes.
+    private IEnumerator WalkOutAfterDelay(Transform landingSpot, Transform boardingSpot, float delay)
+    {
+        yield return new WaitForSeconds(delay);
 
         if (boardingSpot != null && landingSpot != null && boardingSpot != landingSpot)
         {
@@ -529,7 +554,7 @@ public class NPCBunny : MonoBehaviour
             pendingStateOnArrival = BunnyState.DisembarkingLift;
             CurrentState = BunnyState.MovingToSpot;
             AdvanceToNextWaypoint();
-            return;
+            yield break;
         }
 
         ResumeTripAfterLift(landingSpot);
