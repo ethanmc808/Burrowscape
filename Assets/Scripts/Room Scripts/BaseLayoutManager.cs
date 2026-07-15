@@ -161,9 +161,18 @@ public class BaseLayoutManager : MonoBehaviour
 
         Transform exitEntrance = movingRight ? startRoom.GetLeftEntranceForFloor(startFloor) : startRoom.GetRightEntranceForFloor(startFloor);
         if (startSpot != null)
+        {
             fullPath.AddRange(startRoom.GetPathFromSpotToEntrance(startSpot, exitEntrance));
+        }
         else
+        {
+            // No claimed RoomSpot to path from (e.g. just disembarked a lift at a landing spot) — start
+            // from wherever the bunny is actually standing instead of jumping straight to the entrance,
+            // which would cut a diagonal line across the room if the two aren't in the same place.
+            if (startWanderPoint != null && startWanderPoint != exitEntrance)
+                fullPath.Add(startWanderPoint);
             fullPath.Add(exitEntrance);
+        }
 
         for (int i = startIndex + step; i != targetIndex; i += step)
         {
@@ -218,9 +227,17 @@ public class BaseLayoutManager : MonoBehaviour
 
         Transform exitEntrance = movingRight ? startRoom.GetLeftEntranceForFloor(startFloor) : startRoom.GetRightEntranceForFloor(startFloor);
         if (startSpot != null)
+        {
             fullPath.AddRange(startRoom.GetPathFromSpotToEntrance(startSpot, exitEntrance));
+        }
         else
+        {
+            // Same reasoning as GetRouteToSpot: start from the bunny's actual current position (e.g. a
+            // lift landing spot) rather than jumping straight to the entrance.
+            if (startWanderPoint != null && startWanderPoint != exitEntrance)
+                fullPath.Add(startWanderPoint);
             fullPath.Add(exitEntrance);
+        }
 
         for (int i = startIndex + step; i != targetIndex; i += step)
             fullPath.AddRange(ordered[i].GetPassThroughPath(enteringFromLeft: !movingRight, startFloor));
