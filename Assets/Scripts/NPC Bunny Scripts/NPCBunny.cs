@@ -10,6 +10,9 @@ public enum BunnyState
     Wandering,
     PassingGate,
     Despawning,
+    WaitingForLift,
+    RidingLift,
+    DisembarkingLift,
 }
 public enum BunnyArrivalType
 {
@@ -49,6 +52,7 @@ public class NPCBunny : MonoBehaviour
 
     [Header("Wandering")]
     [SerializeField] private float wanderPauseDuration = 3f; // how long to idle at each stop before moving again
+    [SerializeField] private float crossFloorWanderChance = 0.2f; // chance a wander pick is on a different floor (via lift) instead of the current one
     private bool isWanderingEnabled = false;
     private float wanderTimer = 0f;
 
@@ -69,8 +73,22 @@ public class NPCBunny : MonoBehaviour
     private RoomBase currentRoom;
     private RoomSpot currentSpot; // the spot bunny is currently occupying, null if none/mid-transit
     private Transform currentWanderPoint; // last wander destination reached, null if occupying a RoomSpot instead
+
+    // The floor the bunny is ACTUALLY on right now. Tracked separately from currentRoom.FloorIndex
+    // because currentRoom can be a LiftRoom, whose own FloorIndex only ever represents its primary
+    // floor — not necessarily the floor of the specific landing spot the bunny is currently standing at.
+    private int currentFloorIndex = 0;
     private RoomBase pendingArrivalRoom; // room to attribute to the bunny once it finishes crossing the gate
     private Transform pendingArrivalPoint; // gate exit point, becomes the bunny's known position on arrival
+
+    // Cross-floor (lift) trip bookkeeping — the "real" destination beyond the lift ride itself.
+    private LiftRoom pendingLift;
+    private int pendingLiftOriginFloor;
+    private RoomBase pendingFinalRoom;
+    private RoomSpot pendingFinalSpot;
+    private Transform pendingFinalWanderPoint;
+    private BunnyState pendingFinalState;
+    private Transform pendingDisembarkLandingSpot; // where to walk back out to after stepping off the car
 
     private bool facingRight;
     private bool hasInitializedFacing;
@@ -117,6 +135,11 @@ public class NPCBunny : MonoBehaviour
             case BunnyState.Eating:
                 // Eating logic is driven by CafeteriaRoom's coroutine/timer, not here
                 break;
+
+            case BunnyState.WaitingForLift:
+            case BunnyState.RidingLift:
+                // Both driven externally by LiftRoom's own state machine, not here
+                break;
         }
 
         UpdateAnimator();
@@ -150,12 +173,24 @@ public class NPCBunny : MonoBehaviour
         if (assignedJobRoom == null) return;
 
         RoomSpot spot = assignedJobRoom.RequestSpot(this);
-        if (spot != null)
+        if (spot == null) return;
+
+        claimedWorkSpot = spot;
+        RoomBase jobRoomBase = (RoomBase)assignedJobRoom;
+
+        if (currentRoom != null && currentFloorIndex != jobRoomBase.FloorIndex)
         {
-            claimedWorkSpot = spot;
-            List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, (RoomBase)assignedJobRoom, spot);
-            MoveAlongPath(path, spot, BunnyState.Working);
+            if (!TryBeginCrossFloorTripToSpot(jobRoomBase, spot, BunnyState.Working))
+            {
+                // No lift connects these floors — don't leave the spot reserved for an unreachable bunny.
+                assignedJobRoom.ReleaseSpot(spot, this);
+                claimedWorkSpot = null;
+            }
+            return;
         }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, jobRoomBase, spot, currentFloorIndex);
+        MoveAlongPath(path, spot, BunnyState.Working);
     }
 
     private void HandleIdle()
@@ -177,16 +212,39 @@ public class NPCBunny : MonoBehaviour
 
     private void PickNewWanderDestination()
     {
-        int floor = currentRoom != null ? currentRoom.FloorIndex : 0;
-        List<RoomBase> rooms = BaseLayoutManager.Instance.GetAllRoomsOnFloor(floor);
-        if (rooms.Count == 0) return;
+        int myFloor = currentFloorIndex;
+        int targetFloor = myFloor;
 
-        RoomBase target = rooms[Random.Range(0, rooms.Count)];
+        // Only roll for a different floor once we actually have a known current room — a bunny fresh
+        // from the base entrance takes its first same-floor wander step before ever using a lift.
+        if (currentRoom != null && Random.value < crossFloorWanderChance)
+        {
+            List<int> allFloors = BaseLayoutManager.Instance.GetAllFloorIndices();
+            if (allFloors.Count > 1)
+                targetFloor = allFloors[Random.Range(0, allFloors.Count)];
+        }
+
+        List<RoomBase> candidateRooms = new List<RoomBase>();
+        foreach (RoomBase room in BaseLayoutManager.Instance.GetAllRoomsOnFloor(targetFloor))
+        {
+            if (!(room is LiftRoom)) // a lift's shared entrance points aren't meaningful wander destinations
+                candidateRooms.Add(room);
+        }
+        if (candidateRooms.Count == 0) return;
+
+        RoomBase target = candidateRooms[Random.Range(0, candidateRooms.Count)];
         List<Transform> wanderPoints = target.GetWanderPoints();
         if (wanderPoints.Count == 0) return;
 
         Transform destination = wanderPoints[Random.Range(0, wanderPoints.Count)];
-        List<Transform> path = BaseLayoutManager.Instance.GetRouteToWanderPoint(currentRoom, currentSpot, currentWanderPoint, target, destination);
+
+        if (targetFloor != myFloor)
+        {
+            TryBeginCrossFloorTripToWanderPoint(target, destination);
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToWanderPoint(currentRoom, currentSpot, currentWanderPoint, target, destination, currentFloorIndex);
 
         if (path.Count == 0) return;
 
@@ -200,6 +258,7 @@ public class NPCBunny : MonoBehaviour
         currentRoom = target;
         currentSpot = null;
         currentWanderPoint = destination;
+        currentFloorIndex = target.FloorIndex;
     }
 
     // ---------- MOVEMENT ----------
@@ -247,6 +306,12 @@ public class NPCBunny : MonoBehaviour
                 OnArrivedAtGateExit();
             else if (pendingStateOnArrival == BunnyState.Despawning)
                 OnArrivedAtDespawnPoint();
+            else if (pendingStateOnArrival == BunnyState.WaitingForLift)
+                OnArrivedAtLiftLanding();
+            else if (pendingStateOnArrival == BunnyState.RidingLift)
+                OnArrivedAtBoardingSpot();
+            else if (pendingStateOnArrival == BunnyState.DisembarkingLift)
+                OnArrivedAtDisembarkLanding();
 
             return;
         }
@@ -275,6 +340,7 @@ public class NPCBunny : MonoBehaviour
         currentRoom = startingRoom;
         currentSpot = null;
         currentWanderPoint = startingPoint;
+        currentFloorIndex = startingRoom != null ? startingRoom.FloorIndex : 0;
         CurrentState = BunnyState.Idle; // triggers HandleIdle -> picks first wander destination
     }
     public void MoveToQueueSpot(Transform queueSpot)
@@ -318,6 +384,7 @@ public class NPCBunny : MonoBehaviour
         currentRoom = (RoomBase)assignedJobRoom;
         currentSpot = claimedWorkSpot;
         currentWanderPoint = null;
+        currentFloorIndex = currentRoom.FloorIndex;
         assignedJobRoom.NotifyBunnyReadyToWork(this);
     }
 
@@ -326,6 +393,7 @@ public class NPCBunny : MonoBehaviour
         currentRoom = cafeteriaBeingUsed;
         currentSpot = currentTargetSpot;
         currentWanderPoint = null;
+        currentFloorIndex = currentRoom.FloorIndex;
         cafeteriaBeingUsed.NotifyBunnyReadyToEat(this);
     }
 
@@ -338,6 +406,188 @@ public class NPCBunny : MonoBehaviour
     private void OnArrivedAtDespawnPoint()
     {
         Destroy(gameObject);
+    }
+
+    // ---------- CROSS-FLOOR (LIFT) ----------
+
+    // Routes to the nearest floor-appropriate lift, then hands the trip off to it. Returns false
+    // if no lift services both floors, so the caller can back out cleanly (release a claimed spot, etc).
+    private bool TryBeginCrossFloorTripToSpot(RoomBase targetRoom, RoomSpot targetSpot, BunnyState finalState)
+    {
+        int myFloor = currentFloorIndex;
+        LiftRoom lift = BaseLayoutManager.Instance.FindLiftServicing(myFloor, targetRoom.FloorIndex);
+        if (lift == null)
+        {
+            Debug.LogWarning($"{name}: no lift services floor {myFloor} -> {targetRoom.FloorIndex}.");
+            return false;
+        }
+
+        pendingFinalRoom = targetRoom;
+        pendingFinalSpot = targetSpot;
+        pendingFinalWanderPoint = null;
+        pendingFinalState = finalState;
+        BeginTripToLift(lift, myFloor, targetRoom.FloorIndex);
+        return true;
+    }
+
+    private bool TryBeginCrossFloorTripToWanderPoint(RoomBase targetRoom, Transform destination)
+    {
+        int myFloor = currentFloorIndex;
+        LiftRoom lift = BaseLayoutManager.Instance.FindLiftServicing(myFloor, targetRoom.FloorIndex);
+        if (lift == null)
+        {
+            Debug.LogWarning($"{name}: no lift services floor {myFloor} -> {targetRoom.FloorIndex}.");
+            return false;
+        }
+
+        pendingFinalRoom = targetRoom;
+        pendingFinalSpot = null;
+        pendingFinalWanderPoint = destination;
+        pendingFinalState = BunnyState.Wandering;
+        BeginTripToLift(lift, myFloor, targetRoom.FloorIndex);
+        return true;
+    }
+
+    private void BeginTripToLift(LiftRoom lift, int originFloor, int destinationFloor)
+    {
+        pendingLift = lift;
+        pendingLiftOriginFloor = originFloor;
+
+        // Route to the SPECIFIC segment registered on our current floor, not the coordinator directly
+        // — a lift's coordinator is just whichever segment happens to own the shared state machine,
+        // and it's only actually registered (for pass-through/routing purposes) on its own floor.
+        LiftRoom originSegment = lift.GetSegmentForFloor(originFloor);
+        Transform landingSpot = lift.GetLandingSpot(originFloor);
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToWanderPoint(currentRoom, currentSpot, currentWanderPoint, originSegment, landingSpot, currentFloorIndex);
+
+        currentTargetSpot = null;
+        pendingFacingOverride = null;
+        currentPath = new Queue<Transform>(path);
+        pendingStateOnArrival = BunnyState.WaitingForLift;
+        CurrentState = BunnyState.MovingToSpot;
+        AdvanceToNextWaypoint();
+
+        lift.RequestLift(this, originFloor, destinationFloor);
+    }
+
+    private void OnArrivedAtLiftLanding()
+    {
+        currentRoom = pendingLift.GetSegmentForFloor(pendingLiftOriginFloor);
+        currentSpot = null;
+        currentWanderPoint = pendingLift.GetLandingSpot(pendingLiftOriginFloor);
+        currentFloorIndex = pendingLiftOriginFloor;
+        CurrentState = BunnyState.WaitingForLift;
+        pendingLift.NotifyArrivedAtLanding(this, pendingLiftOriginFloor);
+    }
+
+    // Called by LiftRoom once it's ready to carry this bunny — walks the short distance from the
+    // landing/waiting spot to the boarding point (near the shaft), then actually starts riding.
+    public void BoardLift(Transform boardingSpot)
+    {
+        if (boardingSpot == null)
+        {
+            CurrentState = BunnyState.RidingLift;
+            SetVisible(false);
+            return;
+        }
+
+        List<Transform> path = new List<Transform> { boardingSpot };
+        currentTargetSpot = null;
+        pendingFacingOverride = null;
+        currentPath = new Queue<Transform>(path);
+        pendingStateOnArrival = BunnyState.RidingLift;
+        CurrentState = BunnyState.MovingToSpot;
+        AdvanceToNextWaypoint();
+    }
+
+    private void OnArrivedAtBoardingSpot()
+    {
+        // Doors are already open (that's why boarding started) — hide right behind them, as if
+        // stepping fully inside. No car to sync position with; the trip is just a timed wait from here.
+        SetVisible(false);
+    }
+
+    // Called by LiftRoom once it's arrived at this bunny's destination floor. Reappears at the
+    // boarding point (doors just opened here), then walks the short distance back out to the
+    // landing/waiting spot before resuming whatever trip was in progress.
+    public void DisembarkFromLift(Transform landingSpot, Transform boardingSpot, int floorIndex)
+    {
+        currentFloorIndex = floorIndex;
+        SetVisible(true);
+
+        Transform arrivalPoint = boardingSpot != null ? boardingSpot : landingSpot;
+        if (arrivalPoint != null)
+            transform.position = arrivalPoint.position;
+
+        if (boardingSpot != null && landingSpot != null && boardingSpot != landingSpot)
+        {
+            pendingDisembarkLandingSpot = landingSpot;
+            List<Transform> path = new List<Transform> { landingSpot };
+            currentTargetSpot = null;
+            pendingFacingOverride = null;
+            currentPath = new Queue<Transform>(path);
+            pendingStateOnArrival = BunnyState.DisembarkingLift;
+            CurrentState = BunnyState.MovingToSpot;
+            AdvanceToNextWaypoint();
+            return;
+        }
+
+        ResumeTripAfterLift(landingSpot);
+    }
+
+    private void OnArrivedAtDisembarkLanding()
+    {
+        Transform landingSpot = pendingDisembarkLandingSpot;
+        pendingDisembarkLandingSpot = null;
+        ResumeTripAfterLift(landingSpot);
+    }
+
+    private void ResumeTripAfterLift(Transform landingSpot)
+    {
+        // Resolve to the SPECIFIC segment registered on the floor we actually landed on — currentFloorIndex
+        // was already updated to the destination floor by DisembarkFromLift before this runs. The
+        // coordinator itself is only registered (for routing purposes) on its own floor, which may
+        // not be this one.
+        LiftRoom arrivalSegment = pendingLift.GetSegmentForFloor(currentFloorIndex);
+        RoomBase finalRoom = pendingFinalRoom;
+        RoomSpot finalSpot = pendingFinalSpot;
+        Transform finalWanderPoint = pendingFinalWanderPoint;
+        BunnyState finalState = pendingFinalState;
+
+        pendingLift = null;
+        pendingFinalRoom = null;
+        pendingFinalSpot = null;
+        pendingFinalWanderPoint = null;
+
+        currentSpot = null;
+        currentWanderPoint = landingSpot;
+
+        // We're now physically on the destination floor at the lift's landing spot — resume the
+        // original trip as an ordinary same-floor walk from here.
+        if (finalSpot != null)
+        {
+            List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(arrivalSegment, null, landingSpot, finalRoom, finalSpot, currentFloorIndex);
+            MoveAlongPath(path, finalSpot, finalState);
+        }
+        else if (finalWanderPoint != null)
+        {
+            List<Transform> path = BaseLayoutManager.Instance.GetRouteToWanderPoint(arrivalSegment, null, landingSpot, finalRoom, finalWanderPoint, currentFloorIndex);
+            currentTargetSpot = null;
+            pendingFacingOverride = null;
+            currentPath = new Queue<Transform>(path);
+            pendingStateOnArrival = finalState;
+            CurrentState = BunnyState.MovingToSpot;
+            AdvanceToNextWaypoint();
+
+            currentRoom = finalRoom;
+            currentWanderPoint = finalWanderPoint;
+            currentFloorIndex = finalRoom.FloorIndex;
+        }
+        else
+        {
+            currentRoom = arrivalSegment;
+            CurrentState = BunnyState.Idle;
+        }
     }
 
     private void HandleHungerCheckWhileWorking()
@@ -368,7 +618,19 @@ public class NPCBunny : MonoBehaviour
         assignedJobRoom?.NotifyBunnyLeavingToEat(this);
 
         cafeteriaBeingUsed = cafeteria;
-        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, currentWanderPoint, cafeteria, eatSpot);
+
+        if (departingRoom.FloorIndex != cafeteria.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(cafeteria, eatSpot, BunnyState.Eating))
+            {
+                // No lift connects these floors — abandon the eating spot, retry on a later hunger check.
+                cafeteria.ReleaseSpot(eatSpot, this);
+                cafeteriaBeingUsed = null;
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, currentWanderPoint, cafeteria, eatSpot, currentFloorIndex);
 
         Debug.Log($"Path built with {path.Count} points:");
         foreach (Transform t in path)
@@ -382,16 +644,25 @@ public class NPCBunny : MonoBehaviour
         RoomSpot departingSpot = currentSpot;
 
         CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteria(transform.position);
-        if (cafeteria != null)
+        if (cafeteria == null) return;
+
+        RoomSpot eatSpot = cafeteria.RequestSpot(this);
+        if (eatSpot == null) return;
+
+        cafeteriaBeingUsed = cafeteria;
+
+        if (departingRoom != null && currentFloorIndex != cafeteria.FloorIndex)
         {
-            RoomSpot eatSpot = cafeteria.RequestSpot(this);
-            if (eatSpot != null)
+            if (!TryBeginCrossFloorTripToSpot(cafeteria, eatSpot, BunnyState.Eating))
             {
-                cafeteriaBeingUsed = cafeteria;
-                List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, currentWanderPoint, cafeteria, eatSpot);
-                MoveAlongPath(path, eatSpot, BunnyState.Eating);
+                cafeteria.ReleaseSpot(eatSpot, this);
+                cafeteriaBeingUsed = null;
             }
+            return;
         }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, currentWanderPoint, cafeteria, eatSpot, currentFloorIndex);
+        MoveAlongPath(path, eatSpot, BunnyState.Eating);
     }
 
     // Called by CafeteriaRoom each time a carrot-consumption tick happens
@@ -418,8 +689,22 @@ public class NPCBunny : MonoBehaviour
         {
             if (claimedWorkSpot != null)
             {
+                RoomBase jobRoomBase = (RoomBase)assignedJobRoom;
+
+                if (currentRoom != null && currentFloorIndex != jobRoomBase.FloorIndex)
+                {
+                    if (!TryBeginCrossFloorTripToSpot(jobRoomBase, claimedWorkSpot, BunnyState.Working))
+                    {
+                        // No lift back to the job floor — release the spot and let HandleIdle retry later.
+                        assignedJobRoom.ReleaseSpot(claimedWorkSpot, this);
+                        claimedWorkSpot = null;
+                        CurrentState = BunnyState.Idle;
+                    }
+                    return;
+                }
+
                 // Spot was never released while eating — walk straight back to it.
-                List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, (RoomBase)assignedJobRoom, claimedWorkSpot);
+                List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, jobRoomBase, claimedWorkSpot, currentFloorIndex);
                 MoveAlongPath(path, claimedWorkSpot, BunnyState.Working);
             }
             else
@@ -448,6 +733,14 @@ public class NPCBunny : MonoBehaviour
 
         bool isSlowWander = CurrentState == BunnyState.MovingToSpot && pendingStateOnArrival == BunnyState.Wandering;
         animator.speed = isSlowWander ? wanderSpeedMultiplier : 1f;
+    }
+
+    // ---------- VISIBILITY (used while riding a lift, doors-hidden) ----------
+
+    private void SetVisible(bool visible)
+    {
+        if (bunnyScaleRoot != null)
+            bunnyScaleRoot.gameObject.SetActive(visible);
     }
 
     // ---------- FACING (reused from BunnyMovement) ----------

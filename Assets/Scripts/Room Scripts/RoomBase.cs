@@ -12,9 +12,6 @@ public class RoomBase : MonoBehaviour
     [Header("Pass-Through Path (for bunnies just walking through this room)")]
     [SerializeField] protected List<Transform> passThroughWaypoints; // ordered left-to-right
 
-    [Header("Grid")]
-    [SerializeField] private int floorIndex = 0; // set this per-instance when the room is placed
-
     [Header("Spot Paths")]
     [SerializeField] protected List<RoomPath> paths; // entrance-to-spot paths, shared by Garden/Cafeteria
 
@@ -32,15 +29,33 @@ public class RoomBase : MonoBehaviour
         if (middleRight != null) points.Add(middleRight);
         return points;
     }
-    public int FloorIndex => floorIndex;
+    // Auto-detected from this room's world Y position (see BaseLayoutManager.GetFloorIndexForY) the
+    // moment it registers itself — there's no manually-typed field to forget to update, so a room's
+    // floor can never silently drift out of sync with where it's actually placed. Rooms must be
+    // vertically snapped to a consistent floorHeight grid for this to line up (same requirement
+    // LiftRoom already has for stacking its segments).
+    public int FloorIndex { get; private set; }
     public int GridX => Mathf.RoundToInt(transform.position.x);
+
+    // Floor-aware entrance/waypoint lookups. A normal room only has one set of these regardless of
+    // floor (the floorIndex parameter is ignored), but LiftRoom overrides all three to return the
+    // correct set for whichever floor is actually being routed through — a lift spans multiple floors
+    // and its single inherited FloorIndex only ever represents one of them.
+    public virtual Transform GetLeftEntranceForFloor(int floorIndex) => leftEntrance;
+    public virtual Transform GetRightEntranceForFloor(int floorIndex) => rightEntrance;
+    public virtual List<Transform> GetPassThroughWaypointsForFloor(int floorIndex) => passThroughWaypoints;
 
     protected virtual void OnEnable()
     {
         if (BaseLayoutManager.Instance != null)
+        {
+            FloorIndex = BaseLayoutManager.Instance.GetFloorIndexForY(transform.position.y);
             BaseLayoutManager.Instance.RegisterRoom(this);
+        }
         else
+        {
             Debug.LogWarning($"{name}: BaseLayoutManager.Instance was null during OnEnable.");
+        }
     }
 
     protected virtual void OnDisable()
@@ -49,24 +64,28 @@ public class RoomBase : MonoBehaviour
             BaseLayoutManager.Instance.UnregisterRoom(this);
     }
 
-    // Path for a bunny walking straight through this room (not stopping at any spot)
-    public List<Transform> GetPassThroughPath(bool enteringFromLeft)
+    // Path for a bunny walking straight through this room (not stopping at any spot), on a specific floor.
+    public List<Transform> GetPassThroughPath(bool enteringFromLeft, int floorIndex)
     {
+        Transform left = GetLeftEntranceForFloor(floorIndex);
+        Transform right = GetRightEntranceForFloor(floorIndex);
+        List<Transform> waypoints = GetPassThroughWaypointsForFloor(floorIndex);
+
         List<Transform> path = new List<Transform>();
 
         if (enteringFromLeft)
         {
-            path.Add(leftEntrance);
-            path.AddRange(passThroughWaypoints);
-            path.Add(rightEntrance);
+            path.Add(left);
+            path.AddRange(waypoints);
+            path.Add(right);
         }
         else
         {
-            path.Add(rightEntrance);
-            List<Transform> reversed = new List<Transform>(passThroughWaypoints);
+            path.Add(right);
+            List<Transform> reversed = new List<Transform>(waypoints);
             reversed.Reverse();
             path.AddRange(reversed);
-            path.Add(leftEntrance);
+            path.Add(left);
         }
 
         return path;
