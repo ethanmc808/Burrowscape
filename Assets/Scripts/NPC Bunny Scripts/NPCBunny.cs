@@ -335,12 +335,29 @@ public class NPCBunny : MonoBehaviour
         }
 
         Vector3 direction = toTarget.normalized;
-        float currentMoveSpeed = pendingStateOnArrival == BunnyState.Wandering ? moveSpeed * wanderSpeedMultiplier : moveSpeed;
+        float currentMoveSpeed = IsWanderPacedLeg() ? moveSpeed * wanderSpeedMultiplier : moveSpeed;
         transform.position += direction * currentMoveSpeed * Time.deltaTime;
 
         if (Mathf.Abs(direction.x) > 0.01f)
             SetFacing(direction.x < 0f);
     }
+
+    // True while the bunny should move/animate at wander pace rather than full speed. A direct wander
+    // leg always qualifies; the WaitingForLift/RidingLift/DisembarkingLift legs of a lift trip only
+    // qualify if the trip's ultimate purpose (pendingFinalState) is itself a wander — otherwise a lift
+    // ride to a JOB or the cafeteria would incorrectly slow down too. Without this, a wandering bunny
+    // that decides to take the lift walks to the landing spot at full (job) speed, then drops back to
+    // wander speed once it resumes wandering on the new floor — a visible, unintended speed-up.
+    private bool IsWanderPacedLeg()
+    {
+        if (pendingStateOnArrival == BunnyState.Wandering) return true;
+
+        bool isLiftTransitLeg = pendingStateOnArrival == BunnyState.WaitingForLift
+            || pendingStateOnArrival == BunnyState.RidingLift
+            || pendingStateOnArrival == BunnyState.DisembarkingLift;
+        return isLiftTransitLeg && pendingFinalState == BunnyState.Wandering;
+    }
+
     public void EnterBaseAndWander(RoomBase startingRoom = null, Transform startingPoint = null)
     {
         isWanderingEnabled = true;
@@ -774,7 +791,7 @@ public class NPCBunny : MonoBehaviour
         animator.SetBool(isWorkingParam, CurrentState == BunnyState.Working);
         animator.SetBool(isEatingParam, CurrentState == BunnyState.Eating);
 
-        bool isSlowWander = CurrentState == BunnyState.MovingToSpot && pendingStateOnArrival == BunnyState.Wandering;
+        bool isSlowWander = CurrentState == BunnyState.MovingToSpot && IsWanderPacedLeg();
         animator.speed = isSlowWander ? wanderSpeedMultiplier : 1f;
     }
 
