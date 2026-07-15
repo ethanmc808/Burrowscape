@@ -18,6 +18,11 @@ public class EntranceGate : MonoBehaviour
     [SerializeField] private float openDuration = 3f;
     [SerializeField] private float closeDuration = 3f;
 
+    [Header("Visual Gate Model")]
+    [SerializeField] private Transform gateTransform;
+    [SerializeField] private float closedLocalY = 0f;
+    [SerializeField] private float openLocalY = 3f;
+
     private int activeTraffic = 0; // bunnies currently queued/waiting/passing through
     private Coroutine gateRoutine;
 
@@ -68,7 +73,31 @@ public class EntranceGate : MonoBehaviour
         Debug.Log($"Gate: entering {toState}");
 
         float duration = toState == GateState.Opening ? openDuration : closeDuration;
-        yield return new WaitForSeconds(duration);
+        float startY = gateTransform != null ? gateTransform.localPosition.y : 0f;
+        float targetY = toState == GateState.Opening ? openLocalY : closedLocalY;
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            if (gateTransform != null)
+            {
+                Vector3 pos = gateTransform.localPosition;
+                pos.y = Mathf.Lerp(startY, targetY, t);
+                gateTransform.localPosition = pos;
+            }
+
+            yield return null;
+        }
+
+        if (gateTransform != null)
+        {
+            Vector3 finalPos = gateTransform.localPosition;
+            finalPos.y = targetY;
+            gateTransform.localPosition = finalPos;
+        }
 
         if (toState == GateState.Opening)
         {

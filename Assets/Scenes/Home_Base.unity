@@ -1302,6 +1302,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EntranceGate
   openDuration: 3
   closeDuration: 3
+  gateTransform: {fileID: 792371252}
+  closedLocalY: -266.4462
+  openLocalY: -265.539
 --- !u!4 &629919520
 Transform:
   m_ObjectHideFlags: 0
@@ -1314,7 +1317,8 @@ Transform:
   m_LocalPosition: {x: 1218.4976, y: 266.91702, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 792371252}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &686161603
@@ -1403,6 +1407,84 @@ Transform:
   m_Children: []
   m_Father: {fileID: 934702268}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &792371251
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 629919520}
+    m_Modifications:
+    - target: {fileID: 6096736285629927326, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 8c15c09b710a5314dbff7905426596ba, type: 2}
+    - target: {fileID: 6780170203180481154, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_Name
+      value: EntranceGateModel
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.39896
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.16565713
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.14103483
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1208.5006
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -266.4462
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -2.399
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+--- !u!4 &792371252 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8701488423559921692, guid: 7efe4dceef3587247b54b5501f1fb5ab, type: 3}
+  m_PrefabInstance: {fileID: 792371251}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &815537811
 GameObject:
   m_ObjectHideFlags: 0
@@ -1580,9 +1662,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25152f4ddb6baf04b95294a2413ac5fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WildBunnySpawner
-  bunnyPrefab: {fileID: 3142430252561249029, guid: 4d1f8847fcaad46499f85679d17231d3, type: 3}
+  bunnyPrefabs:
+  - {fileID: 3142430252561249029, guid: 4d1f8847fcaad46499f85679d17231d3, type: 3}
   spawnOnStart: 1
   offscreenSpawnOffsetX: 15
+  autoSpawnEnabled: 1
+  minSpawnInterval: 10
+  maxSpawnInterval: 20
 --- !u!1 &919876965
 GameObject:
   m_ObjectHideFlags: 0
@@ -2588,6 +2674,452 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2896676963235504331, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
   m_PrefabInstance: {fileID: 1207482685}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1233478484
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1233478486}
+  - component: {fileID: 1233478485}
+  m_Layer: 0
+  m_Name: Wild Bunny Names
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1233478485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1233478484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bfa27d9c81556b4e88f3d683cfb64cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WildBunnyNames
+  maleNames:
+  - Clover
+  - Thistle
+  - Bramble
+  - Fern
+  - Pip
+  - Sprout
+  - Acorn
+  - Twig
+  - Nibbles
+  - Buttons
+  - Waffle
+  - Biscuit
+  - Pancake
+  - Pebble
+  - Muffin
+  - Cricket
+  - Dash
+  - Scout
+  - Buddy
+  - Peanut
+  - Chip
+  - Cocoa
+  - Toffee
+  - Bingo
+  - Jasper
+  - Rusty
+  - Copper
+  - Oakley
+  - Basil
+  - Sage
+  - Reed
+  - Birch
+  - Cedar
+  - Pumpkin
+  - Marshmallow
+  - Gizmo
+  - Buster
+  - Nugget
+  - Pretzel
+  - Waffles
+  - Snickers
+  - Doodle
+  - Squiggle
+  - Puddle
+  - Marbles
+  - Fuzzball
+  - Snuggles
+  - Wiggles
+  - Bouncer
+  - Sprocket
+  - Tumbles
+  - Speckle
+  - Dumpling
+  - Noodle
+  - Cobbler
+  - Sherbet
+  - Bramblet
+  - Fudge
+  - Pistachio
+  - Marzipan
+  - Sir Hops-a-Lot
+  - Duke Dandelion
+  - Baron Fluffington
+  - Professor Nibbles
+  - Captain Carrot
+  - General Fuzz
+  - Doctor Floppy
+  - Mayor McHopper
+  - King Cottontail
+  - Private Pellet
+  - Buckminster
+  - Thumperton
+  - Hopscotch
+  - Bunsen
+  - Furlong
+  - Whiskerton
+  - Nibblesworth
+  - Buckshot
+  - Hopalot
+  - Bunbury
+  - Hareold
+  - Buckaroo
+  - Hoptimist
+  - Fernando
+  - Radish Rex
+  - Salad Dodger
+  - Cabbage Bandit
+  - Lettuce Leaper
+  - Carrot Cruncher
+  - Chewy McChewface
+  - Fluffernutter
+  - Sir Reginald Hops
+  - Earl Grey
+  - Count Fuzzula
+  - Sir Loin
+  - Baron Von Floof
+  - Duke of Dandelion
+  - Marquis de Carrot
+  - Viscount Veggie
+  - Admiral Cottontail
+  - Fang
+  - Venom
+  - Shadow
+  - Blade
+  - Reaper
+  - Ravage
+  - Havoc
+  - Bane
+  - Talon
+  - Vex
+  - Grim
+  - Rex
+  - Rogue
+  - Ash
+  - Chaos
+  - Diesel
+  - Ripper
+  - Slasher
+  - Maverick
+  - Skulk
+  - Bruiser
+  - Renegade
+  - Viper
+  - Cobra
+  - Zero
+  - Nitro
+  - Kane
+  - Onyx
+  - Skull
+  - Toxic
+  - Menace
+  - Riot
+  - Wraith
+  - Savage
+  - Brawler
+  - Switchblade
+  - Executioner
+  - Doom
+  - Grimwood
+  - Vandal
+  - Outlaw
+  - Ghoul
+  - Feral
+  - Anarchy
+  - Vortex
+  - Sinister
+  - Malice
+  - Reckless
+  - Berserk
+  - Corvus
+  - Thorne
+  - Draven
+  - Orin
+  - Fenwick
+  - Corwin
+  - Alderic
+  - Galahad
+  - Merlin
+  - Percival
+  - Tristan
+  - Kael
+  - Doran
+  - Aldric
+  - Emrys
+  - Faelan
+  - Griffin
+  - Thane
+  - Orsino
+  - Caspian
+  - Bramwell
+  - Lysander
+  - Osric
+  - Ronan
+  - Fenrir
+  - Aldous
+  - Cormac
+  - Dorian
+  - Evander
+  - Faelor
+  - Garrick
+  - Halric
+  - Ithran
+  - Joran
+  - Kellan
+  - Loric
+  - Maddox
+  - Nyx
+  - Osgood
+  - Perrin
+  - Quill
+  - Roderick
+  - Silas
+  - Thoron
+  - Ulric
+  - Varin
+  - Wystan
+  - Xanther
+  - Yorick
+  - Zephyrin
+  - Aramis
+  femaleNames:
+  - Poppy
+  - Willow
+  - Dandelion
+  - Briar
+  - Juniper
+  - Daisy
+  - Petal
+  - Marigold
+  - Blossom
+  - Honey
+  - Buttercup
+  - Clementine
+  - Cupcake
+  - Sprinkle
+  - Cookie
+  - Sugar
+  - Ginger
+  - Cinnamon
+  - Hazelnut
+  - Pudding
+  - Tulip
+  - Rosie
+  - Lily
+  - Iris
+  - Violet
+  - Sunny
+  - Star
+  - Twinkle
+  - Sparkle
+  - Bubbles
+  - Fluffy
+  - Cottonball
+  - Snowball
+  - Marshmallow
+  - Peaches
+  - Berry
+  - Plum
+  - Apricot
+  - Cherry
+  - Mochi
+  - Dumplin
+  - Biscotti
+  - Praline
+  - Nougat
+  - Caramel
+  - Butterscotch
+  - Meringue
+  - Frosting
+  - Glimmer
+  - Twirl
+  - Giggles
+  - Bounce
+  - Puddles
+  - Freckle
+  - Speckles
+  - Snuggle
+  - Nibblet
+  - Pipsqueak
+  - Tumble
+  - Flopsy
+  - Lady Hops-a-Lot
+  - Duchess Dandelion
+  - Baroness Fluffington
+  - Professor Whiskers
+  - Countess Cottontail
+  - Queen of Clover
+  - Miss Nibbles
+  - Madame Floof
+  - Dame Fuzzalot
+  - Lieutenant Lettuce
+  - Princess Pellet
+  - Bunnyetta
+  - Harelequin
+  - Fuzzlequin
+  - Hoparella
+  - Buttercream
+  - Radishette
+  - Salad Sprite
+  - Carrotina
+  - Thumperella
+  - Fernanda
+  - Cabbage Rose
+  - Bunbury Belle
+  - Whiskerella
+  - Chewbella
+  - Fluffington
+  - Hare-iet
+  - Bunapple
+  - Cottontina
+  - Nibblesina
+  - Baroness Von Floof
+  - Duchess of Dandelion
+  - Marchioness Marigold
+  - Viscountess Violet
+  - Lady Buttercup
+  - Countess Clover
+  - Empress Ember
+  - Sultana Sage
+  - Contessa Cotton
+  - Vixenella
+  - Raven
+  - Vixen
+  - Shade
+  - Vesper
+  - Nyxie
+  - Onyxette
+  - Huntress
+  - Reaperine
+  - Venomina
+  - Feral
+  - Riot
+  - Vex
+  - Rebel
+  - Havoc
+  - Wraithe
+  - Banshee
+  - Talon
+  - Blade
+  - Chaos
+  - Savage
+  - Maverick
+  - Nitro
+  - Vandal
+  - Ghoul
+  - Toxic
+  - Menace
+  - Sinister
+  - Malice
+  - Bruiser
+  - Switchblade
+  - Fury
+  - Vengeance
+  - Grim
+  - Diesel
+  - Cobra
+  - Viper
+  - Zero
+  - Sable
+  - Onyx
+  - Skulk
+  - Anarchy
+  - Vortex
+  - Reckless
+  - Berserka
+  - Requiem
+  - Nemesis
+  - Ravena
+  - Doom
+  - Morrigan
+  - Corvina
+  - Aeliana
+  - Isolde
+  - Rhiannon
+  - Elowen
+  - Seraphina
+  - Guinevere
+  - Freya
+  - Elysia
+  - Ravenna
+  - Odessa
+  - Calla
+  - Thalia
+  - Nerissa
+  - Wren
+  - Selene
+  - Lyra
+  - Ondine
+  - Faelynn
+  - Briallen
+  - Ithlyn
+  - Sorrel
+  - Maren
+  - Ysolde
+  - Aurelia
+  - Cressida
+  - Delphine
+  - Evangeline
+  - Fiora
+  - Galanthe
+  - Hespera
+  - Ilyana
+  - Junia
+  - Kyrie
+  - Liora
+  - Meliora
+  - Nyssa
+  - Oriana
+  - Persephone
+  - Quilla
+  - Rosalind
+  - Solenne
+  - Thessaly
+  - Umbriel
+  - Valeska
+  - Wisteria
+  - Xanthe
+  - Yseult
+  - Zinnia
+  - Amoret
+  - Branwen
+--- !u!4 &1233478486
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1233478484}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 12.38537, y: 0.21443, z: -2.94581}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1325068888 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 656667274383277941, guid: 58dc4c966de65e4469574e6637dacfca, type: 3}
@@ -4171,9 +4703,10 @@ SceneRoots:
   - {fileID: 961739753}
   - {fileID: 203844589}
   - {fileID: 995728564}
+  - {fileID: 1945512141}
   - {fileID: 953679138}
   - {fileID: 629919520}
-  - {fileID: 1945512141}
+  - {fileID: 1233478486}
   - {fileID: 430627076}
   - {fileID: 934702268}
   - {fileID: 427964888}
