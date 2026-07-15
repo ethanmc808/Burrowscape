@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &812004214686321193
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3186962060287734298}
+  m_Layer: 0
+  m_Name: GateExitPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3186962060287734298
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 812004214686321193}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: 0.0009999275, y: -0.894, z: 1.833}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 399445776876835591}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1819377523330260640
 GameObject:
   m_ObjectHideFlags: 0
@@ -26,7 +57,7 @@ Transform:
   m_GameObject: {fileID: 1819377523330260640}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: -1.167, y: -0.894, z: 5.581}
+  m_LocalPosition: {x: -1.167, y: -0.894, z: 5.081}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -78,6 +109,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6741216569666800682}
+  - {fileID: 3186962060287734298}
   - {fileID: 7577375625950615007}
   - {fileID: 4201845982539062840}
   - {fileID: 4662241099832073635}
@@ -101,8 +133,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EntranceRoom
   leftEntrance: {fileID: 9213148216188798901}
   rightEntrance: {fileID: 4489546531400349566}
+  middleLeft: {fileID: 0}
+  middleRight: {fileID: 0}
   passThroughWaypoints: []
-  floorIndex: 0
   paths:
   - entrance: {fileID: 9213148216188798901}
     targetSpot: {fileID: 4979276418371817488}
@@ -119,6 +152,15 @@ MonoBehaviour:
     - {fileID: 2354981106535409420}
     - {fileID: 4201845982539062840}
   - entrance: {fileID: 4489546531400349566}
+    targetSpot: {fileID: 6958286060065839923}
+    waypoints:
+    - {fileID: 7045471705470254009}
+    - {fileID: 2354981106535409420}
+  - entrance: {fileID: 3186962060287734298}
+    targetSpot: {fileID: 4979276418371817488}
+    waypoints:
+    - {fileID: 4662241099832073635}
+  - entrance: {fileID: 3186962060287734298}
     targetSpot: {fileID: 6958286060065839923}
     waypoints:
     - {fileID: 7045471705470254009}
@@ -230,7 +272,7 @@ Transform:
   m_GameObject: {fileID: 4733806015444649233}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: 1.007, y: -0.894, z: 5.746}
+  m_LocalPosition: {x: 1.081, y: -0.894, z: 5.746}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

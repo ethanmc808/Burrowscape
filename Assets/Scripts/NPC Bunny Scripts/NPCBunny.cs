@@ -66,6 +66,11 @@ public class NPCBunny : MonoBehaviour
     public BunnyState CurrentState { get; private set; } = BunnyState.Idle;
     public bool IsHungry => hunger < hungerThresholdLow;
     public bool IsAssignedToJob => assignedJobRoom != null;
+    // True once the bunny has actually passed through the entrance gate (set in EnterBaseAndWander,
+    // which only ever runs from OnArrivedAtGateExit). False while spawned-but-queued or still awaiting
+    // approval — a bunny in that state has no currentRoom yet, so routing it to a job would build a
+    // path straight from the base entrance to the job room, skipping the gate entirely.
+    public bool HasEnteredBase { get; private set; }
     public bool IsAwaitingApproval { get; private set; }
     public BunnyArrivalType ArrivalType { get; private set; } = BunnyArrivalType.Wild;
     public BunnyGender Gender { get; private set; } = BunnyGender.Male;
@@ -87,6 +92,13 @@ public class NPCBunny : MonoBehaviour
     private int currentFloorIndex = 0;
     private RoomBase pendingArrivalRoom; // room to attribute to the bunny once it finishes crossing the gate
     private Transform pendingArrivalPoint; // gate exit point, becomes the bunny's known position on arrival
+
+    // A picked-but-not-yet-reached wander destination. Deliberately NOT committed to currentRoom/
+    // currentWanderPoint until the bunny actually arrives (see OnArrivedAtWanderPoint) — committing
+    // early would make anything that routes off currentRoom mid-walk (e.g. a job assignment) build a
+    // path from a location the bunny hasn't physically reached yet.
+    private RoomBase pendingWanderRoom;
+    private Transform pendingWanderDestination;
 
     // Cross-floor (lift) trip bookkeeping — the "real" destination beyond the lift ride itself.
     private LiftRoom pendingLift;
@@ -156,6 +168,16 @@ public class NPCBunny : MonoBehaviour
 
     public void AssignToJob(IJobRoom jobRoom)
     {
+        if (!HasEnteredBase)
+        {
+            // Still spawned-but-queued at the gate (or mid-approval) — currentRoom isn't set yet, so
+            // routing to a job would path straight from the base entrance to the job room, skipping
+            // the gate/queue entirely. Guarded here (not just in the assignment UI) so no caller —
+            // present or future — can trigger this by routing around the UI.
+            Debug.LogWarning($"{name}: can't assign to a job before entering the base (still awaiting gate approval).");
+            return;
+        }
+
         assignedJobRoom = jobRoom;
         RequestNewJobSpot();
     }
@@ -261,11 +283,22 @@ public class NPCBunny : MonoBehaviour
         CurrentState = BunnyState.MovingToSpot;
         AdvanceToNextWaypoint();
 
-        // Track which room/point we're heading toward, for next time
-        currentRoom = target;
+        // Remembered for OnArrivedAtWanderPoint — NOT committed to currentRoom/currentWanderPoint yet,
+        // since the bunny hasn't actually walked there.
+        pendingWanderRoom = target;
+        pendingWanderDestination = destination;
+    }
+
+    private void OnArrivedAtWanderPoint()
+    {
+        currentRoom = pendingWanderRoom;
         currentSpot = null;
-        currentWanderPoint = destination;
-        currentFloorIndex = target.FloorIndex;
+        currentWanderPoint = pendingWanderDestination;
+        currentFloorIndex = pendingWanderRoom.FloorIndex;
+        pendingWanderRoom = null;
+        pendingWanderDestination = null;
+
+        CurrentState = BunnyState.Idle; // pause, then HandleIdle picks the next destination after wanderPauseDuration
     }
 
     // ---------- MOVEMENT ----------
@@ -308,7 +341,7 @@ public class NPCBunny : MonoBehaviour
             else if (pendingStateOnArrival == BunnyState.Eating)
                 OnArrivedAtEatingSpot();
             else if (pendingStateOnArrival == BunnyState.Wandering)
-                CurrentState = BunnyState.Idle; // pause, then HandleIdle picks the next destination after wanderPauseDuration
+                OnArrivedAtWanderPoint();
             else if (pendingStateOnArrival == BunnyState.PassingGate)
                 OnArrivedAtGateExit();
             else if (pendingStateOnArrival == BunnyState.Despawning)
@@ -360,6 +393,7 @@ public class NPCBunny : MonoBehaviour
 
     public void EnterBaseAndWander(RoomBase startingRoom = null, Transform startingPoint = null)
     {
+        HasEnteredBase = true;
         isWanderingEnabled = true;
         currentRoom = startingRoom;
         currentSpot = null;

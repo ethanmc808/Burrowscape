@@ -27,6 +27,9 @@ public class DwellerRoster : MonoBehaviour
 
     public List<NPCBunny> GetUnassignedBunnies()
     {
-        return allBunnies.Where(b => !b.IsAssignedToJob).ToList();
+        // Exclude bunnies still spawned-but-queued at the gate (or mid-approval) — they haven't
+        // entered the base yet, so assigning them to a job would route them straight from the base
+        // entrance to the job room, skipping the gate/queue entirely.
+        return allBunnies.Where(b => !b.IsAssignedToJob && b.HasEnteredBase).ToList();
     }
 }

@@ -132,6 +132,15 @@ public class BaseLayoutManager : MonoBehaviour
 
         if (startRoom == targetRoom)
         {
+            if (startSpot == null && startWanderPoint != null)
+            {
+                // Try the room's authored entrance-to-spot path first, so a same-room assignment
+                // doesn't cut a straight line through walls/scenery the path was specifically routed
+                // around. Falls back to a straight line (with a warning) if no RoomPath's entrance
+                // matches wherever the bunny currently is.
+                return startRoom.GetPathBetweenEntranceAndSpot(targetSpot, startWanderPoint);
+            }
+
             // Prefer a known RoomSpot, then a remembered wander point, and only fall back to the
             // room's own root Transform (its grid-alignment pivot, NOT a walkable point) as a last resort.
             Transform startPoint = startSpot != null ? startSpot.transform : (startWanderPoint != null ? startWanderPoint : startRoom.transform);
