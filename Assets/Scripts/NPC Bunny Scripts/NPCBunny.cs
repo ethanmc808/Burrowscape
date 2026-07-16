@@ -206,6 +206,18 @@ public class NPCBunny : MonoBehaviour
 
         assignedJobRoom = null;
 
+        // wanderTimer accumulates only while Idle and is never reset except when a wander pick actually
+        // fires — so a bunny that sat idle for a while before ITS FIRST job (e.g. right after entering
+        // the base) can carry a near-threshold timer indefinitely, dormant through Working/Eating, ready
+        // to fire on the very next Idle tick no matter how much later that is. Without this reset, going
+        // Idle here can trigger an immediate random (possibly cross-floor) wander pick that wins a race
+        // against the player's very next reassignment click — the bunny visibly detours through a whole
+        // extra lift trip before the real reassignment gets its turn (it's only deferred, not lost — see
+        // HandleIdle's assignedJobRoom != null retry — but looks like a broken/random path in the
+        // meantime). Resetting here guarantees a full wanderPauseDuration grace window after any
+        // unassign before wandering can resume.
+        wanderTimer = 0f;
+
         // Currently working: stop immediately and go idle right where we're standing.
         if (CurrentState == BunnyState.Working)
         {
@@ -256,8 +268,16 @@ public class NPCBunny : MonoBehaviour
     {
         if (assignedJobRoom == null) return;
 
+        // TEMP DEBUG (round 2) — remove once the deferred-retry issue is root-caused.
+        Debug.Log($"[JobRouteDebug2] {name}: RequestNewJobSpot called. CurrentState={CurrentState}, currentRoom={(currentRoom != null ? currentRoom.name : "NULL")}, currentFloorIndex={currentFloorIndex}, pendingLift={(pendingLift != null ? pendingLift.name : "NULL")}");
+
         RoomSpot spot = assignedJobRoom.RequestSpot(this);
-        if (spot == null) return;
+        if (spot == null)
+        {
+            // TEMP DEBUG (round 2) — remove once the deferred-retry issue is root-caused.
+            Debug.Log($"[JobRouteDebug2] {name}: RequestNewJobSpot -> RequestSpot returned null (room full?).");
+            return;
+        }
 
         claimedWorkSpot = spot;
         RoomBase jobRoomBase = (RoomBase)assignedJobRoom;
@@ -281,6 +301,8 @@ public class NPCBunny : MonoBehaviour
     {
         if (assignedJobRoom != null && claimedWorkSpot == null)
         {
+            // TEMP DEBUG (round 2) — remove once the deferred-retry issue is root-caused.
+            Debug.Log($"[JobRouteDebug2] {name}: HandleIdle sees a deferred job assignment, retrying.");
             RequestNewJobSpot();
         }
         else if (isWanderingEnabled)
@@ -346,6 +368,9 @@ public class NPCBunny : MonoBehaviour
 
     private void OnArrivedAtWanderPoint()
     {
+        // TEMP DEBUG (round 2) — remove once the deferred-retry issue is root-caused.
+        Debug.Log($"[JobRouteDebug2] {name}: OnArrivedAtWanderPoint reached. pendingWanderRoom={(pendingWanderRoom != null ? pendingWanderRoom.name : "NULL")}, assignedJobRoom={(assignedJobRoom is RoomBase arb ? arb.name : "NULL")}, claimedWorkSpot={(claimedWorkSpot != null ? claimedWorkSpot.name : "NULL")}");
+
         currentRoom = pendingWanderRoom;
         currentSpot = null;
         currentWanderPoint = pendingWanderDestination;
@@ -693,6 +718,9 @@ public class NPCBunny : MonoBehaviour
 
     private void ResumeTripAfterLift(Transform landingSpot)
     {
+        // TEMP DEBUG (round 2) — remove once the deferred-retry issue is root-caused.
+        Debug.Log($"[JobRouteDebug2] {name}: ResumeTripAfterLift called. currentFloorIndex={currentFloorIndex}, pendingFinalRoom={(pendingFinalRoom != null ? pendingFinalRoom.name : "NULL")}, pendingFinalState={pendingFinalState}");
+
         // Resolve to the SPECIFIC segment registered on the floor we actually landed on — currentFloorIndex
         // was already updated to the destination floor by DisembarkFromLift before this runs. The
         // coordinator itself is only registered (for routing purposes) on its own floor, which may
@@ -731,6 +759,17 @@ public class NPCBunny : MonoBehaviour
             currentRoom = finalRoom;
             currentWanderPoint = finalWanderPoint;
             currentFloorIndex = finalRoom.FloorIndex;
+
+            // pendingStateOnArrival == Wandering means OnArrivedAtWanderPoint() fires once this leg's
+            // path completes, and THAT method reads pendingWanderRoom/pendingWanderDestination (only
+            // ever set by the same-floor wander path, PickNewWanderDestination) rather than finalRoom/
+            // finalWanderPoint. Without setting them here too, it dereferences a null pendingWanderRoom
+            // and throws — which aborts Update() mid-call and leaves the bunny stuck in
+            // BunnyState.Wandering (a state Update()'s switch has no case for) permanently. Harmless to
+            // set redundantly alongside the eager currentRoom/currentWanderPoint/currentFloorIndex
+            // assignment above — OnArrivedAtWanderPoint() just re-applies the same values.
+            pendingWanderRoom = finalRoom;
+            pendingWanderDestination = finalWanderPoint;
         }
         else
         {

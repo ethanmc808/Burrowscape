@@ -68,9 +68,9 @@ public class LiftRoom : RoomBase
     [SerializeField] private float doorAnimDuration = 0.5f;
 
     [Header("Lift-Wide Settings (only used by whichever segment becomes the coordinator)")]
-    [SerializeField] private float travelTimePerFloor = 2f; // seconds to move between two adjacent floors
+    [SerializeField] private float travelTimePerFloor = 1f; // seconds to move between two adjacent floors
     [SerializeField] private float boardingGracePeriod = 3f; // seconds to wait for stragglers once doors open at pickup
-    [SerializeField] private float dropoffDwellTime = 1f; // seconds doors stay open at a drop-off before moving on
+    [SerializeField] private float dropoffDwellTime = .5f; // seconds doors stay open at a drop-off before moving on
 
     public int DetectedFloorIndex { get; private set; }
     public LiftState CurrentState { get; private set; } = LiftState.Idle;
