@@ -567,14 +567,18 @@ MonoBehaviour:
   middleLeft: {fileID: 1423003967682540139}
   middleRight: {fileID: 8333382802469087974}
   passThroughWaypoints: []
-  floorIndex: 0
   paths: []
+  footprintWidth: 4
+  grade: 1
   landingSpot: {fileID: 5547709232855880916}
   boardingSpot: {fileID: 8368183023766265124}
-  travelTimePerFloor: 2
+  doorTransform: {fileID: 0}
+  doorClosedLocalPosition: {x: 0, y: 0, z: 0}
+  doorOpenLocalPosition: {x: 0, y: 0, z: 0}
+  doorAnimDuration: 0.5
+  travelTimePerFloor: 1
   boardingGracePeriod: 3
-  dropoffDwellTime: 1
-  carTransform: {fileID: 0}
+  dropoffDwellTime: 0.5
 --- !u!1 &5279735359770697722
 GameObject:
   m_ObjectHideFlags: 0

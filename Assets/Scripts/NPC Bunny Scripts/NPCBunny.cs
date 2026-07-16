@@ -268,16 +268,8 @@ public class NPCBunny : MonoBehaviour
     {
         if (assignedJobRoom == null) return;
 
-        // TEMP DEBUG (round 2) — remove once the deferred-retry issue is root-caused.
-        Debug.Log($"[JobRouteDebug2] {name}: RequestNewJobSpot called. CurrentState={CurrentState}, currentRoom={(currentRoom != null ? currentRoom.name : "NULL")}, currentFloorIndex={currentFloorIndex}, pendingLift={(pendingLift != null ? pendingLift.name : "NULL")}");
-
         RoomSpot spot = assignedJobRoom.RequestSpot(this);
-        if (spot == null)
-        {
-            // TEMP DEBUG (round 2) — remove once the deferred-retry issue is root-caused.
-            Debug.Log($"[JobRouteDebug2] {name}: RequestNewJobSpot -> RequestSpot returned null (room full?).");
-            return;
-        }
+        if (spot == null) return;
 
         claimedWorkSpot = spot;
         RoomBase jobRoomBase = (RoomBase)assignedJobRoom;
@@ -301,8 +293,6 @@ public class NPCBunny : MonoBehaviour
     {
         if (assignedJobRoom != null && claimedWorkSpot == null)
         {
-            // TEMP DEBUG (round 2) — remove once the deferred-retry issue is root-caused.
-            Debug.Log($"[JobRouteDebug2] {name}: HandleIdle sees a deferred job assignment, retrying.");
             RequestNewJobSpot();
         }
         else if (isWanderingEnabled)
@@ -368,9 +358,6 @@ public class NPCBunny : MonoBehaviour
 
     private void OnArrivedAtWanderPoint()
     {
-        // TEMP DEBUG (round 2) — remove once the deferred-retry issue is root-caused.
-        Debug.Log($"[JobRouteDebug2] {name}: OnArrivedAtWanderPoint reached. pendingWanderRoom={(pendingWanderRoom != null ? pendingWanderRoom.name : "NULL")}, assignedJobRoom={(assignedJobRoom is RoomBase arb ? arb.name : "NULL")}, claimedWorkSpot={(claimedWorkSpot != null ? claimedWorkSpot.name : "NULL")}");
-
         currentRoom = pendingWanderRoom;
         currentSpot = null;
         currentWanderPoint = pendingWanderDestination;
@@ -556,9 +543,15 @@ public class NPCBunny : MonoBehaviour
         if (pendingLift != null)
         {
             // Already mid-trip (waiting for / riding / walking off a lift) from an earlier assignment.
-            // Starting a second trip here would overwrite pendingFinalRoom/Spot/Lift out from under the
-            // first one, so that when IT finishes it resolves against the wrong (this) destination —
-            // the bunny ends up "arriving" somewhere that doesn't match where it actually is.
+            // If that trip is just an ambient wander (lower priority than a real job or heading to eat),
+            // redirect it to this destination instead of making the bunny finish the now-irrelevant leg
+            // first — see TryRedirectInFlightWanderTrip. Otherwise (already mid-trip toward a real job
+            // or the cafeteria), leave it alone: overwriting pendingFinalRoom/Spot/Lift out from under
+            // an equally-important trip would make IT resolve against the wrong destination once it
+            // finishes — the bunny would end up "arriving" somewhere that doesn't match where it is.
+            if (TryRedirectInFlightWanderTrip(targetRoom, targetSpot, null, finalState))
+                return true;
+
             Debug.LogWarning($"{name}: already mid-lift-trip, ignoring new cross-floor request to floor {targetRoom.FloorIndex}.");
             return false;
         }
@@ -576,6 +569,26 @@ public class NPCBunny : MonoBehaviour
         pendingFinalWanderPoint = null;
         pendingFinalState = finalState;
         BeginTripToLift(lift, myFloor, targetRoom.FloorIndex);
+        return true;
+    }
+
+    // Claims an in-flight trip for a higher-priority destination instead of making the bunny finish an
+    // unrelated, lower-priority leg first — e.g. a random wander pick that happened to fire right
+    // before the player assigned a job. Only ever preempts a trip whose purpose is ALREADY Wandering;
+    // a trip already heading to a real job or the cafeteria is left alone (the caller falls back to the
+    // normal defer-and-retry-once-idle path instead), since bumping those would risk losing track of a
+    // RoomSpot already claimed on the original destination.
+    private bool TryRedirectInFlightWanderTrip(RoomBase targetRoom, RoomSpot targetSpot, Transform targetWanderPoint, BunnyState finalState)
+    {
+        if (pendingLift == null || pendingFinalState != BunnyState.Wandering) return false;
+        if (!pendingLift.TryRedirectCall(this, targetRoom.FloorIndex)) return false;
+
+        pendingFinalRoom = targetRoom;
+        pendingFinalSpot = targetSpot;
+        pendingFinalWanderPoint = targetWanderPoint;
+        pendingFinalState = finalState;
+
+        Debug.Log($"{name}: redirected in-flight wander trip to floor {targetRoom.FloorIndex} for a higher-priority {finalState} trip.");
         return true;
     }
 
@@ -718,9 +731,6 @@ public class NPCBunny : MonoBehaviour
 
     private void ResumeTripAfterLift(Transform landingSpot)
     {
-        // TEMP DEBUG (round 2) — remove once the deferred-retry issue is root-caused.
-        Debug.Log($"[JobRouteDebug2] {name}: ResumeTripAfterLift called. currentFloorIndex={currentFloorIndex}, pendingFinalRoom={(pendingFinalRoom != null ? pendingFinalRoom.name : "NULL")}, pendingFinalState={pendingFinalState}");
-
         // Resolve to the SPECIFIC segment registered on the floor we actually landed on — currentFloorIndex
         // was already updated to the destination floor by DisembarkFromLift before this runs. The
         // coordinator itself is only registered (for routing purposes) on its own floor, which may
