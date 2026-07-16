@@ -8,6 +8,7 @@ public enum BunnyState
     MovingToSpot,
     Working,
     Eating,
+    Relaxing,
     Wandering,
     PassingGate,
     Despawning,
@@ -51,16 +52,16 @@ public class NPCBunny : MonoBehaviour
     [SerializeField] private Transform bunnyScaleRoot;
     [SerializeField] private bool bunnyFacesLeftByDefault = true;
 
-    [Header("Wandering")]
+    [Header("Idle Pacing (fallback when no Living Room spot is available anywhere on the base)")]
     [SerializeField] private float wanderPauseDuration = 3f; // how long to idle at each stop before moving again
-    [SerializeField] private float crossFloorWanderChance = 0.2f; // chance a wander pick is on a different floor (via lift) instead of the current one
-    private bool isWanderingEnabled = false;
     private float wanderTimer = 0f;
 
+    [Header("Warnings")]
+    [SerializeField] private float noSpotWarningCooldown = 5f; // throttles repeated "no spot available" toasts
+    private float lastNoEatSpotWarningTime = -999f;
+
     [Header("Lift Visual Timing")]
-    [Tooltip("Delay after reaching the boarding spot before vanishing, so a doors-closing animation has time to play first.")]
-    [SerializeField] private float liftBoardHideDelay = 0.5f;
-    [Tooltip("Delay after arriving at the destination floor before reappearing and walking out, so a doors-opening animation has time to play first.")]
+    [Tooltip("Brief pause after teleporting onto the new floor before walking out to the landing spot, leaving room for a future doors-opening animation.")]
     [SerializeField] private float liftDisembarkRevealDelay = 0.5f;
 
     public BunnyState CurrentState { get; private set; } = BunnyState.Idle;
@@ -83,6 +84,8 @@ public class NPCBunny : MonoBehaviour
     private RoomSpot claimedWorkSpot; // remembers the garden spot to return to after eating
     private IJobRoom assignedJobRoom;
     private CafeteriaRoom cafeteriaBeingUsed;
+    private RoomSpot claimedRelaxSpot; // Living Room spot reserved/occupied while idle; mirrors claimedWorkSpot
+    private LivingRoom claimedRelaxRoom; // which room claimedRelaxSpot belongs to
     private RoomBase currentRoom;
     private RoomSpot currentSpot; // the spot bunny is currently occupying, null if none/mid-transit
     private Transform currentWanderPoint; // last wander destination reached, null if occupying a RoomSpot instead
@@ -140,8 +143,6 @@ public class NPCBunny : MonoBehaviour
         {
             case BunnyState.Idle:
                 HandleIdle();
-                if (isWanderingEnabled && IsHungry)
-                    LeaveWanderingForCafeteria();
                 break;
 
             case BunnyState.MovingToSpot:
@@ -150,6 +151,13 @@ public class NPCBunny : MonoBehaviour
 
             case BunnyState.Working:
                 HandleHungerCheckWhileWorking();
+                break;
+
+            case BunnyState.Relaxing:
+                if (assignedJobRoom != null && claimedWorkSpot == null)
+                    RequestNewJobSpot();
+                else
+                    HandleHungerCheckWhileRelaxing();
                 break;
 
             case BunnyState.Eating:
@@ -239,6 +247,7 @@ public class NPCBunny : MonoBehaviour
         if (assignedJobRoom is RoomBase jobRoomBase && jobRoomBase == room) return true;
         if (pendingWanderRoom == room) return true;
         if (pendingFinalRoom == room) return true;
+        if (claimedRelaxRoom == room) return true;
         return false;
     }
 
@@ -246,7 +255,8 @@ public class NPCBunny : MonoBehaviour
     {
         string jobRoomName = assignedJobRoom is RoomBase jobRoomBase ? jobRoomBase.name : "NULL";
         string finalRoomName = pendingFinalRoom != null ? pendingFinalRoom.name : "NULL";
-        return $"{name}: currentRoom={(currentRoom != null ? currentRoom.name : "NULL")}, currentState={CurrentState}, pendingStateOnArrival={pendingStateOnArrival}, assignedJobRoom={jobRoomName}, pendingWanderRoom={(pendingWanderRoom != null ? pendingWanderRoom.name : "NULL")}, pendingFinalRoom={finalRoomName}, currentWaypointTarget={(currentWaypointTarget != null ? currentWaypointTarget.name : "NULL")}, pos={transform.position}";
+        string relaxRoomName = claimedRelaxRoom != null ? claimedRelaxRoom.name : "NULL";
+        return $"{name}: currentRoom={(currentRoom != null ? currentRoom.name : "NULL")}, currentState={CurrentState}, pendingStateOnArrival={pendingStateOnArrival}, assignedJobRoom={jobRoomName}, pendingWanderRoom={(pendingWanderRoom != null ? pendingWanderRoom.name : "NULL")}, pendingFinalRoom={finalRoomName}, claimedRelaxRoom={relaxRoomName}, currentWaypointTarget={(currentWaypointTarget != null ? currentWaypointTarget.name : "NULL")}, pos={transform.position}";
     }
 
     public void SetAwaitingApproval(bool value)
@@ -270,48 +280,28 @@ public class NPCBunny : MonoBehaviour
 
         RoomBase jobRoomBase = (RoomBase)assignedJobRoom;
 
-        // Mid-walk on ANY leg of a lower-priority wander trip: currentRoom/currentWanderPoint only
-        // update on FULL arrival at a destination (see OnArrivedAtWanderPoint/ResumeTripAfterLift),
-        // never incrementally as the bunny passes through intermediate rooms or walks toward a lift.
-        // Building a route now (below) would resume from that stale "start of this leg" point instead
-        // of wherever the bunny actually is.
-        //
-        // IsWanderPacedLeg() (already existed for movement-speed purposes) correctly identifies every
-        // leg of a lower-priority wander trip — same-floor AND every stage of a cross-floor one.
-        //
-        // If there's an actual lift call already in flight (pendingLift != null), try to REDIRECT it to
-        // the job's floor first — this is strictly better than deferring: the bunny is already
-        // committed to riding this lift, so retargeting where it drops her off costs nothing extra,
-        // whereas deferring would make her ride all the way to the now-irrelevant wander destination
-        // and back. My first attempt at this fix deferred unconditionally here, which made the
-        // already-built TryRedirectInFlightWanderTrip mechanism unreachable for exactly the cases it
-        // was designed for (a job landing while mid-transit toward a lift) — a bunny would ride to a
-        // stale wander destination floor, then ride BACK to the real job floor, instead of just
-        // redirecting the one ride in progress.
-        //
-        // Only fall back to deferring (let the current leg finish naturally, HandleIdle's existing
-        // retry picks the job back up once idle) when there's no lift to redirect at all (a pure
-        // same-floor wander) or this specific lift doesn't reach the job's floor.
+        // A fallback pacing leg never leaves the bunny's current room (see PickNewWanderDestination),
+        // so if a job assignment interrupts one, the worst case is a short, bounded, same-room hop.
+        // That's cheap enough to just defer: let the current leg finish naturally, and HandleIdle's
+        // existing retry (once idle) picks the job back up.
         if (CurrentState == BunnyState.MovingToSpot && IsWanderPacedLeg())
-        {
-            if (pendingLift != null)
-            {
-                RoomSpot redirectSpot = assignedJobRoom.RequestSpot(this);
-                if (redirectSpot != null)
-                {
-                    if (TryRedirectInFlightWanderTrip(jobRoomBase, redirectSpot, null, BunnyState.Working))
-                    {
-                        claimedWorkSpot = redirectSpot;
-                        return;
-                    }
-                    // This lift doesn't reach the job's floor — don't hold the spot hostage while
-                    // waiting for the current leg to finish; release and let the deferred retry
-                    // reclaim it once idle.
-                    assignedJobRoom.ReleaseSpot(redirectSpot, this);
-                }
-            }
-
             return;
+
+        // A relax trip CAN cross floors via lift, unlike fallback pacing — interrupting it mid-flight
+        // would corrupt the in-progress lift bookkeeping (pendingLift/pendingFinalRoom etc. are single-
+        // slot fields already in use for that trip). Safer to let it finish naturally; the
+        // BunnyState.Relaxing case in Update() immediately pulls the bunny back out for the job once it
+        // settles in, at worst a single frame late.
+        if (IsHeadedToRelaxSpot())
+            return;
+
+        // Pull the bunny out of any already-claimed Living Room spot — a job takes priority. Mirrors
+        // UnassignFromJob's claimedWorkSpot release.
+        if (claimedRelaxSpot != null)
+        {
+            claimedRelaxRoom.ReleaseSpot(claimedRelaxSpot, this);
+            claimedRelaxSpot = null;
+            claimedRelaxRoom = null;
         }
 
         RoomSpot spot = assignedJobRoom.RequestSpot(this);
@@ -335,58 +325,100 @@ public class NPCBunny : MonoBehaviour
         MoveAlongPath(path, spot, BunnyState.Working);
     }
 
+    // True while the bunny is walking toward, or mid-lift-trip toward, an already-claimed Living Room
+    // relax spot — covers every leg of that trip (direct walk, or WaitingForLift/RidingLift/
+    // DisembarkingLift/final-walk if it crosses floors). Used by RequestNewJobSpot to avoid interrupting
+    // an in-flight lift trip; deliberately excludes the "already arrived and sitting" case (CurrentState
+    // == Relaxing), which Update()'s Relaxing case handles directly instead.
+    private bool IsHeadedToRelaxSpot()
+    {
+        bool inTransit = CurrentState == BunnyState.MovingToSpot
+            || CurrentState == BunnyState.WaitingForLift
+            || CurrentState == BunnyState.RidingLift
+            || CurrentState == BunnyState.DisembarkingLift;
+
+        if (!inTransit) return false;
+
+        return pendingStateOnArrival == BunnyState.Relaxing
+            || (pendingLift != null && pendingFinalState == BunnyState.Relaxing);
+    }
+
     private void HandleIdle()
     {
+        // Still queued/awaiting gate approval — MoveToQueueSpot parks a bunny in BunnyState.Idle while
+        // it waits, but it has no currentRoom yet and hasn't passed the gate. Without this guard, a
+        // queued bunny would immediately claim a Living Room spot and walk straight there, skipping the
+        // gate/approval flow entirely.
+        if (!HasEnteredBase) return;
+
         if (assignedJobRoom != null && claimedWorkSpot == null)
         {
             RequestNewJobSpot();
+            return;
         }
-        else if (isWanderingEnabled)
+        if (assignedJobRoom != null) return;
+
+        // No job: always try to claim a Living Room spot this tick (cheap, and lets a bunny grab a
+        // spot the moment one frees up rather than waiting out a full wanderPauseDuration first).
+        if (TryClaimRelaxSpot()) return;
+
+        // No Living Room anywhere on the base has an open spot — pace within the current room only
+        // until one frees up, on the same cadence the warning is throttled to.
+        wanderTimer += Time.deltaTime;
+        if (wanderTimer >= wanderPauseDuration)
         {
-            wanderTimer += Time.deltaTime;
-            if (wanderTimer >= wanderPauseDuration)
-            {
-                wanderTimer = 0f;
-                PickNewWanderDestination();
-            }
+            wanderTimer = 0f;
+            NotificationToast.Instance?.Show($"{BunnyName} has no relaxing spot available.");
+            PickNewWanderDestination();
         }
     }
 
+    // Finds the nearest Living Room with an open relaxing spot (anywhere on the base, crossing floors
+    // via lift if needed — unlike the old wandering system, this is the bunny's actual idle destination,
+    // not aimless exploration, so there's no reason to bound it to the current floor). Returns false if
+    // no Living Room anywhere has room, so HandleIdle can fall back to same-room pacing.
+    private bool TryClaimRelaxSpot()
+    {
+        LivingRoom room = BaseManager.Instance.FindNearestLivingRoomWithSpot(transform.position);
+        if (room == null) return false;
+
+        RoomSpot spot = room.RequestSpot(this);
+        if (spot == null) return false; // spot claimed by someone else between the check and this call — retry next tick
+
+        claimedRelaxSpot = spot;
+        claimedRelaxRoom = room;
+
+        if (currentRoom != null && currentFloorIndex != room.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(room, spot, BunnyState.Relaxing))
+            {
+                room.ReleaseSpot(spot, this);
+                claimedRelaxSpot = null;
+                claimedRelaxRoom = null;
+                return false;
+            }
+            return true;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, room, spot, currentFloorIndex);
+        MoveAlongPath(path, spot, BunnyState.Relaxing);
+        return true;
+    }
+
+    // Fallback for when no Living Room anywhere on the base has an open relax spot (see
+    // TryClaimRelaxSpot/HandleIdle) — the bunny paces back and forth within its OWN current room only,
+    // never picks a neighboring room. This exists purely so a bunny isn't frozen stiff while waiting for
+    // a spot to free up; it deliberately does NOT explore the base the way the old wandering system did.
     private void PickNewWanderDestination()
     {
-        int myFloor = currentFloorIndex;
-        int targetFloor = myFloor;
+        if (currentRoom == null) return; // no known room yet — shouldn't normally happen once past first arrival
 
-        // Only roll for a different floor once we actually have a known current room — a bunny fresh
-        // from the base entrance takes its first same-floor wander step before ever using a lift.
-        if (currentRoom != null && Random.value < crossFloorWanderChance)
-        {
-            List<int> allFloors = BaseLayoutManager.Instance.GetAllFloorIndices();
-            if (allFloors.Count > 1)
-                targetFloor = allFloors[Random.Range(0, allFloors.Count)];
-        }
-
-        List<RoomBase> candidateRooms = new List<RoomBase>();
-        foreach (RoomBase room in BaseLayoutManager.Instance.GetAllRoomsOnFloor(targetFloor))
-        {
-            if (!(room is LiftRoom)) // a lift's shared entrance points aren't meaningful wander destinations
-                candidateRooms.Add(room);
-        }
-        if (candidateRooms.Count == 0) return;
-
-        RoomBase target = candidateRooms[Random.Range(0, candidateRooms.Count)];
-        List<Transform> wanderPoints = target.GetWanderPoints();
+        List<Transform> wanderPoints = currentRoom.GetWanderPoints();
         if (wanderPoints.Count == 0) return;
 
         Transform destination = wanderPoints[Random.Range(0, wanderPoints.Count)];
 
-        if (targetFloor != myFloor)
-        {
-            TryBeginCrossFloorTripToWanderPoint(target, destination);
-            return;
-        }
-
-        List<Transform> path = BaseLayoutManager.Instance.GetRouteToWanderPoint(currentRoom, currentSpot, currentWanderPoint, target, destination, currentFloorIndex);
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToWanderPoint(currentRoom, currentSpot, currentWanderPoint, currentRoom, destination, currentFloorIndex);
 
         if (path.Count == 0) return;
 
@@ -398,7 +430,7 @@ public class NPCBunny : MonoBehaviour
 
         // Remembered for OnArrivedAtWanderPoint — NOT committed to currentRoom/currentWanderPoint yet,
         // since the bunny hasn't actually walked there.
-        pendingWanderRoom = target;
+        pendingWanderRoom = currentRoom;
         pendingWanderDestination = destination;
     }
 
@@ -411,7 +443,15 @@ public class NPCBunny : MonoBehaviour
         pendingWanderRoom = null;
         pendingWanderDestination = null;
 
-        CurrentState = BunnyState.Idle; // pause, then HandleIdle picks the next destination after wanderPauseDuration
+        CurrentState = BunnyState.Idle; // pause, then HandleIdle retries a Living Room spot / paces again
+    }
+
+    private void OnArrivedAtRelaxSpot()
+    {
+        currentRoom = claimedRelaxRoom;
+        currentSpot = claimedRelaxSpot;
+        currentWanderPoint = null;
+        currentFloorIndex = currentRoom.FloorIndex;
     }
 
     // ---------- MOVEMENT ----------
@@ -453,6 +493,8 @@ public class NPCBunny : MonoBehaviour
                 OnArrivedAtWorkSpot();
             else if (pendingStateOnArrival == BunnyState.Eating)
                 OnArrivedAtEatingSpot();
+            else if (pendingStateOnArrival == BunnyState.Relaxing)
+                OnArrivedAtRelaxSpot();
             else if (pendingStateOnArrival == BunnyState.Wandering)
                 OnArrivedAtWanderPoint();
             else if (pendingStateOnArrival == BunnyState.PassingGate)
@@ -461,8 +503,6 @@ public class NPCBunny : MonoBehaviour
                 OnArrivedAtDespawnPoint();
             else if (pendingStateOnArrival == BunnyState.WaitingForLift)
                 OnArrivedAtLiftLanding();
-            else if (pendingStateOnArrival == BunnyState.RidingLift)
-                OnArrivedAtBoardingSpot();
             else if (pendingStateOnArrival == BunnyState.DisembarkingLift)
                 OnArrivedAtDisembarkLanding();
 
@@ -488,31 +528,24 @@ public class NPCBunny : MonoBehaviour
             SetFacing(direction.x < 0f);
     }
 
-    // True while the bunny should move/animate at wander pace rather than full speed. A direct wander
-    // leg always qualifies; the WaitingForLift/RidingLift/DisembarkingLift legs of a lift trip only
-    // qualify if the trip's ultimate purpose (pendingFinalState) is itself a wander — otherwise a lift
-    // ride to a JOB or the cafeteria would incorrectly slow down too. Without this, a wandering bunny
-    // that decides to take the lift walks to the landing spot at full (job) speed, then drops back to
-    // wander speed once it resumes wandering on the new floor — a visible, unintended speed-up.
+    // True while the bunny should move/animate at wander pace rather than full speed. Used to only be
+    // more involved than this single check — it also had to cover the WaitingForLift/RidingLift/
+    // DisembarkingLift legs of a lift trip whose ultimate purpose was itself a wander — but wandering
+    // never touches a lift at all anymore (see PickNewWanderDestination), so a lift leg can now only
+    // ever be for a real job or the cafeteria, never wandering.
     private bool IsWanderPacedLeg()
     {
-        if (pendingStateOnArrival == BunnyState.Wandering) return true;
-
-        bool isLiftTransitLeg = pendingStateOnArrival == BunnyState.WaitingForLift
-            || pendingStateOnArrival == BunnyState.RidingLift
-            || pendingStateOnArrival == BunnyState.DisembarkingLift;
-        return isLiftTransitLeg && pendingFinalState == BunnyState.Wandering;
+        return pendingStateOnArrival == BunnyState.Wandering;
     }
 
     public void EnterBaseAndWander(RoomBase startingRoom = null, Transform startingPoint = null)
     {
         HasEnteredBase = true;
-        isWanderingEnabled = true;
         currentRoom = startingRoom;
         currentSpot = null;
         currentWanderPoint = startingPoint;
         currentFloorIndex = startingRoom != null ? startingRoom.FloorIndex : 0;
-        CurrentState = BunnyState.Idle; // triggers HandleIdle -> picks first wander destination
+        CurrentState = BunnyState.Idle; // triggers HandleIdle -> seeks a Living Room spot
     }
     public void MoveToQueueSpot(Transform queueSpot)
     {
@@ -588,16 +621,12 @@ public class NPCBunny : MonoBehaviour
     {
         if (pendingLift != null)
         {
-            // Already mid-trip (waiting for / riding / walking off a lift) from an earlier assignment.
-            // If that trip is just an ambient wander (lower priority than a real job or heading to eat),
-            // redirect it to this destination instead of making the bunny finish the now-irrelevant leg
-            // first — see TryRedirectInFlightWanderTrip. Otherwise (already mid-trip toward a real job
-            // or the cafeteria), leave it alone: overwriting pendingFinalRoom/Spot/Lift out from under
-            // an equally-important trip would make IT resolve against the wrong destination once it
-            // finishes — the bunny would end up "arriving" somewhere that doesn't match where it is.
-            if (TryRedirectInFlightWanderTrip(targetRoom, targetSpot, null, finalState))
-                return true;
-
+            // Already mid-trip (waiting for / riding / walking off a lift) from an earlier job/eating
+            // assignment — wandering never touches a lift at all now (see PickNewWanderDestination), so
+            // this can only mean an equally-important trip is already in flight. Leave it alone:
+            // overwriting pendingFinalRoom/Spot/Lift out from under it would make IT resolve against
+            // the wrong destination once it finishes — the bunny would end up "arriving" somewhere that
+            // doesn't match where it actually is.
             Debug.LogWarning($"{name}: already mid-lift-trip, ignoring new cross-floor request to floor {targetRoom.FloorIndex}.");
             return false;
         }
@@ -614,51 +643,6 @@ public class NPCBunny : MonoBehaviour
         pendingFinalSpot = targetSpot;
         pendingFinalWanderPoint = null;
         pendingFinalState = finalState;
-        BeginTripToLift(lift, myFloor, targetRoom.FloorIndex);
-        return true;
-    }
-
-    // Claims an in-flight trip for a higher-priority destination instead of making the bunny finish an
-    // unrelated, lower-priority leg first — e.g. a random wander pick that happened to fire right
-    // before the player assigned a job. Only ever preempts a trip whose purpose is ALREADY Wandering;
-    // a trip already heading to a real job or the cafeteria is left alone (the caller falls back to the
-    // normal defer-and-retry-once-idle path instead), since bumping those would risk losing track of a
-    // RoomSpot already claimed on the original destination.
-    private bool TryRedirectInFlightWanderTrip(RoomBase targetRoom, RoomSpot targetSpot, Transform targetWanderPoint, BunnyState finalState)
-    {
-        if (pendingLift == null || pendingFinalState != BunnyState.Wandering) return false;
-        if (!pendingLift.TryRedirectCall(this, targetRoom.FloorIndex)) return false;
-
-        pendingFinalRoom = targetRoom;
-        pendingFinalSpot = targetSpot;
-        pendingFinalWanderPoint = targetWanderPoint;
-        pendingFinalState = finalState;
-
-        DebugLog.Log($"{name}: redirected in-flight wander trip to floor {targetRoom.FloorIndex} for a higher-priority {finalState} trip.");
-        return true;
-    }
-
-    private bool TryBeginCrossFloorTripToWanderPoint(RoomBase targetRoom, Transform destination)
-    {
-        if (pendingLift != null)
-        {
-            // See TryBeginCrossFloorTripToSpot — refuse to clobber an in-flight trip's pending state.
-            Debug.LogWarning($"{name}: already mid-lift-trip, ignoring new cross-floor wander request to floor {targetRoom.FloorIndex}.");
-            return false;
-        }
-
-        int myFloor = currentFloorIndex;
-        LiftRoom lift = BaseLayoutManager.Instance.FindLiftServicing(myFloor, targetRoom.FloorIndex);
-        if (lift == null)
-        {
-            Debug.LogWarning($"{name}: no lift services floor {myFloor} -> {targetRoom.FloorIndex}.");
-            return false;
-        }
-
-        pendingFinalRoom = targetRoom;
-        pendingFinalSpot = null;
-        pendingFinalWanderPoint = destination;
-        pendingFinalState = BunnyState.Wandering;
         BeginTripToLift(lift, myFloor, targetRoom.FloorIndex);
         return true;
     }
@@ -696,13 +680,16 @@ public class NPCBunny : MonoBehaviour
     }
 
     // Called by LiftRoom once it's ready to carry this bunny — walks the short distance from the
-    // landing/waiting spot to the boarding point (near the shaft), then actually starts riding.
+    // landing/waiting spot to the boarding point (near the shaft), then actually starts riding. The
+    // bunny stays visible for the whole ride (see DisembarkFromLift) — there's no door animation yet to
+    // mask a hide/reveal, and the scripted hide/reveal was itself the source of more than one
+    // "disappears and never comes back" bug (races between this coroutine and a fast/near-zero-time
+    // ride — see git history), so it was removed entirely rather than patched again.
     public void BoardLift(Transform boardingSpot)
     {
         if (boardingSpot == null)
         {
             CurrentState = BunnyState.RidingLift;
-            StartCoroutine(HideAfterDelay(liftBoardHideDelay));
             return;
         }
 
@@ -715,47 +702,18 @@ public class NPCBunny : MonoBehaviour
         AdvanceToNextWaypoint();
     }
 
-    private void OnArrivedAtBoardingSpot()
-    {
-        // Doors are already open (that's why boarding started), but stay visible a moment longer so a
-        // doors-closing animation has time to play before the bunny vanishes into the shaft — otherwise
-        // it pops out of existence before the doors even start closing.
-        StartCoroutine(HideAfterDelay(liftBoardHideDelay));
-    }
-
-    private IEnumerator HideAfterDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        SetVisible(false);
-    }
-
-    // Called by LiftRoom once it's arrived at this bunny's destination floor. Reappears at the
-    // boarding point right away (doors just opened here, revealing the bunny standing inside), waits
-    // a beat, then walks the short distance back out to the landing/waiting spot before resuming
-    // whatever trip was in progress.
+    // Called by LiftRoom once it's arrived at this bunny's destination floor. Teleports to the new
+    // floor's boarding point (the bunny was visibly standing at the origin boarding point the whole
+    // ride — see BoardLift), then walks the short distance back out to the landing/waiting spot before
+    // resuming whatever trip was in progress.
     public void DisembarkFromLift(Transform landingSpot, Transform boardingSpot, int floorIndex)
     {
         currentFloorIndex = floorIndex;
-        SetVisible(true);
 
         Transform arrivalPoint = boardingSpot != null ? boardingSpot : landingSpot;
         if (arrivalPoint != null)
             transform.position = arrivalPoint.position;
 
-        // Clear any leftover "walking to the boarding spot" state from BoardLift before it gets a
-        // chance to process again. LiftRoom.BoardArrivedRiders marks a bunny "boarded" (moves it into
-        // boardedRiders) the instant it calls BoardLift — without waiting for the bunny to actually
-        // finish that short walk. On a near-zero-travel-time ride (e.g. a same-floor redirect, or a
-        // shared boarding-grace-period window that's already mostly elapsed for a later-joining
-        // bunny), the whole round trip can complete faster than that walk animation does. Without this
-        // reset, the teleport above makes the bunny's still-active RidingLift-bound path think it just
-        // arrived at the boarding spot on its own, firing OnArrivedAtBoardingSpot() a second, spurious
-        // time — starting a stale HideAfterDelay that lands ~0.5s later, right as (or after) THIS
-        // disembark's own reveal-and-walk-out sequence has already moved the bunny onto a different
-        // leg, hiding it with nothing left to ever reveal it again. CurrentState = Idle (rather than
-        // leaving it MovingToSpot with an empty queue) matches what's already true here per the comment
-        // above WalkOutAfterDelay — the bunny is standing still during this wait — and stops
-        // HandleMovingToSpot from dispatching anything until WalkOutAfterDelay resumes movement itself.
         currentPath = new Queue<Transform>();
         currentWaypointTarget = null;
         CurrentState = BunnyState.Idle;
@@ -763,9 +721,8 @@ public class NPCBunny : MonoBehaviour
         StartCoroutine(WalkOutAfterDelay(landingSpot, boardingSpot, liftDisembarkRevealDelay));
     }
 
-    // Waits before actually setting off so a doors-opening animation has time to finish first — the
-    // bunny is already visible and standing still during this wait (see DisembarkFromLift), matching
-    // the same visible pause boarding gets before it vanishes.
+    // Brief settling pause after teleporting onto the new floor before walking out — leaves room for a
+    // doors-opening animation later, once one exists.
     private IEnumerator WalkOutAfterDelay(Transform landingSpot, Transform boardingSpot, float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -860,6 +817,21 @@ public class NPCBunny : MonoBehaviour
         }
     }
 
+    private void HandleHungerCheckWhileRelaxing()
+    {
+        if (IsHungry)
+        {
+            LeaveRelaxingForCafeteria();
+        }
+    }
+
+    private void WarnNoEatSpot()
+    {
+        if (Time.time - lastNoEatSpotWarningTime < noSpotWarningCooldown) return;
+        lastNoEatSpotWarningTime = Time.time;
+        NotificationToast.Instance?.Show($"{BunnyName} is hungry, but there are no eating spots available.");
+    }
+
     private void LeaveWorkForCafeteria()
     {
         RoomBase departingRoom = (RoomBase)assignedJobRoom;
@@ -868,12 +840,18 @@ public class NPCBunny : MonoBehaviour
         CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteria(transform.position);
         DebugLog.Log($"Cafeteria found: {cafeteria}");
         if (cafeteria == null)
+        {
+            WarnNoEatSpot();
             return; // no cafeteria available — stay working, hunger check retries next frame
+        }
 
         RoomSpot eatSpot = cafeteria.RequestSpot(this);
         DebugLog.Log($"Eat spot found: {eatSpot}");
         if (eatSpot == null)
+        {
+            WarnNoEatSpot();
             return; // cafeteria full — stay working, hunger check retries next frame
+        }
 
         // Pause work but keep claimedWorkSpot reserved — otherwise the room could hand
         // this bunny's spot to someone else while it's off eating.
@@ -900,16 +878,24 @@ public class NPCBunny : MonoBehaviour
 
         MoveAlongPath(path, eatSpot, BunnyState.Eating);
     }
-    private void LeaveWanderingForCafeteria()
+    private void LeaveRelaxingForCafeteria()
     {
-        RoomBase departingRoom = currentRoom;
-        RoomSpot departingSpot = currentSpot;
+        RoomBase departingRoom = claimedRelaxRoom;
+        RoomSpot departingSpot = claimedRelaxSpot;
 
         CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteria(transform.position);
-        if (cafeteria == null) return;
+        if (cafeteria == null)
+        {
+            WarnNoEatSpot();
+            return;
+        }
 
         RoomSpot eatSpot = cafeteria.RequestSpot(this);
-        if (eatSpot == null) return;
+        if (eatSpot == null)
+        {
+            WarnNoEatSpot();
+            return;
+        }
 
         cafeteriaBeingUsed = cafeteria;
 
@@ -974,13 +960,30 @@ public class NPCBunny : MonoBehaviour
                 RequestNewJobSpot();
             }
         }
-        else if (isWanderingEnabled)
+        else if (claimedRelaxSpot != null)
         {
-            CurrentState = BunnyState.Idle; // resumes wandering via HandleIdle
+            RoomBase relaxRoomBase = claimedRelaxRoom;
+
+            if (currentRoom != null && currentFloorIndex != relaxRoomBase.FloorIndex)
+            {
+                if (!TryBeginCrossFloorTripToSpot(relaxRoomBase, claimedRelaxSpot, BunnyState.Relaxing))
+                {
+                    // No lift back to the relax floor — release the spot and let HandleIdle claim a new one.
+                    claimedRelaxRoom.ReleaseSpot(claimedRelaxSpot, this);
+                    claimedRelaxSpot = null;
+                    claimedRelaxRoom = null;
+                    CurrentState = BunnyState.Idle;
+                }
+                return;
+            }
+
+            // Spot was never released while eating — walk straight back to it.
+            List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, relaxRoomBase, claimedRelaxSpot, currentFloorIndex);
+            MoveAlongPath(path, claimedRelaxSpot, BunnyState.Relaxing);
         }
         else
         {
-            CurrentState = BunnyState.Idle;
+            CurrentState = BunnyState.Idle; // HandleIdle claims a fresh relax spot (or paces) from here
         }
     }
     // ---------- ANIMATION ----------
@@ -995,14 +998,6 @@ public class NPCBunny : MonoBehaviour
 
         bool isSlowWander = CurrentState == BunnyState.MovingToSpot && IsWanderPacedLeg();
         animator.speed = isSlowWander ? wanderSpeedMultiplier : 1f;
-    }
-
-    // ---------- VISIBILITY (used while riding a lift, doors-hidden) ----------
-
-    private void SetVisible(bool visible)
-    {
-        if (bunnyScaleRoot != null)
-            bunnyScaleRoot.gameObject.SetActive(visible);
     }
 
     // ---------- FACING (reused from BunnyMovement) ----------

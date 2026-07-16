@@ -17,7 +17,7 @@ public class LiftCall
 {
     public readonly NPCBunny bunny;
     public readonly int originFloor;
-    public int destinationFloor { get; private set; }
+    public readonly int destinationFloor;
     public bool hasArrived; // physically standing at the origin floor's landing spot, ready to board
 
     public LiftCall(NPCBunny bunny, int originFloor, int destinationFloor)
@@ -25,13 +25,6 @@ public class LiftCall
         this.bunny = bunny;
         this.originFloor = originFloor;
         this.destinationFloor = destinationFloor;
-    }
-
-    // Lets a higher-priority trip claim this call mid-flight (see LiftRoom.TryRedirectCall) instead of
-    // making the bunny finish riding to its original, now-irrelevant destination first.
-    public void Redirect(int newDestinationFloor)
-    {
-        destinationFloor = newDestinationFloor;
     }
 }
 
@@ -329,33 +322,6 @@ public class LiftRoom : RoomBase
         LiftCall call = activeCalls.FirstOrDefault(c => c.bunny == bunny && c.originFloor == floorIndex);
         if (call != null)
             call.hasArrived = true;
-    }
-
-    // Changes an already-registered call's destination floor — used when a higher-priority trip (a
-    // real job, or heading to eat) needs to claim a bunny who's already mid-transit toward an
-    // unrelated wander destination via this same lift, instead of making her finish the pointless leg
-    // first. Returns false (do nothing) if this lift doesn't service the new floor at all, or if the
-    // bunny has no call registered here.
-    //
-    // Safe to call at any point in the call's lifecycle. If it hasn't boarded yet, this just changes
-    // where she'll be taken once she does. If she's already riding, DisembarkArrivedRiders only lets a
-    // rider off at their CURRENT destinationFloor — so if a stop's already in progress toward the OLD
-    // floor, she simply rides past it (no longer matching) and gets picked up by the NEXT
-    // BeginNextDropoff() recomputation instead, which already recomputes nearest-destination-first
-    // from scratch after every single stop. No separate re-scheduling logic is needed here.
-    public bool TryRedirectCall(NPCBunny bunny, int newDestinationFloor)
-    {
-        LiftRoom target = coordinator != null ? coordinator : this;
-        if (target != this)
-            return target.TryRedirectCall(bunny, newDestinationFloor);
-
-        if (!ServicesFloor(newDestinationFloor)) return false;
-
-        LiftCall call = activeCalls.FirstOrDefault(c => c.bunny == bunny) ?? boardedRiders.FirstOrDefault(c => c.bunny == bunny);
-        if (call == null) return false;
-
-        call.Redirect(newDestinationFloor);
-        return true;
     }
 
     private void EnqueuePickupFloor(int floorIndex)
