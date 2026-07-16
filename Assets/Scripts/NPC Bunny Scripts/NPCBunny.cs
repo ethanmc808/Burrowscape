@@ -66,6 +66,7 @@ public class NPCBunny : MonoBehaviour
     public BunnyState CurrentState { get; private set; } = BunnyState.Idle;
     public bool IsHungry => hunger < hungerThresholdLow;
     public bool IsAssignedToJob => assignedJobRoom != null;
+    public IJobRoom AssignedJobRoom => assignedJobRoom;
     // True once the bunny has actually passed through the entrance gate (set in EnterBaseAndWander,
     // which only ever runs from OnArrivedAtGateExit). False while spawned-but-queued or still awaiting
     // approval — a bunny in that state has no currentRoom yet, so routing it to a job would build a
@@ -180,6 +181,60 @@ public class NPCBunny : MonoBehaviour
 
         assignedJobRoom = jobRoom;
         RequestNewJobSpot();
+    }
+
+    // Used by RoomBase.CanBeDeleted (via DwellerRoster) to check whether a room is safe to demolish —
+    // covers physically standing/wandering/working/eating there (currentRoom), being assigned there but
+    // still mid-transit toward it (assignedJobRoom, e.g. WaitingForLift/RidingLift/walking), and actively
+    // walking toward it as a wander destination but not arrived yet (pendingWanderRoom for a same-floor
+    // walk, pendingFinalRoom for a wander OR job trip currently in progress via a lift) — currentRoom is
+    // deliberately NOT committed until actual arrival (see OnArrivedAtWanderPoint/ResumeTripAfterLift),
+    // so without these a bunny visibly walking into/through a room wouldn't count as occupying it yet.
+    public void UnassignFromJob()
+    {
+        if (assignedJobRoom == null) return;
+
+        // Release the reserved spot. In practice claimedWorkSpot is always set the moment a job is
+        // actively pursued (RequestNewJobSpot claims it via assignedJobRoom.RequestSpot before any
+        // movement starts), so this covers "currently working" AND "still walking toward the spot."
+        // The null check is just a defensive guard.
+        if (claimedWorkSpot != null)
+        {
+            assignedJobRoom.ReleaseSpot(claimedWorkSpot, this);
+            claimedWorkSpot = null;
+        }
+
+        assignedJobRoom = null;
+
+        // Currently working: stop immediately and go idle right where we're standing.
+        if (CurrentState == BunnyState.Working)
+        {
+            CurrentState = BunnyState.Idle;
+        }
+        // Still walking toward the (now-released) work spot: let the bunny finish that walk rather
+        // than snapping it to a mid-path position, but arrive Idle instead of starting work.
+        else if (CurrentState == BunnyState.MovingToSpot && pendingStateOnArrival == BunnyState.Working)
+        {
+            pendingStateOnArrival = BunnyState.Idle;
+        }
+        // Eating, or mid-lift-trip toward the job: deliberately left alone. FinishEatingAndReturnToWork
+        // and ResumeTripAfterLift both already check assignedJobRoom == null and fall back to
+        // wandering/idle on their own once that leg finishes.
+    }
+    public bool IsAssociatedWithRoom(RoomBase room)
+    {
+        if (currentRoom == room) return true;
+        if (assignedJobRoom is RoomBase jobRoomBase && jobRoomBase == room) return true;
+        if (pendingWanderRoom == room) return true;
+        if (pendingFinalRoom == room) return true;
+        return false;
+    }
+
+    public string DebugState()
+    {
+        string jobRoomName = assignedJobRoom is RoomBase jobRoomBase ? jobRoomBase.name : "NULL";
+        string finalRoomName = pendingFinalRoom != null ? pendingFinalRoom.name : "NULL";
+        return $"{name}: currentRoom={(currentRoom != null ? currentRoom.name : "NULL")}, currentState={CurrentState}, pendingStateOnArrival={pendingStateOnArrival}, assignedJobRoom={jobRoomName}, pendingWanderRoom={(pendingWanderRoom != null ? pendingWanderRoom.name : "NULL")}, pendingFinalRoom={finalRoomName}, currentWaypointTarget={(currentWaypointTarget != null ? currentWaypointTarget.name : "NULL")}, pos={transform.position}";
     }
 
     public void SetAwaitingApproval(bool value)

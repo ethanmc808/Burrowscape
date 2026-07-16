@@ -64,6 +64,22 @@ public class RoomBase : MonoBehaviour
             BaseLayoutManager.Instance.UnregisterRoom(this);
     }
 
+    // Query only — Unity gives no way to veto an in-progress Destroy(), so whatever future
+    // build/demolish system removes rooms must call this BEFORE calling Destroy(), not rely on it to
+    // block anything by itself. Default: blocked if any bunny is currently in or assigned to this room.
+    // LiftRoom additionally requires the whole shaft (not just this segment) to be idle.
+    public virtual bool CanBeDeleted(out string blockedReason)
+    {
+        if (DwellerRoster.Instance != null && DwellerRoster.Instance.IsRoomOccupied(this))
+        {
+            blockedReason = "a bunny is inside or assigned to this room";
+            return false;
+        }
+
+        blockedReason = null;
+        return true;
+    }
+
     // Path for a bunny walking straight through this room (not stopping at any spot), on a specific floor.
     public List<Transform> GetPassThroughPath(bool enteringFromLeft, int floorIndex)
     {

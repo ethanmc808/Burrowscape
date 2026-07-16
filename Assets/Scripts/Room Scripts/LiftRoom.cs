@@ -55,7 +55,6 @@ public class LiftCall
 public class LiftRoom : RoomBase
 {
     private static readonly List<LiftRoom> allSegments = new List<LiftRoom>();
-    private static readonly HashSet<int> groupedColumns = new HashSet<int>();
 
     [Header("This Floor's Boarding Point")]
     [SerializeField] private Transform landingSpot; // where bunnies wait to board / are dropped off on this floor
@@ -99,7 +98,12 @@ public class LiftRoom : RoomBase
     private void OnDestroy()
     {
         allSegments.Remove(this);
-        groupedColumns.Remove(GridX); // let the column re-group if segments are added/removed later
+
+        // Unlike OnEnable's regroup request (which needs DetectedFloorIndex, only known after Start()),
+        // a removal doesn't need anything about this segment — the regroup just needs to see that it's
+        // gone from allSegments (already true by the time the deferred pass runs next frame) to correctly
+        // split/shrink whatever shaft it used to belong to.
+        BaseLayoutManager.Instance?.RequestLiftColumnRegroup(GridX);
     }
 
     protected override void OnEnable()
@@ -125,34 +129,40 @@ public class LiftRoom : RoomBase
 
         BaseLayoutManager.Instance?.RegisterRoomOnFloor(this, DetectedFloorIndex);
 
-        // Deferred by a frame: Unity only guarantees every Awake() runs before any Start(), not that
-        // Start() itself runs in any particular order across segments. Grouping reads DetectedFloorIndex
-        // off every OTHER segment in the column too, so if it ran here (inline, in Start()) whichever
-        // segment's Start() happened to fire first would group its siblings before their own Start()
-        // had set their DetectedFloorIndex — reading them as the default 0 and fracturing one shaft
-        // into several bogus single-floor ones. Waiting a frame guarantees every segment already has
-        // its real DetectedFloorIndex by the time any of them actually groups.
-        if (!groupedColumns.Contains(GridX))
-            StartCoroutine(GroupColumnNextFrame(GridX));
+        // Deferred by a frame via BaseLayoutManager (see RequestLiftColumnRegroup): Unity only
+        // guarantees every Awake() runs before any Start(), not that Start() itself runs in any
+        // particular order across segments. Grouping reads DetectedFloorIndex off every OTHER segment
+        // in the column too, so if it ran here (inline, in Start()) whichever segment's Start()
+        // happened to fire first would group its siblings before their own Start() had set their
+        // DetectedFloorIndex — reading them as the default 0 and fracturing one shaft into several
+        // bogus single-floor ones. Waiting a frame guarantees every segment already has its real
+        // DetectedFloorIndex by the time any of them actually groups. The same request also fires
+        // whenever a segment is later added or removed at runtime (plopped/demolished rooms), not
+        // just at scene load — see BaseLayoutManager.RequestLiftColumnRegroup and OnDestroy below.
+        BaseLayoutManager.Instance?.RequestLiftColumnRegroup(GridX);
     }
 
-    private IEnumerator GroupColumnNextFrame(int gridX)
+    // Splits every LiftRoom segment CURRENTLY sharing this X position into contiguous floor runs —
+    // each run is an independent shaft. Re-runnable: called by BaseLayoutManager (deferred a frame)
+    // every time a segment is added or removed anywhere in this column, not just once at scene load —
+    // that's what lets a shaft extend, shrink, split, or merge with another as rooms get built/demolished.
+    public static void RegroupColumn(int gridX)
     {
-        yield return null;
-
-        if (!groupedColumns.Contains(gridX))
-            GroupColumn(gridX);
-    }
-
-    // Splits every LiftRoom segment sharing this X position into contiguous floor runs — each run
-    // is an independent shaft. Called once per column, one frame after Start(), by whichever segment's
-    // deferred coroutine happens to resume first — safe because every segment in the column has had
-    // its own Start() (and thus DetectedFloorIndex) resolved by then. See GroupColumnNextFrame.
-    private void GroupColumn(int gridX)
-    {
-        groupedColumns.Add(gridX);
-
         List<LiftRoom> segmentsInColumn = allSegments.Where(s => s.GridX == gridX).ToList();
+
+        // Retire every coordinator CURRENTLY appointed among these segments before recomputing runs.
+        // Without this, a segment that stops being a coordinator (e.g. two shafts merge because a new
+        // segment fills the gap between them) would leave a stale duplicate entry in
+        // BaseLayoutManager's lift list and a stale shaftSegments list behind. Safe against segments
+        // that were destroyed as part of this same change — Unity's Object == override makes a
+        // reference to a destroyed segment compare equal to null.
+        List<LiftRoom> oldCoordinators = segmentsInColumn.Select(s => s.coordinator).Where(c => c != null).Distinct().ToList();
+        foreach (LiftRoom oldCoordinator in oldCoordinators)
+        {
+            BaseLayoutManager.Instance?.UnregisterLift(oldCoordinator);
+            oldCoordinator.shaftSegments = null;
+        }
+
         segmentsInColumn.Sort((a, b) => a.DetectedFloorIndex.CompareTo(b.DetectedFloorIndex));
 
         List<LiftRoom> currentRun = null;
@@ -174,7 +184,7 @@ public class LiftRoom : RoomBase
             FinalizeShaft(currentRun);
     }
 
-    private void FinalizeShaft(List<LiftRoom> run)
+    private static void FinalizeShaft(List<LiftRoom> run)
     {
         LiftRoom lead = run[0]; // lowest floor number in the run — deterministic coordinator choice
         foreach (LiftRoom segment in run)
@@ -204,6 +214,27 @@ public class LiftRoom : RoomBase
         LiftRoom segment = FindSegment(floorIndex);
         if (segment == null) return null;
         return segment.boardingSpot != null ? segment.boardingSpot : segment.landingSpot;
+    }
+
+    // A bunny mid-trip may not have currentRoom pointing at the specific segment being deleted (e.g.
+    // it's invisible and "at" its origin segment while actually riding toward a different floor), so
+    // the base per-segment occupancy check alone isn't enough — the whole shaft must be idle too.
+    public override bool CanBeDeleted(out string blockedReason)
+    {
+        if (!base.CanBeDeleted(out blockedReason)) return false;
+
+        LiftRoom shaftCoordinator = coordinator != null ? coordinator : this;
+        if (shaftCoordinator.CurrentState != LiftState.Idle
+            || shaftCoordinator.activeCalls.Count > 0
+            || shaftCoordinator.boardedRiders.Count > 0
+            || shaftCoordinator.pickupCallQueue.Count > 0)
+        {
+            blockedReason = "this lift shaft is currently in use";
+            return false;
+        }
+
+        blockedReason = null;
+        return true;
     }
 
     private void OpenDoorsOnFloor(int floorIndex) => FindSegment(floorIndex)?.OpenDoors();
@@ -237,8 +268,22 @@ public class LiftRoom : RoomBase
     }
 
     // Called once a bunny commits to riding this lift — before it's necessarily arrived at the landing spot.
+    // Safe to call on ANY segment in the shaft, not just the coordinator — activeCalls/pickupCallQueue
+    // only actually get drained by the coordinator's own Update() (see the `if (coordinator != this)
+    // return;` guard there), so a call landing on a non-coordinator segment would otherwise sit in a
+    // list nobody's ticking, either failing loudly (RequestLift, via ServicesFloor returning false
+    // since shaftSegments is only populated on the coordinator) or silently doing nothing
+    // (NotifyArrivedAtLanding, since activeCalls would always be empty on a non-coordinator).
+    // Falls back to `this` if called before grouping has assigned a coordinator yet.
     public void RequestLift(NPCBunny bunny, int originFloor, int destinationFloor)
     {
+        LiftRoom target = coordinator != null ? coordinator : this;
+        if (target != this)
+        {
+            target.RequestLift(bunny, originFloor, destinationFloor);
+            return;
+        }
+
         if (!ServicesFloor(originFloor) || !ServicesFloor(destinationFloor))
         {
             Debug.LogWarning($"{name}: lift requested between floors {originFloor} and {destinationFloor}, but doesn't service both.");
@@ -252,6 +297,13 @@ public class LiftRoom : RoomBase
     // Called once a bunny physically reaches its origin floor's landing spot.
     public void NotifyArrivedAtLanding(NPCBunny bunny, int floorIndex)
     {
+        LiftRoom target = coordinator != null ? coordinator : this;
+        if (target != this)
+        {
+            target.NotifyArrivedAtLanding(bunny, floorIndex);
+            return;
+        }
+
         LiftCall call = activeCalls.FirstOrDefault(c => c.bunny == bunny && c.originFloor == floorIndex);
         if (call != null)
             call.hasArrived = true;

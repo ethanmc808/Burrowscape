@@ -32,4 +32,18 @@ public class DwellerRoster : MonoBehaviour
         // entrance to the job room, skipping the gate/queue entirely.
         return allBunnies.Where(b => !b.IsAssignedToJob && b.HasEnteredBase).ToList();
     }
+    public List<NPCBunny> GetBunniesAssignedTo(IJobRoom room)
+    {
+        return allBunnies.Where(b => b.AssignedJobRoom == room).ToList();
+    }
+
+    // Used by RoomBase.CanBeDeleted to block demolishing a room that's currently in use.
+    public bool IsRoomOccupied(RoomBase room)
+    {
+        Debug.Log($"[OccupancyCheck] room={room.name} @ {room.transform.position}");
+        foreach (NPCBunny b in allBunnies)
+            Debug.Log($"[OccupancyCheck]   {b.DebugState()}, associated={b.IsAssociatedWithRoom(room)}");
+
+        return allBunnies.Any(b => b.IsAssociatedWithRoom(room));
+    }
 }

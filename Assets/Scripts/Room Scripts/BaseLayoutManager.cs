@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,6 +16,7 @@ public class BaseLayoutManager : MonoBehaviour
 
     private Dictionary<int, List<RoomBase>> roomsByFloor = new Dictionary<int, List<RoomBase>>();
     private List<LiftRoom> allLifts = new List<LiftRoom>();
+    private readonly HashSet<int> pendingLiftColumnRegroups = new HashSet<int>();
 
     private void Awake()
     {
@@ -75,6 +77,23 @@ public class BaseLayoutManager : MonoBehaviour
     public void UnregisterLift(LiftRoom lift)
     {
         allLifts.Remove(lift);
+    }
+
+    // Schedules a shaft (re)grouping pass for every LiftRoom segment sharing this X column, deferred
+    // one frame so multiple segments added/removed in the same frame collapse into a single pass.
+    // Lives here (not on LiftRoom itself) because a segment that's being destroyed can't reliably run
+    // its own coroutine to defer this — this manager is a persistent singleton that can.
+    public void RequestLiftColumnRegroup(int gridX)
+    {
+        if (!pendingLiftColumnRegroups.Add(gridX)) return;
+        StartCoroutine(RegroupLiftColumnNextFrame(gridX));
+    }
+
+    private IEnumerator RegroupLiftColumnNextFrame(int gridX)
+    {
+        yield return null;
+        pendingLiftColumnRegroups.Remove(gridX);
+        LiftRoom.RegroupColumn(gridX);
     }
 
     // Finds a lift that services both floors, so a bunny can ride it between them.

@@ -10,6 +10,7 @@ public class BunnyApprovalUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI bunnyNameLabel;
     [SerializeField] private Button approveButton;
     [SerializeField] private Button rejectButton;
+    [SerializeField] private Button closeButton;
 
     private NPCBunny currentBunny;
 
@@ -20,6 +21,7 @@ public class BunnyApprovalUI : MonoBehaviour
 
         approveButton.onClick.AddListener(OnApproveClicked);
         rejectButton.onClick.AddListener(OnRejectClicked);
+        closeButton.onClick.AddListener(Close);
     }
 
     public void OpenForBunny(NPCBunny bunny)
