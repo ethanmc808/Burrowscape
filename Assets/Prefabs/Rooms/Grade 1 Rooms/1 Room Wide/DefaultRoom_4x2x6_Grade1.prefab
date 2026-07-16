@@ -728,7 +728,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4835314923114570966}
   m_Layer: 0
-  m_Name: DefaultRoom_3x4x6
+  m_Name: DefaultRoom_4x2x6_Grade1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

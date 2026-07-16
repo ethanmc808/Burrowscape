@@ -170,7 +170,7 @@ GameObject:
   - component: {fileID: 4991280497254301588}
   - component: {fileID: 7037124140991272582}
   m_Layer: 0
-  m_Name: Garden_3x4x6
+  m_Name: Garden_4x2x6_Grade1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

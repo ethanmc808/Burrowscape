@@ -229,7 +229,7 @@ GameObject:
   - component: {fileID: 3014265632777260577}
   - component: {fileID: 4472798844281746462}
   m_Layer: 0
-  m_Name: Cafeteria_3x4x6
+  m_Name: Cafeteria_4x2x6_Grade1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

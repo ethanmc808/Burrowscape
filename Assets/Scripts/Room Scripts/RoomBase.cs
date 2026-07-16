@@ -37,6 +37,17 @@ public class RoomBase : MonoBehaviour
     public int FloorIndex { get; private set; }
     public int GridX => Mathf.RoundToInt(transform.position.x);
 
+    // How wide this room's footprint is in world-X units. Tracked per-instance (not just read off a
+    // RoomDefinition at build time) so a future merge/upgrade system can change a room's width by
+    // swapping its prefab without needing to look up catalog data it may no longer have a 1:1 entry in.
+    [SerializeField] protected float footprintWidth = 4f;
+    public virtual float FootprintWidth => footprintWidth;
+
+    // Grade 1-3, for the future room-upgrade system. Every room starts at Grade 1; upgrading is a
+    // separate future system that isn't built yet.
+    [SerializeField] protected int grade = 1;
+    public int Grade => grade;
+
     // Floor-aware entrance/waypoint lookups. A normal room only has one set of these regardless of
     // floor (the floorIndex parameter is ignored), but LiftRoom overrides all three to return the
     // correct set for whichever floor is actually being routed through — a lift spans multiple floors

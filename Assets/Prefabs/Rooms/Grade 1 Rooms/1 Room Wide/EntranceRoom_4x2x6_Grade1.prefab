@@ -89,7 +89,7 @@ GameObject:
   - component: {fileID: 6556248090089998753}
   - component: {fileID: 5995781407820028525}
   m_Layer: 0
-  m_Name: EntranceRoom_3x4x6
+  m_Name: EntranceRoom_4x2x6_Grade1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
