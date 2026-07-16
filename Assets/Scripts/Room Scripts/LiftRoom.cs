@@ -76,6 +76,11 @@ public class LiftRoom : RoomBase
     public LiftState CurrentState { get; private set; } = LiftState.Idle;
     public int CurrentFloor { get; private set; }
 
+    // Always exactly 1 unit wide, regardless of any Inspector-set footprintWidth — a Lift segment never
+    // has a merged/upgraded variant (it extends vertically, not horizontally), so there's no reason to
+    // risk a per-prefab Inspector value drifting from the one width that actually matters for grid math.
+    public override float FootprintWidth => 1f;
+
     private LiftRoom coordinator; // the segment actually running the shared state machine (may be `this`)
     private List<LiftRoom> shaftSegments; // only populated on the coordinator: every segment in this shaft
 

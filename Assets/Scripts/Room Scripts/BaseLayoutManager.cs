@@ -14,6 +14,12 @@ public class BaseLayoutManager : MonoBehaviour
     [SerializeField] private RoomBase entranceRoom; // reference point for Y -> floor conversion; there's only ever one per base, and it never moves
     [SerializeField] private float floorHeight = 2f; // vertical world-unit distance between floors
 
+    [Header("Buildable Bounds")]
+    // Mutable (not const) on purpose: nothing expands these yet, but a future tech unlock will call
+    // ExpandBuildableBounds() below rather than needing a refactor to make these editable at runtime.
+    [SerializeField] private float maxGridXFromEntrance = 20f;
+    [SerializeField] private int maxFloorDepth = 10;
+
     private Dictionary<int, List<RoomBase>> roomsByFloor = new Dictionary<int, List<RoomBase>>();
     private List<LiftRoom> allLifts = new List<LiftRoom>();
     private readonly HashSet<int> pendingLiftColumnRegroups = new HashSet<int>();
@@ -32,6 +38,29 @@ public class BaseLayoutManager : MonoBehaviour
     {
         if (entranceRoom == null) return 1;
         return 1 + Mathf.RoundToInt((entranceRoom.transform.position.y - worldY) / floorHeight);
+    }
+
+    // Inverse of GetFloorIndexForY — needed by the build system to actually place a room at a validated
+    // floor index (rather than just detecting which floor an existing world Y belongs to).
+    public float GetWorldYForFloor(int floorIndex)
+    {
+        if (entranceRoom == null) return 0f;
+        return entranceRoom.transform.position.y - (floorIndex - 1) * floorHeight;
+    }
+
+    public float EntranceWorldX => entranceRoom != null ? entranceRoom.transform.position.x : 0f;
+    public float EntranceWorldZ => entranceRoom != null ? entranceRoom.transform.position.z : 0f;
+    public int EntranceFloorIndex => entranceRoom != null ? entranceRoom.FloorIndex : 1;
+
+    public float MaxGridXFromEntrance => maxGridXFromEntrance;
+    public int MaxFloorDepth => maxFloorDepth;
+
+    // Entry point for a future tech-unlock system to grow the buildable area — deliberately additive
+    // (not a setter) so multiple unlocks can each contribute without needing to know the current total.
+    public void ExpandBuildableBounds(float additionalGridX, int additionalFloorDepth)
+    {
+        maxGridXFromEntrance += additionalGridX;
+        maxFloorDepth += additionalFloorDepth;
     }
 
     public void RegisterRoom(RoomBase room)

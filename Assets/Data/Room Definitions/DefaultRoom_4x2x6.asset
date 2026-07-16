@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b7702f5703f0c048a4e0778cf372b29, type: 3}
+  m_Name: DefaultRoom_4x2x6
+  m_EditorClassIdentifier: Assembly-CSharp::RoomDefinition
+  displayName: Default Room
+  icon: {fileID: 0}
+  prefab: {fileID: 3716477364223810790, guid: d0d69547b4f4abb46845874fedef77a1, type: 3}
+  footprint: {x: 4, y: 2, z: 6}
+  goldCost: 0
+  isLiftSegment: 0
+  unlockConditions: []
