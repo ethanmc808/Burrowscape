@@ -2924,8 +2924,8 @@ MonoBehaviour:
   spawnOnStart: 1
   offscreenSpawnOffsetX: 15
   autoSpawnEnabled: 1
-  minSpawnInterval: 2
-  maxSpawnInterval: 3
+  minSpawnInterval: 10
+  maxSpawnInterval: 20
 --- !u!1 &919876965
 GameObject:
   m_ObjectHideFlags: 0

@@ -216,7 +216,7 @@ public class LiftRoom : RoomBase
         lead.CurrentFloor = lead.DetectedFloorIndex;
         BaseLayoutManager.Instance?.RegisterLift(lead);
 
-        Debug.Log($"{lead.name}: shaft formed spanning floor(s) {string.Join(", ", run.Select(s => s.DetectedFloorIndex))}.");
+        DebugLog.Log($"{lead.name}: shaft formed spanning floor(s) {string.Join(", ", run.Select(s => s.DetectedFloorIndex))}.");
     }
 
     private LiftRoom FindSegment(int floorIndex)
@@ -405,7 +405,7 @@ public class LiftRoom : RoomBase
     {
         stateTimer = Mathf.Abs(targetFloor - CurrentFloor) * travelTimePerFloor;
         CurrentState = travelState;
-        Debug.Log($"{name}: moving from floor {CurrentFloor} to floor {targetFloor} ({stateTimer:F1}s).");
+        DebugLog.Log($"{name}: moving from floor {CurrentFloor} to floor {targetFloor} ({stateTimer:F1}s).");
     }
 
     private void TickTravel(int targetFloor, System.Action onArrived)
@@ -419,7 +419,7 @@ public class LiftRoom : RoomBase
 
     private void OnArrivedAtPickupFloor()
     {
-        Debug.Log($"{name}: doors open at floor {CurrentFloor} for boarding.");
+        DebugLog.Log($"{name}: doors open at floor {CurrentFloor} for boarding.");
         CurrentState = LiftState.BoardingAtPickup;
         stateTimer = boardingGracePeriod;
         OpenDoorsOnFloor(CurrentFloor);
@@ -448,7 +448,7 @@ public class LiftRoom : RoomBase
             activeCalls.RemoveAt(i);
             boardedRiders.Add(call);
             call.bunny.BoardLift(boardingSpotForFloor);
-            Debug.Log($"{name}: {call.bunny.name} boarded at floor {CurrentFloor}, heading to floor {call.destinationFloor}.");
+            DebugLog.Log($"{name}: {call.bunny.name} boarded at floor {CurrentFloor}, heading to floor {call.destinationFloor}.");
         }
     }
 
@@ -486,7 +486,7 @@ public class LiftRoom : RoomBase
 
     private void OnArrivedAtDropoffFloor()
     {
-        Debug.Log($"{name}: doors open at floor {CurrentFloor} for drop-off.");
+        DebugLog.Log($"{name}: doors open at floor {CurrentFloor} for drop-off.");
         CurrentState = LiftState.DoorsOpenAtDropoff;
         stateTimer = dropoffDwellTime;
         OpenDoorsOnFloor(CurrentFloor);
@@ -505,7 +505,7 @@ public class LiftRoom : RoomBase
 
             boardedRiders.RemoveAt(i);
             rider.bunny.DisembarkFromLift(landingSpotForFloor, boardingSpotForFloor, CurrentFloor);
-            Debug.Log($"{name}: {rider.bunny.name} disembarked at floor {CurrentFloor}.");
+            DebugLog.Log($"{name}: {rider.bunny.name} disembarked at floor {CurrentFloor}.");
         }
     }
 

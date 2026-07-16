@@ -77,6 +77,6 @@ public class WildBunnySpawner : MonoBehaviour
         }
 
         newBunny.MoveToQueueSpot(queueSpot);
-        Debug.Log($"Spawned wild bunny {newBunny.name} and sent it to the queue.");
+        DebugLog.Log($"Spawned wild bunny {newBunny.name} and sent it to the queue.");
     }
 }

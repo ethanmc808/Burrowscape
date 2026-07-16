@@ -7,7 +7,7 @@ public class CarrotCountDisplay : MonoBehaviour
 
     private void OnEnable()
     {
-        Debug.Log("CarrotCountDisplay OnEnable running");
+        DebugLog.Log("CarrotCountDisplay OnEnable running");
 
         if (CarrotManager.Instance != null)
         {
@@ -28,7 +28,7 @@ public class CarrotCountDisplay : MonoBehaviour
 
     private void UpdateDisplay(int newCount)
     {
-        Debug.Log($"UpdateDisplay called with newCount = {newCount}");
+        DebugLog.Log($"UpdateDisplay called with newCount = {newCount}");
         carrotText.text = newCount.ToString();
     }
 }

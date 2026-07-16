@@ -30,7 +30,7 @@ public class GateQueueManager : MonoBehaviour
         if (currentQueue.Count >= queueSpots.Count)
         {
             waitingBunnies.Enqueue(bunny);
-            Debug.Log("Gate queue is full — bunny added to the waiting backlog.");
+            DebugLog.Log("Gate queue is full — bunny added to the waiting backlog.");
             return null;
         }
 

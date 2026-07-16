@@ -111,7 +111,7 @@ public class AssignmentUI : MonoBehaviour
 
     private void SelectAssignedBunny(NPCBunny bunny, Button btn)
     {
-        Debug.Log($"AssignmentUI: selected {bunny.name} for possible unassignment.");
+        DebugLog.Log($"AssignmentUI: selected {bunny.name} for possible unassignment.");
 
         // Clicking the already-selected bunny again deselects it.
         if (selectedAssignedBunny == bunny)
@@ -131,12 +131,12 @@ public class AssignmentUI : MonoBehaviour
 
     private void OnUnassignClicked()
     {
-        Debug.Log($"AssignmentUI: Unassign button clicked. selectedAssignedBunny={(selectedAssignedBunny != null ? selectedAssignedBunny.name : "NULL")}");
+        DebugLog.Log($"AssignmentUI: Unassign button clicked. selectedAssignedBunny={(selectedAssignedBunny != null ? selectedAssignedBunny.name : "NULL")}");
 
         if (selectedAssignedBunny == null) return;
 
         selectedAssignedBunny.UnassignFromJob();
-        Debug.Log($"AssignmentUI: UnassignFromJob() called on {selectedAssignedBunny.name}.");
+        DebugLog.Log($"AssignmentUI: UnassignFromJob() called on {selectedAssignedBunny.name}.");
 
         ClearSelection();
         PopulateLists(); // bunny moves from the assigned list back into the unassigned list

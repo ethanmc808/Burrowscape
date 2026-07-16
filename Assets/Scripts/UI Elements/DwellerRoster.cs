@@ -40,9 +40,14 @@ public class DwellerRoster : MonoBehaviour
     // Used by RoomBase.CanBeDeleted to block demolishing a room that's currently in use.
     public bool IsRoomOccupied(RoomBase room)
     {
-        Debug.Log($"[OccupancyCheck] room={room.name} @ {room.transform.position}");
-        foreach (NPCBunny b in allBunnies)
-            Debug.Log($"[OccupancyCheck]   {b.DebugState()}, associated={b.IsAssociatedWithRoom(room)}");
+        // Guarded as a block, not per-line, so the (DebugState()/IsAssociatedWithRoom() per bunny)
+        // work itself is skipped when verbose logging is off, not just the resulting Debug.Log call.
+        if (DebugLog.Verbose)
+        {
+            Debug.Log($"[OccupancyCheck] room={room.name} @ {room.transform.position}");
+            foreach (NPCBunny b in allBunnies)
+                Debug.Log($"[OccupancyCheck]   {b.DebugState()}, associated={b.IsAssociatedWithRoom(room)}");
+        }
 
         return allBunnies.Any(b => b.IsAssociatedWithRoom(room));
     }

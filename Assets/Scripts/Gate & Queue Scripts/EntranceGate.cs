@@ -70,7 +70,7 @@ public class EntranceGate : MonoBehaviour
     private IEnumerator TransitionRoutine(GateState toState)
     {
         CurrentState = toState;
-        Debug.Log($"Gate: entering {toState}");
+        DebugLog.Log($"Gate: entering {toState}");
 
         float duration = toState == GateState.Opening ? openDuration : closeDuration;
         float startY = gateTransform != null ? gateTransform.localPosition.y : 0f;
@@ -102,20 +102,20 @@ public class EntranceGate : MonoBehaviour
         if (toState == GateState.Opening)
         {
             CurrentState = GateState.Open;
-            Debug.Log("Gate: now Open");
+            DebugLog.Log("Gate: now Open");
         }
         else if (toState == GateState.Closing)
         {
             // Re-check: did new traffic arrive during the closing animation?
             if (activeTraffic > 0)
             {
-                Debug.Log("Gate: traffic arrived during closing, reopening");
+                DebugLog.Log("Gate: traffic arrived during closing, reopening");
                 StartTransition(GateState.Opening);
             }
             else
             {
                 CurrentState = GateState.Closed;
-                Debug.Log("Gate: now Closed");
+                DebugLog.Log("Gate: now Closed");
             }
         }
     }

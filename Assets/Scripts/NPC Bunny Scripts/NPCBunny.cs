@@ -302,8 +302,6 @@ public class NPCBunny : MonoBehaviour
                     if (TryRedirectInFlightWanderTrip(jobRoomBase, redirectSpot, null, BunnyState.Working))
                     {
                         claimedWorkSpot = redirectSpot;
-                        // TEMP DEBUG (round 4) — remove once the Menace round-trip issue is root-caused.
-                        Debug.Log($"[JobRouteDebug4] {name}: RequestNewJobSpot redirected in-flight lift trip to floor {jobRoomBase.FloorIndex}.");
                         return;
                     }
                     // This lift doesn't reach the job's floor — don't hold the spot hostage while
@@ -313,8 +311,6 @@ public class NPCBunny : MonoBehaviour
                 }
             }
 
-            // TEMP DEBUG (round 4) — remove once the Menace round-trip issue is root-caused.
-            Debug.Log($"[JobRouteDebug4] {name}: RequestNewJobSpot deferred (mid lower-priority wander leg, no redirect possible). {DebugState()}");
             return;
         }
 
@@ -322,9 +318,6 @@ public class NPCBunny : MonoBehaviour
         if (spot == null) return;
 
         claimedWorkSpot = spot;
-
-        // TEMP DEBUG (round 4) — remove once the Menace round-trip issue is root-caused.
-        Debug.Log($"[JobRouteDebug4] {name}: RequestNewJobSpot proceeding. {DebugState()}, jobRoomFloor={jobRoomBase.FloorIndex}");
 
         if (currentRoom != null && currentFloorIndex != jobRoomBase.FloorIndex)
         {
@@ -338,11 +331,6 @@ public class NPCBunny : MonoBehaviour
         }
 
         List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, jobRoomBase, spot, currentFloorIndex);
-
-        // TEMP DEBUG (round 4) — remove once the Pip long-detour issue is root-caused.
-        Debug.Log($"[JobRouteDebug4] {name}: same-floor route to {jobRoomBase.name} built with {path.Count} points:");
-        foreach (Transform t in path)
-            Debug.Log($"[JobRouteDebug4]   - {(t != null ? t.name : "NULL")} at {(t != null ? t.position.ToString() : "N/A")}");
 
         MoveAlongPath(path, spot, BunnyState.Working);
     }
@@ -646,7 +634,7 @@ public class NPCBunny : MonoBehaviour
         pendingFinalWanderPoint = targetWanderPoint;
         pendingFinalState = finalState;
 
-        Debug.Log($"{name}: redirected in-flight wander trip to floor {targetRoom.FloorIndex} for a higher-priority {finalState} trip.");
+        DebugLog.Log($"{name}: redirected in-flight wander trip to floor {targetRoom.FloorIndex} for a higher-priority {finalState} trip.");
         return true;
     }
 
@@ -711,9 +699,6 @@ public class NPCBunny : MonoBehaviour
     // landing/waiting spot to the boarding point (near the shaft), then actually starts riding.
     public void BoardLift(Transform boardingSpot)
     {
-        // TEMP DEBUG (round 5) — remove once the Buckshot invisibility issue is root-caused.
-        Debug.Log($"[VisibilityDebug] {name}: BoardLift called, boardingSpot={(boardingSpot != null ? boardingSpot.name : "NULL")}, time={Time.time:F2}");
-
         if (boardingSpot == null)
         {
             CurrentState = BunnyState.RidingLift;
@@ -735,18 +720,11 @@ public class NPCBunny : MonoBehaviour
         // Doors are already open (that's why boarding started), but stay visible a moment longer so a
         // doors-closing animation has time to play before the bunny vanishes into the shaft — otherwise
         // it pops out of existence before the doors even start closing.
-
-        // TEMP DEBUG (round 5) — remove once the Buckshot invisibility issue is root-caused.
-        Debug.Log($"[VisibilityDebug] {name}: OnArrivedAtBoardingSpot, starting HideAfterDelay({liftBoardHideDelay}), time={Time.time:F2}");
-
         StartCoroutine(HideAfterDelay(liftBoardHideDelay));
     }
 
     private IEnumerator HideAfterDelay(float delay)
     {
-        // TEMP DEBUG (round 5) — remove once the Buckshot invisibility issue is root-caused.
-        Debug.Log($"[VisibilityDebug] {name}: HideAfterDelay coroutine started, will hide at time={Time.time + delay:F2}");
-
         yield return new WaitForSeconds(delay);
         SetVisible(false);
     }
@@ -757,9 +735,6 @@ public class NPCBunny : MonoBehaviour
     // whatever trip was in progress.
     public void DisembarkFromLift(Transform landingSpot, Transform boardingSpot, int floorIndex)
     {
-        // TEMP DEBUG (round 5) — remove once the Buckshot invisibility issue is root-caused.
-        Debug.Log($"[VisibilityDebug] {name}: DisembarkFromLift called, landingSpot={(landingSpot != null ? landingSpot.name : "NULL")}, boardingSpot={(boardingSpot != null ? boardingSpot.name : "NULL")}, floorIndex={floorIndex}, time={Time.time:F2}");
-
         currentFloorIndex = floorIndex;
         SetVisible(true);
 
@@ -891,12 +866,12 @@ public class NPCBunny : MonoBehaviour
         RoomSpot departingSpot = claimedWorkSpot;
 
         CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteria(transform.position);
-        Debug.Log($"Cafeteria found: {cafeteria}");
+        DebugLog.Log($"Cafeteria found: {cafeteria}");
         if (cafeteria == null)
             return; // no cafeteria available — stay working, hunger check retries next frame
 
         RoomSpot eatSpot = cafeteria.RequestSpot(this);
-        Debug.Log($"Eat spot found: {eatSpot}");
+        DebugLog.Log($"Eat spot found: {eatSpot}");
         if (eatSpot == null)
             return; // cafeteria full — stay working, hunger check retries next frame
 
@@ -919,9 +894,9 @@ public class NPCBunny : MonoBehaviour
 
         List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, currentWanderPoint, cafeteria, eatSpot, currentFloorIndex);
 
-        Debug.Log($"Path built with {path.Count} points:");
+        DebugLog.Log($"Path built with {path.Count} points:");
         foreach (Transform t in path)
-            Debug.Log($" - {(t != null ? t.name : "NULL")} at {(t != null ? t.position.ToString() : "N/A")}");
+            DebugLog.Log($" - {(t != null ? t.name : "NULL")} at {(t != null ? t.position.ToString() : "N/A")}");
 
         MoveAlongPath(path, eatSpot, BunnyState.Eating);
     }
@@ -1026,9 +1001,6 @@ public class NPCBunny : MonoBehaviour
 
     private void SetVisible(bool visible)
     {
-        // TEMP DEBUG (round 5) — remove once the Buckshot invisibility issue is root-caused.
-        Debug.Log($"[VisibilityDebug] {name}: SetVisible({visible}) called. CurrentState={CurrentState}, pendingStateOnArrival={pendingStateOnArrival}, time={Time.time:F2}");
-
         if (bunnyScaleRoot != null)
             bunnyScaleRoot.gameObject.SetActive(visible);
     }
