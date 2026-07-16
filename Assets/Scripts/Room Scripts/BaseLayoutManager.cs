@@ -12,7 +12,7 @@ public class BaseLayoutManager : MonoBehaviour
 
     [Header("Floor Detection")]
     [SerializeField] private RoomBase entranceRoom; // reference point for Y -> floor conversion; there's only ever one per base, and it never moves
-    [SerializeField] private float floorHeight = 4f; // vertical world-unit distance between floors
+    [SerializeField] private float floorHeight = 2f; // vertical world-unit distance between floors
 
     private Dictionary<int, List<RoomBase>> roomsByFloor = new Dictionary<int, List<RoomBase>>();
     private List<LiftRoom> allLifts = new List<LiftRoom>();

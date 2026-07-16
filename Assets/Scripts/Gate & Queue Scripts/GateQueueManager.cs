@@ -107,6 +107,25 @@ public class GateQueueManager : MonoBehaviour
             front.SetAwaitingApproval(false);
             pendingRequestBunny = null;
             frontBunnyCleared = false;
+
+            // This is the single point every bunny passes through to become (or resume being) a base
+            // resident, regardless of whether clearance came from auto-approval or the player clicking
+            // Approve — so it's the right spot to update the population count exactly once per bunny.
+            if (front.ArrivalType == BunnyArrivalType.Wild)
+            {
+                // First time ever entering the colony.
+                PopulationManager.Instance.AddNewResident(ResidentCategory.InBase);
+            }
+            else if (front.ArrivalType == BunnyArrivalType.ReturningFromQuest)
+            {
+                // Already counted (as Questing) when it left — just shift the bucket, don't re-add it.
+                PopulationManager.Instance.MoveResident(ResidentCategory.Questing, ResidentCategory.InBase);
+            }
+            // NOTE: there's no foraging-return case yet since the foraging system doesn't exist. When
+            // it's built, either add a BunnyArrivalType.ReturningFromForaging case here, or call
+            // PopulationManager.Instance.MoveResident(ResidentCategory.Foraging, ResidentCategory.InBase)
+            // directly from wherever that system reintroduces the bunny.
+
             front.ProceedThroughGate(gateExitPoint, entranceRoom);
         }
     }
