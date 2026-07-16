@@ -268,11 +268,63 @@ public class NPCBunny : MonoBehaviour
     {
         if (assignedJobRoom == null) return;
 
+        RoomBase jobRoomBase = (RoomBase)assignedJobRoom;
+
+        // Mid-walk on ANY leg of a lower-priority wander trip: currentRoom/currentWanderPoint only
+        // update on FULL arrival at a destination (see OnArrivedAtWanderPoint/ResumeTripAfterLift),
+        // never incrementally as the bunny passes through intermediate rooms or walks toward a lift.
+        // Building a route now (below) would resume from that stale "start of this leg" point instead
+        // of wherever the bunny actually is.
+        //
+        // IsWanderPacedLeg() (already existed for movement-speed purposes) correctly identifies every
+        // leg of a lower-priority wander trip — same-floor AND every stage of a cross-floor one.
+        //
+        // If there's an actual lift call already in flight (pendingLift != null), try to REDIRECT it to
+        // the job's floor first — this is strictly better than deferring: the bunny is already
+        // committed to riding this lift, so retargeting where it drops her off costs nothing extra,
+        // whereas deferring would make her ride all the way to the now-irrelevant wander destination
+        // and back. My first attempt at this fix deferred unconditionally here, which made the
+        // already-built TryRedirectInFlightWanderTrip mechanism unreachable for exactly the cases it
+        // was designed for (a job landing while mid-transit toward a lift) — a bunny would ride to a
+        // stale wander destination floor, then ride BACK to the real job floor, instead of just
+        // redirecting the one ride in progress.
+        //
+        // Only fall back to deferring (let the current leg finish naturally, HandleIdle's existing
+        // retry picks the job back up once idle) when there's no lift to redirect at all (a pure
+        // same-floor wander) or this specific lift doesn't reach the job's floor.
+        if (CurrentState == BunnyState.MovingToSpot && IsWanderPacedLeg())
+        {
+            if (pendingLift != null)
+            {
+                RoomSpot redirectSpot = assignedJobRoom.RequestSpot(this);
+                if (redirectSpot != null)
+                {
+                    if (TryRedirectInFlightWanderTrip(jobRoomBase, redirectSpot, null, BunnyState.Working))
+                    {
+                        claimedWorkSpot = redirectSpot;
+                        // TEMP DEBUG (round 4) — remove once the Menace round-trip issue is root-caused.
+                        Debug.Log($"[JobRouteDebug4] {name}: RequestNewJobSpot redirected in-flight lift trip to floor {jobRoomBase.FloorIndex}.");
+                        return;
+                    }
+                    // This lift doesn't reach the job's floor — don't hold the spot hostage while
+                    // waiting for the current leg to finish; release and let the deferred retry
+                    // reclaim it once idle.
+                    assignedJobRoom.ReleaseSpot(redirectSpot, this);
+                }
+            }
+
+            // TEMP DEBUG (round 4) — remove once the Menace round-trip issue is root-caused.
+            Debug.Log($"[JobRouteDebug4] {name}: RequestNewJobSpot deferred (mid lower-priority wander leg, no redirect possible). {DebugState()}");
+            return;
+        }
+
         RoomSpot spot = assignedJobRoom.RequestSpot(this);
         if (spot == null) return;
 
         claimedWorkSpot = spot;
-        RoomBase jobRoomBase = (RoomBase)assignedJobRoom;
+
+        // TEMP DEBUG (round 4) — remove once the Menace round-trip issue is root-caused.
+        Debug.Log($"[JobRouteDebug4] {name}: RequestNewJobSpot proceeding. {DebugState()}, jobRoomFloor={jobRoomBase.FloorIndex}");
 
         if (currentRoom != null && currentFloorIndex != jobRoomBase.FloorIndex)
         {
@@ -286,6 +338,12 @@ public class NPCBunny : MonoBehaviour
         }
 
         List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, jobRoomBase, spot, currentFloorIndex);
+
+        // TEMP DEBUG (round 4) — remove once the Pip long-detour issue is root-caused.
+        Debug.Log($"[JobRouteDebug4] {name}: same-floor route to {jobRoomBase.name} built with {path.Count} points:");
+        foreach (Transform t in path)
+            Debug.Log($"[JobRouteDebug4]   - {(t != null ? t.name : "NULL")} at {(t != null ? t.position.ToString() : "N/A")}");
+
         MoveAlongPath(path, spot, BunnyState.Working);
     }
 
@@ -653,6 +711,9 @@ public class NPCBunny : MonoBehaviour
     // landing/waiting spot to the boarding point (near the shaft), then actually starts riding.
     public void BoardLift(Transform boardingSpot)
     {
+        // TEMP DEBUG (round 5) — remove once the Buckshot invisibility issue is root-caused.
+        Debug.Log($"[VisibilityDebug] {name}: BoardLift called, boardingSpot={(boardingSpot != null ? boardingSpot.name : "NULL")}, time={Time.time:F2}");
+
         if (boardingSpot == null)
         {
             CurrentState = BunnyState.RidingLift;
@@ -674,11 +735,18 @@ public class NPCBunny : MonoBehaviour
         // Doors are already open (that's why boarding started), but stay visible a moment longer so a
         // doors-closing animation has time to play before the bunny vanishes into the shaft — otherwise
         // it pops out of existence before the doors even start closing.
+
+        // TEMP DEBUG (round 5) — remove once the Buckshot invisibility issue is root-caused.
+        Debug.Log($"[VisibilityDebug] {name}: OnArrivedAtBoardingSpot, starting HideAfterDelay({liftBoardHideDelay}), time={Time.time:F2}");
+
         StartCoroutine(HideAfterDelay(liftBoardHideDelay));
     }
 
     private IEnumerator HideAfterDelay(float delay)
     {
+        // TEMP DEBUG (round 5) — remove once the Buckshot invisibility issue is root-caused.
+        Debug.Log($"[VisibilityDebug] {name}: HideAfterDelay coroutine started, will hide at time={Time.time + delay:F2}");
+
         yield return new WaitForSeconds(delay);
         SetVisible(false);
     }
@@ -689,12 +757,33 @@ public class NPCBunny : MonoBehaviour
     // whatever trip was in progress.
     public void DisembarkFromLift(Transform landingSpot, Transform boardingSpot, int floorIndex)
     {
+        // TEMP DEBUG (round 5) — remove once the Buckshot invisibility issue is root-caused.
+        Debug.Log($"[VisibilityDebug] {name}: DisembarkFromLift called, landingSpot={(landingSpot != null ? landingSpot.name : "NULL")}, boardingSpot={(boardingSpot != null ? boardingSpot.name : "NULL")}, floorIndex={floorIndex}, time={Time.time:F2}");
+
         currentFloorIndex = floorIndex;
         SetVisible(true);
 
         Transform arrivalPoint = boardingSpot != null ? boardingSpot : landingSpot;
         if (arrivalPoint != null)
             transform.position = arrivalPoint.position;
+
+        // Clear any leftover "walking to the boarding spot" state from BoardLift before it gets a
+        // chance to process again. LiftRoom.BoardArrivedRiders marks a bunny "boarded" (moves it into
+        // boardedRiders) the instant it calls BoardLift — without waiting for the bunny to actually
+        // finish that short walk. On a near-zero-travel-time ride (e.g. a same-floor redirect, or a
+        // shared boarding-grace-period window that's already mostly elapsed for a later-joining
+        // bunny), the whole round trip can complete faster than that walk animation does. Without this
+        // reset, the teleport above makes the bunny's still-active RidingLift-bound path think it just
+        // arrived at the boarding spot on its own, firing OnArrivedAtBoardingSpot() a second, spurious
+        // time — starting a stale HideAfterDelay that lands ~0.5s later, right as (or after) THIS
+        // disembark's own reveal-and-walk-out sequence has already moved the bunny onto a different
+        // leg, hiding it with nothing left to ever reveal it again. CurrentState = Idle (rather than
+        // leaving it MovingToSpot with an empty queue) matches what's already true here per the comment
+        // above WalkOutAfterDelay — the bunny is standing still during this wait — and stops
+        // HandleMovingToSpot from dispatching anything until WalkOutAfterDelay resumes movement itself.
+        currentPath = new Queue<Transform>();
+        currentWaypointTarget = null;
+        CurrentState = BunnyState.Idle;
 
         StartCoroutine(WalkOutAfterDelay(landingSpot, boardingSpot, liftDisembarkRevealDelay));
     }
@@ -937,6 +1026,9 @@ public class NPCBunny : MonoBehaviour
 
     private void SetVisible(bool visible)
     {
+        // TEMP DEBUG (round 5) — remove once the Buckshot invisibility issue is root-caused.
+        Debug.Log($"[VisibilityDebug] {name}: SetVisible({visible}) called. CurrentState={CurrentState}, pendingStateOnArrival={pendingStateOnArrival}, time={Time.time:F2}");
+
         if (bunnyScaleRoot != null)
             bunnyScaleRoot.gameObject.SetActive(visible);
     }
