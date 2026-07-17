@@ -41,6 +41,16 @@ public class CafeteriaRoom : RoomBase   // CHANGED from : MonoBehaviour
         spot.Release(bunny);
     }
 
+    public bool HasAvailableSpot()
+    {
+        foreach (RoomSpot spot in eatingSpots)
+        {
+            if (!spot.IsOccupied)
+                return true;
+        }
+        return false;
+    }
+
     public void NotifyBunnyReadyToEat(NPCBunny bunny)
     {
         StartCoroutine(EatingRoutine(bunny));

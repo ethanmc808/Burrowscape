@@ -8,6 +8,8 @@ public class BaseManager : MonoBehaviour
 
     private List<CafeteriaRoom> cafeterias = new List<CafeteriaRoom>();
     private List<LivingRoom> livingRooms = new List<LivingRoom>();
+    private List<WaterRoom> waterRooms = new List<WaterRoom>();
+    private List<BedroomRoom> bedrooms = new List<BedroomRoom>();
 
     private void Awake()
     {
@@ -30,7 +32,10 @@ public class BaseManager : MonoBehaviour
         cafeterias.Remove(cafeteria);
     }
 
-    public CafeteriaRoom FindNearestCafeteria(Vector3 fromPosition)
+    // Nearest cafeteria with an actual open eating spot, not just nearest cafeteria — mirrors
+    // FindNearestLivingRoomWithSpot's shape. Fixes a pre-existing gap where a hungry bunny stuck near a
+    // full cafeteria never checked a farther one with room.
+    public CafeteriaRoom FindNearestCafeteriaWithSpot(Vector3 fromPosition)
     {
         CafeteriaRoom nearest = null;
         float nearestDist = float.MaxValue;
@@ -38,6 +43,7 @@ public class BaseManager : MonoBehaviour
         foreach (CafeteriaRoom cafeteria in cafeterias)
         {
             if (cafeteria == null) continue; // safety check for destroyed rooms
+            if (!cafeteria.HasAvailableSpot()) continue;
 
             float dist = Vector3.Distance(fromPosition, cafeteria.transform.position);
             if (dist < nearestDist)
@@ -71,6 +77,72 @@ public class BaseManager : MonoBehaviour
         float nearestDist = float.MaxValue;
 
         foreach (LivingRoom room in livingRooms)
+        {
+            if (room == null) continue; // safety check for destroyed rooms
+            if (!room.HasAvailableSpot()) continue;
+
+            float dist = Vector3.Distance(fromPosition, room.transform.position);
+            if (dist < nearestDist)
+            {
+                nearestDist = dist;
+                nearest = room;
+            }
+        }
+
+        return nearest;
+    }
+
+    public void RegisterWaterRoom(WaterRoom room)
+    {
+        if (!waterRooms.Contains(room))
+            waterRooms.Add(room);
+    }
+
+    public void UnregisterWaterRoom(WaterRoom room)
+    {
+        waterRooms.Remove(room);
+    }
+
+    // Nearest Water Room with an open drinking spot — same shape as FindNearestLivingRoomWithSpot.
+    public WaterRoom FindNearestWaterRoomWithDrinkingSpot(Vector3 fromPosition)
+    {
+        WaterRoom nearest = null;
+        float nearestDist = float.MaxValue;
+
+        foreach (WaterRoom room in waterRooms)
+        {
+            if (room == null) continue; // safety check for destroyed rooms
+            if (!room.HasAvailableDrinkingSpot()) continue;
+
+            float dist = Vector3.Distance(fromPosition, room.transform.position);
+            if (dist < nearestDist)
+            {
+                nearestDist = dist;
+                nearest = room;
+            }
+        }
+
+        return nearest;
+    }
+
+    public void RegisterBedroom(BedroomRoom room)
+    {
+        if (!bedrooms.Contains(room))
+            bedrooms.Add(room);
+    }
+
+    public void UnregisterBedroom(BedroomRoom room)
+    {
+        bedrooms.Remove(room);
+    }
+
+    // Nearest Bedroom with an open sleeping spot — same shape as FindNearestLivingRoomWithSpot.
+    public BedroomRoom FindNearestBedroomWithSpot(Vector3 fromPosition)
+    {
+        BedroomRoom nearest = null;
+        float nearestDist = float.MaxValue;
+
+        foreach (BedroomRoom room in bedrooms)
         {
             if (room == null) continue; // safety check for destroyed rooms
             if (!room.HasAvailableSpot()) continue;

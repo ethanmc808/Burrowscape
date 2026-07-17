@@ -8,7 +8,9 @@ public enum BunnyState
     MovingToSpot,
     Working,
     Eating,
+    Drinking,
     Relaxing,
+    Sleeping,
     Wandering,
     PassingGate,
     Despawning,
@@ -40,13 +42,41 @@ public class NPCBunny : MonoBehaviour
     [SerializeField] private float hungerDecayPerSecond = 0.1f;
     [SerializeField] private float hungerThresholdLow = 35f;
     [SerializeField] private float hungerThresholdFull = 75f;
+    [SerializeField] private float hungerThresholdCritical = 15f; // only this threshold interrupts Sleeping
     [SerializeField] private float hungerGainPerCarrot = 25f;
+
+    [Header("Thirst")]
+    [SerializeField] private float thirst = 100f; // 0-100, mechanically clones Hunger
+    [SerializeField] private float thirstDecayPerSecond = 0.1f;
+    [SerializeField] private float thirstThresholdLow = 35f;
+    [SerializeField] private float thirstThresholdFull = 75f;
+    [SerializeField] private float thirstThresholdCritical = 15f; // only this threshold interrupts Sleeping
+    [SerializeField] private float thirstGainPerDrink = 25f;
+
+    [Header("Energy")]
+    [SerializeField] private float energy = 100f; // 0-100
+    [SerializeField] private float energyDecayPerSecond = 0.1f; // passive decay, ticks in every state except Sleeping
+    [SerializeField] private float energyDecayPerSecondWorking = 0.2f; // faster than passive while actually working
+    [SerializeField] private float energyDecayPerSecondQuesting = 0.2f; // Quest state doesn't exist yet — tunable ahead of time
+    [SerializeField] private float energyDecayPerSecondForaging = 0.2f; // Foraging state doesn't exist yet — tunable ahead of time
+    [SerializeField] private float energyThresholdLow = 35f;
+    [SerializeField] private float energyGainPerSecondSleeping = 5f; // regen only goes up to 100, never past
+
+    [Header("Mood")]
+    [SerializeField] private float mood = 100f; // 0-100, pure passive stat, no room/travel of its own
+    [SerializeField] private float moodDecayPerSecondWorking = 0.05f;
+    [SerializeField] private float moodGainPerSecondRelaxing = 0.05f;
+    [SerializeField] private float moodGainPerSecondEatingOrDrinking = 0.2f; // fast but short (Eating/Drinking don't last long)
+    [SerializeField] private float moodGainPerSecondSleeping = 0.02f; // slow but long
+    [SerializeField] private float moodDecayPerSecondIdlePacing = 0.1f; // idle-pacing with no relax spot available
 
     [Header("Animation")]
     [SerializeField] private Animator animator;
     [SerializeField] private string isMovingParam = "IsMoving";
     [SerializeField] private string isWorkingParam = "IsWorking";
     [SerializeField] private string isEatingParam = "IsEating";
+    [SerializeField] private string isDrinkingParam = "IsDrinking";
+    [SerializeField] private string isSleepingParam = "IsSleeping";
 
     [Header("Facing Direction")]
     [SerializeField] private Transform bunnyScaleRoot;
@@ -59,6 +89,8 @@ public class NPCBunny : MonoBehaviour
     [Header("Warnings")]
     [SerializeField] private float noSpotWarningCooldown = 5f; // throttles repeated "no spot available" toasts
     private float lastNoEatSpotWarningTime = -999f;
+    private float lastNoDrinkSpotWarningTime = -999f;
+    private float lastNoSleepSpotWarningTime = -999f;
 
     [Header("Lift Visual Timing")]
     [Tooltip("Brief pause after teleporting onto the new floor before walking out to the landing spot, leaving room for a future doors-opening animation.")]
@@ -66,6 +98,14 @@ public class NPCBunny : MonoBehaviour
 
     public BunnyState CurrentState { get; private set; } = BunnyState.Idle;
     public bool IsHungry => hunger < hungerThresholdLow;
+    public bool IsThirsty => thirst < thirstThresholdLow;
+    public bool IsTired => energy < energyThresholdLow;
+    public bool IsCriticallyHungry => hunger < hungerThresholdCritical;
+    public bool IsCriticallyThirsty => thirst < thirstThresholdCritical;
+    public float HungerValue => hunger;
+    public float ThirstValue => thirst;
+    public float EnergyValue => energy;
+    public float MoodValue => mood;
     public bool IsAssignedToJob => assignedJobRoom != null;
     public IJobRoom AssignedJobRoom => assignedJobRoom;
     // True once the bunny has actually passed through the entrance gate (set in EnterBaseAndWander,
@@ -84,8 +124,11 @@ public class NPCBunny : MonoBehaviour
     private RoomSpot claimedWorkSpot; // remembers the garden spot to return to after eating
     private IJobRoom assignedJobRoom;
     private CafeteriaRoom cafeteriaBeingUsed;
+    private WaterRoom waterRoomBeingUsed; // mirrors cafeteriaBeingUsed, for the drinking-spot side of a WaterRoom
     private RoomSpot claimedRelaxSpot; // Living Room spot reserved/occupied while idle; mirrors claimedWorkSpot
     private LivingRoom claimedRelaxRoom; // which room claimedRelaxSpot belongs to
+    private RoomSpot claimedSleepSpot; // Bedroom spot reserved/occupied while sleeping; mirrors claimedRelaxSpot
+    private BedroomRoom claimedSleepRoom; // which room claimedSleepSpot belongs to
     private RoomBase currentRoom;
     private RoomSpot currentSpot; // the spot bunny is currently occupying, null if none/mid-transit
     private Transform currentWanderPoint; // last wander destination reached, null if occupying a RoomSpot instead
@@ -136,8 +179,16 @@ public class NPCBunny : MonoBehaviour
 
     private void Update()
     {
-        // Hunger decay ticks regardless of state
+        // Hunger/Thirst decay tick regardless of state
         hunger = Mathf.Max(0f, hunger - hungerDecayPerSecond * Time.deltaTime);
+        thirst = Mathf.Max(0f, thirst - thirstDecayPerSecond * Time.deltaTime);
+
+        // Energy always decays except while Sleeping, which is the only way to regen it (capped at 100).
+        // The rate depends on activity — see GetEnergyDecayRate().
+        if (CurrentState == BunnyState.Sleeping)
+            energy = Mathf.Min(100f, energy + energyGainPerSecondSleeping * Time.deltaTime);
+        else
+            energy = Mathf.Max(0f, energy - GetEnergyDecayRate() * Time.deltaTime);
 
         switch (CurrentState)
         {
@@ -150,18 +201,28 @@ public class NPCBunny : MonoBehaviour
                 break;
 
             case BunnyState.Working:
-                HandleHungerCheckWhileWorking();
+                HandleNeedsCheckWhileWorking();
                 break;
 
             case BunnyState.Relaxing:
                 if (assignedJobRoom != null && claimedWorkSpot == null)
                     RequestNewJobSpot();
                 else
-                    HandleHungerCheckWhileRelaxing();
+                    HandleNeedsCheckWhileRelaxing();
+                break;
+
+            // A job assignment never interrupts Sleeping (unlike Relaxing, above) — no job check here
+            // at all. Only a critical hunger/thirst threshold or energy reaching 100 ends a sleep.
+            case BunnyState.Sleeping:
+                if (energy >= 100f)
+                    FinishSleepingAndReturnToPrevious();
+                else
+                    HandleCriticalNeedsCheckWhileSleeping();
                 break;
 
             case BunnyState.Eating:
-                // Eating logic is driven by CafeteriaRoom's coroutine/timer, not here
+            case BunnyState.Drinking:
+                // Eating/Drinking logic is driven by CafeteriaRoom's/WaterRoom's own coroutine/timer, not here
                 break;
 
             case BunnyState.WaitingForLift:
@@ -170,7 +231,72 @@ public class NPCBunny : MonoBehaviour
                 break;
         }
 
+        // Ticked after the switch so a state transition that happens this same frame (e.g. Idle ->
+        // MovingToSpot the instant a relax spot is claimed) is reflected immediately rather than a
+        // frame late.
+        TickMood();
+
         UpdateAnimator();
+    }
+
+    // Passive decay applies in every state except Sleeping (handled separately in Update()). Working
+    // drains faster than passive; Questing/Foraging will too once those states exist — their rate
+    // fields already exist for tuning ahead of time, this switch is the one-line extension point for
+    // wiring them in once the states themselves are added.
+    private float GetEnergyDecayRate()
+    {
+        switch (CurrentState)
+        {
+            case BunnyState.Working:
+                return energyDecayPerSecondWorking;
+            // case BunnyState.Questing: return energyDecayPerSecondQuesting;
+            // case BunnyState.Foraging: return energyDecayPerSecondForaging;
+            default:
+                return energyDecayPerSecond;
+        }
+    }
+
+    // Mood is a pure passive stat: no room, no travel, no interrupt of its own. Ticked once per frame
+    // based on whatever CurrentState already resolved to this frame.
+    private void TickMood()
+    {
+        switch (CurrentState)
+        {
+            case BunnyState.Working:
+                mood = Mathf.Max(0f, mood - moodDecayPerSecondWorking * Time.deltaTime);
+                break;
+
+            case BunnyState.Relaxing:
+                mood = Mathf.Min(100f, mood + moodGainPerSecondRelaxing * Time.deltaTime);
+                break;
+
+            case BunnyState.Eating:
+            case BunnyState.Drinking:
+                mood = Mathf.Min(100f, mood + moodGainPerSecondEatingOrDrinking * Time.deltaTime);
+                break;
+
+            case BunnyState.Sleeping:
+                mood = Mathf.Min(100f, mood + moodGainPerSecondSleeping * Time.deltaTime);
+                break;
+
+            default:
+                if (IsIdlePacingWithoutRelaxSpot())
+                    mood = Mathf.Max(0f, mood - moodDecayPerSecondIdlePacing * Time.deltaTime);
+                break;
+        }
+    }
+
+    // True whenever the bunny has no job and no claimed relax spot, and is either parked Idle waiting
+    // for one to free up, or mid-pace between wander points while it waits (see PickNewWanderDestination
+    // / IsWanderPacedLeg) — the two states control flow actually visits while no Living Room anywhere
+    // has an open spot.
+    private bool IsIdlePacingWithoutRelaxSpot()
+    {
+        if (assignedJobRoom != null) return false;
+        if (claimedRelaxSpot != null) return false;
+        if (CurrentState == BunnyState.Idle) return true;
+        if (CurrentState == BunnyState.MovingToSpot && IsWanderPacedLeg()) return true;
+        return false;
     }
 
     // ---------- JOB ASSIGNMENT ----------
@@ -248,6 +374,7 @@ public class NPCBunny : MonoBehaviour
         if (pendingWanderRoom == room) return true;
         if (pendingFinalRoom == room) return true;
         if (claimedRelaxRoom == room) return true;
+        if (claimedSleepRoom == room) return true;
         return false;
     }
 
@@ -293,6 +420,16 @@ public class NPCBunny : MonoBehaviour
         // BunnyState.Relaxing case in Update() immediately pulls the bunny back out for the job once it
         // settles in, at worst a single frame late.
         if (IsHeadedToRelaxSpot())
+            return;
+
+        // Unlike Relaxing (above), a job assignment never interrupts Sleeping at all — the job is left
+        // pending (assignedJobRoom set, claimedWorkSpot never claimed) until the bunny actually wakes.
+        // Critically, this path never releases claimedSleepSpot: waking for a critical need loops
+        // straight back to the same sleep spot regardless of this pending job (see
+        // LeaveSleepingForCafeteria/WaterRoom), and only FinishSleepingAndReturnToPrevious (energy
+        // reaching 100) clears claimedSleepSpot, at which point ReturnToPreviousActivity's own
+        // job-check calls this method again and it proceeds normally.
+        if (IsAsleepOrHeadedToSleepSpot())
             return;
 
         // Pull the bunny out of any already-claimed Living Room spot — a job takes priority. Mirrors
@@ -341,6 +478,20 @@ public class NPCBunny : MonoBehaviour
 
         return pendingStateOnArrival == BunnyState.Relaxing
             || (pendingLift != null && pendingFinalState == BunnyState.Relaxing);
+    }
+
+    // Broader than IsHeadedToRelaxSpot on purpose: a job assignment must never pull a bunny out of
+    // Sleeping at all (unlike Relaxing, which IS pulled out immediately once settled — see the Relaxing
+    // case in Update()), so this needs to stay true for the ENTIRE reservation window, not just mid-
+    // transit. claimedSleepSpot is set the instant the spot is claimed (before any travel begins, in
+    // LeaveWorkForBedroom/LeaveRelaxingForBedroom) and only ever cleared by
+    // FinishSleepingAndReturnToPrevious — so checking it directly (rather than CurrentState) is what
+    // makes this correct at the exact moment that method clears it and re-enters RequestNewJobSpot via
+    // ReturnToPreviousActivity: CurrentState is still Sleeping for that one call, but claimedSleepSpot is
+    // already null, so this must NOT block it.
+    private bool IsAsleepOrHeadedToSleepSpot()
+    {
+        return claimedSleepSpot != null;
     }
 
     private void HandleIdle()
@@ -454,6 +605,23 @@ public class NPCBunny : MonoBehaviour
         currentFloorIndex = currentRoom.FloorIndex;
     }
 
+    private void OnArrivedAtDrinkingSpot()
+    {
+        currentRoom = waterRoomBeingUsed;
+        currentSpot = currentTargetSpot;
+        currentWanderPoint = null;
+        currentFloorIndex = currentRoom.FloorIndex;
+        waterRoomBeingUsed.NotifyBunnyReadyToDrink(this);
+    }
+
+    private void OnArrivedAtSleepingSpot()
+    {
+        currentRoom = claimedSleepRoom;
+        currentSpot = claimedSleepSpot;
+        currentWanderPoint = null;
+        currentFloorIndex = currentRoom.FloorIndex;
+    }
+
     // ---------- MOVEMENT ----------
 
     private void MoveAlongPath(List<Transform> waypoints, RoomSpot spot, BunnyState stateOnArrival)
@@ -493,8 +661,12 @@ public class NPCBunny : MonoBehaviour
                 OnArrivedAtWorkSpot();
             else if (pendingStateOnArrival == BunnyState.Eating)
                 OnArrivedAtEatingSpot();
+            else if (pendingStateOnArrival == BunnyState.Drinking)
+                OnArrivedAtDrinkingSpot();
             else if (pendingStateOnArrival == BunnyState.Relaxing)
                 OnArrivedAtRelaxSpot();
+            else if (pendingStateOnArrival == BunnyState.Sleeping)
+                OnArrivedAtSleepingSpot();
             else if (pendingStateOnArrival == BunnyState.Wandering)
                 OnArrivedAtWanderPoint();
             else if (pendingStateOnArrival == BunnyState.PassingGate)
@@ -809,20 +981,38 @@ public class NPCBunny : MonoBehaviour
         }
     }
 
-    private void HandleHungerCheckWhileWorking()
+    // Priority chain: whichever need crosses its threshold first wins, and Update()'s dispatch only
+    // calls this again once the bunny is back in Working/Relaxing (satiated) — so within a single leave
+    // the highest-priority need in code order (hunger, then thirst, then tired) is the one acted on.
+    private void HandleNeedsCheckWhileWorking()
     {
         if (IsHungry)
-        {
             LeaveWorkForCafeteria();
-        }
+        else if (IsThirsty)
+            LeaveWorkForWaterRoom();
+        else if (IsTired)
+            LeaveWorkForBedroom();
     }
 
-    private void HandleHungerCheckWhileRelaxing()
+    private void HandleNeedsCheckWhileRelaxing()
     {
         if (IsHungry)
-        {
             LeaveRelaxingForCafeteria();
-        }
+        else if (IsThirsty)
+            LeaveRelaxingForWaterRoom();
+        else if (IsTired)
+            LeaveRelaxingForBedroom();
+    }
+
+    // Sleeping is only ever interrupted by a CRITICAL hunger/thirst threshold (well below the normal
+    // low threshold) — normal hunger/thirst are ignored while asleep, and a job assignment never
+    // interrupts it at all (see the Sleeping case in Update()).
+    private void HandleCriticalNeedsCheckWhileSleeping()
+    {
+        if (IsCriticallyHungry)
+            LeaveSleepingForCafeteria();
+        else if (IsCriticallyThirsty)
+            LeaveSleepingForWaterRoom();
     }
 
     private void WarnNoEatSpot()
@@ -832,12 +1022,26 @@ public class NPCBunny : MonoBehaviour
         NotificationToast.Instance?.Show($"{BunnyName} is hungry, but there are no eating spots available.");
     }
 
+    private void WarnNoDrinkSpot()
+    {
+        if (Time.time - lastNoDrinkSpotWarningTime < noSpotWarningCooldown) return;
+        lastNoDrinkSpotWarningTime = Time.time;
+        NotificationToast.Instance?.Show($"{BunnyName} is thirsty, but there are no drinking spots available.");
+    }
+
+    private void WarnNoSleepSpot()
+    {
+        if (Time.time - lastNoSleepSpotWarningTime < noSpotWarningCooldown) return;
+        lastNoSleepSpotWarningTime = Time.time;
+        NotificationToast.Instance?.Show($"{BunnyName} is tired, but there are no sleeping spots available.");
+    }
+
     private void LeaveWorkForCafeteria()
     {
         RoomBase departingRoom = (RoomBase)assignedJobRoom;
         RoomSpot departingSpot = claimedWorkSpot;
 
-        CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteria(transform.position);
+        CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteriaWithSpot(transform.position);
         DebugLog.Log($"Cafeteria found: {cafeteria}");
         if (cafeteria == null)
         {
@@ -883,7 +1087,7 @@ public class NPCBunny : MonoBehaviour
         RoomBase departingRoom = claimedRelaxRoom;
         RoomSpot departingSpot = claimedRelaxSpot;
 
-        CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteria(transform.position);
+        CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteriaWithSpot(transform.position);
         if (cafeteria == null)
         {
             WarnNoEatSpot();
@@ -913,6 +1117,237 @@ public class NPCBunny : MonoBehaviour
         MoveAlongPath(path, eatSpot, BunnyState.Eating);
     }
 
+    // ---------- THIRST (WATER ROOM DRINKING SIDE) ----------
+    // Structural copies of LeaveWorkForCafeteria/LeaveRelaxingForCafeteria — spot stays reserved while
+    // away (paused, not released), same as the hunger pair.
+
+    private void LeaveWorkForWaterRoom()
+    {
+        RoomBase departingRoom = (RoomBase)assignedJobRoom;
+        RoomSpot departingSpot = claimedWorkSpot;
+
+        WaterRoom waterRoom = BaseManager.Instance.FindNearestWaterRoomWithDrinkingSpot(transform.position);
+        if (waterRoom == null)
+        {
+            WarnNoDrinkSpot();
+            return;
+        }
+
+        RoomSpot drinkSpot = waterRoom.RequestDrinkingSpot(this);
+        if (drinkSpot == null)
+        {
+            WarnNoDrinkSpot();
+            return;
+        }
+
+        assignedJobRoom?.NotifyBunnyLeavingToEat(this);
+
+        waterRoomBeingUsed = waterRoom;
+
+        if (departingRoom.FloorIndex != waterRoom.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(waterRoom, drinkSpot, BunnyState.Drinking))
+            {
+                waterRoom.ReleaseDrinkingSpot(drinkSpot, this);
+                waterRoomBeingUsed = null;
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, currentWanderPoint, waterRoom, drinkSpot, currentFloorIndex);
+        MoveAlongPath(path, drinkSpot, BunnyState.Drinking);
+    }
+
+    private void LeaveRelaxingForWaterRoom()
+    {
+        RoomBase departingRoom = claimedRelaxRoom;
+        RoomSpot departingSpot = claimedRelaxSpot;
+
+        WaterRoom waterRoom = BaseManager.Instance.FindNearestWaterRoomWithDrinkingSpot(transform.position);
+        if (waterRoom == null)
+        {
+            WarnNoDrinkSpot();
+            return;
+        }
+
+        RoomSpot drinkSpot = waterRoom.RequestDrinkingSpot(this);
+        if (drinkSpot == null)
+        {
+            WarnNoDrinkSpot();
+            return;
+        }
+
+        waterRoomBeingUsed = waterRoom;
+
+        if (departingRoom != null && currentFloorIndex != waterRoom.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(waterRoom, drinkSpot, BunnyState.Drinking))
+            {
+                waterRoom.ReleaseDrinkingSpot(drinkSpot, this);
+                waterRoomBeingUsed = null;
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, currentWanderPoint, waterRoom, drinkSpot, currentFloorIndex);
+        MoveAlongPath(path, drinkSpot, BunnyState.Drinking);
+    }
+
+    // ---------- ENERGY (BEDROOM) ----------
+    // Structural copies of the relax pair, but the claim persists once arrived — nothing auto-returns
+    // the bunny (Bedroom has no coroutine; NPCBunny's own Update() Sleeping case decides when to leave).
+
+    private void LeaveWorkForBedroom()
+    {
+        RoomBase departingRoom = (RoomBase)assignedJobRoom;
+        RoomSpot departingSpot = claimedWorkSpot;
+
+        BedroomRoom bedroom = BaseManager.Instance.FindNearestBedroomWithSpot(transform.position);
+        if (bedroom == null)
+        {
+            WarnNoSleepSpot();
+            return;
+        }
+
+        RoomSpot sleepSpot = bedroom.RequestSpot(this);
+        if (sleepSpot == null)
+        {
+            WarnNoSleepSpot();
+            return;
+        }
+
+        assignedJobRoom?.NotifyBunnyLeavingToEat(this);
+
+        claimedSleepSpot = sleepSpot;
+        claimedSleepRoom = bedroom;
+
+        if (departingRoom.FloorIndex != bedroom.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(bedroom, sleepSpot, BunnyState.Sleeping))
+            {
+                bedroom.ReleaseSpot(sleepSpot, this);
+                claimedSleepSpot = null;
+                claimedSleepRoom = null;
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, currentWanderPoint, bedroom, sleepSpot, currentFloorIndex);
+        MoveAlongPath(path, sleepSpot, BunnyState.Sleeping);
+    }
+
+    private void LeaveRelaxingForBedroom()
+    {
+        RoomBase departingRoom = claimedRelaxRoom;
+        RoomSpot departingSpot = claimedRelaxSpot;
+
+        BedroomRoom bedroom = BaseManager.Instance.FindNearestBedroomWithSpot(transform.position);
+        if (bedroom == null)
+        {
+            WarnNoSleepSpot();
+            return;
+        }
+
+        RoomSpot sleepSpot = bedroom.RequestSpot(this);
+        if (sleepSpot == null)
+        {
+            WarnNoSleepSpot();
+            return;
+        }
+
+        claimedSleepSpot = sleepSpot;
+        claimedSleepRoom = bedroom;
+
+        if (departingRoom != null && currentFloorIndex != bedroom.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(bedroom, sleepSpot, BunnyState.Sleeping))
+            {
+                bedroom.ReleaseSpot(sleepSpot, this);
+                claimedSleepSpot = null;
+                claimedSleepRoom = null;
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, currentWanderPoint, bedroom, sleepSpot, currentFloorIndex);
+        MoveAlongPath(path, sleepSpot, BunnyState.Sleeping);
+    }
+
+    // ---------- CRITICAL-NEED WAKE (SLEEPING -> EATING/DRINKING) ----------
+    // Departing spot is the SLEEP spot, which stays reserved throughout — unconditionally, regardless
+    // of any pending job. FinishEatingAndReturnToWork / FinishDrinkingAndReturnToPrevious route back to
+    // it via ReturnToPreviousActivity's top-priority sleep check once satiated.
+
+    private void LeaveSleepingForCafeteria()
+    {
+        RoomBase departingRoom = claimedSleepRoom;
+        RoomSpot departingSpot = claimedSleepSpot;
+
+        CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteriaWithSpot(transform.position);
+        if (cafeteria == null)
+        {
+            WarnNoEatSpot();
+            return;
+        }
+
+        RoomSpot eatSpot = cafeteria.RequestSpot(this);
+        if (eatSpot == null)
+        {
+            WarnNoEatSpot();
+            return;
+        }
+
+        cafeteriaBeingUsed = cafeteria;
+
+        if (departingRoom != null && currentFloorIndex != cafeteria.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(cafeteria, eatSpot, BunnyState.Eating))
+            {
+                cafeteria.ReleaseSpot(eatSpot, this);
+                cafeteriaBeingUsed = null;
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, currentWanderPoint, cafeteria, eatSpot, currentFloorIndex);
+        MoveAlongPath(path, eatSpot, BunnyState.Eating);
+    }
+
+    private void LeaveSleepingForWaterRoom()
+    {
+        RoomBase departingRoom = claimedSleepRoom;
+        RoomSpot departingSpot = claimedSleepSpot;
+
+        WaterRoom waterRoom = BaseManager.Instance.FindNearestWaterRoomWithDrinkingSpot(transform.position);
+        if (waterRoom == null)
+        {
+            WarnNoDrinkSpot();
+            return;
+        }
+
+        RoomSpot drinkSpot = waterRoom.RequestDrinkingSpot(this);
+        if (drinkSpot == null)
+        {
+            WarnNoDrinkSpot();
+            return;
+        }
+
+        waterRoomBeingUsed = waterRoom;
+
+        if (departingRoom != null && currentFloorIndex != waterRoom.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(waterRoom, drinkSpot, BunnyState.Drinking))
+            {
+                waterRoom.ReleaseDrinkingSpot(drinkSpot, this);
+                waterRoomBeingUsed = null;
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(departingRoom, departingSpot, currentWanderPoint, waterRoom, drinkSpot, currentFloorIndex);
+        MoveAlongPath(path, drinkSpot, BunnyState.Drinking);
+    }
+
     // Called by CafeteriaRoom each time a carrot-consumption tick happens
     public void ReceiveCarrotNutrition()
     {
@@ -924,6 +1359,17 @@ public class NPCBunny : MonoBehaviour
         return hunger >= hungerThresholdFull;
     }
 
+    // Called by WaterRoom each time a water-consumption tick happens
+    public void ReceiveWaterHydration()
+    {
+        thirst = Mathf.Min(100f, thirst + thirstGainPerDrink);
+    }
+
+    public bool IsFullyHydrated()
+    {
+        return thirst >= thirstThresholdFull;
+    }
+
     // Called by CafeteriaRoom once bunny is full (or can't get more carrots)
     public void FinishEatingAndReturnToWork()
     {
@@ -931,6 +1377,69 @@ public class NPCBunny : MonoBehaviour
         {
             cafeteriaBeingUsed.ReleaseSpot(currentTargetSpot, this);
             cafeteriaBeingUsed = null;
+        }
+
+        ReturnToPreviousActivity();
+    }
+
+    // Called by WaterRoom once bunny is fully hydrated (or can't get more water)
+    public void FinishDrinkingAndReturnToPrevious()
+    {
+        if (waterRoomBeingUsed != null)
+        {
+            waterRoomBeingUsed.ReleaseDrinkingSpot(currentTargetSpot, this);
+            waterRoomBeingUsed = null;
+        }
+
+        ReturnToPreviousActivity();
+    }
+
+    // Called from Update()'s Sleeping case once energy reaches 100. Releases the sleep claim FIRST —
+    // this is what distinguishes this wake path from the critical-need wake
+    // (LeaveSleepingForCafeteria/WaterRoom), which deliberately never clears claimedSleepSpot so a
+    // return trip after eating/drinking always loops back to sleep no matter what else is pending. Here,
+    // clearing it first means ReturnToPreviousActivity's own sleep-check correctly falls through to the
+    // job/relax/idle chain instead of looping back to sleep.
+    private void FinishSleepingAndReturnToPrevious()
+    {
+        if (claimedSleepRoom != null)
+            claimedSleepRoom.ReleaseSpot(claimedSleepSpot, this);
+
+        claimedSleepSpot = null;
+        claimedSleepRoom = null;
+
+        ReturnToPreviousActivity();
+    }
+
+    // Shared by all three "done with an interrupt, resume whatever I was doing" paths above (eating,
+    // drinking, and finishing a sleep). Sleep is checked FIRST, ahead of the job check — a bunny that
+    // just finished eating/drinking while still mid-sleep (claimedSleepSpot still reserved — see
+    // LeaveSleepingForCafeteria/WaterRoom) always walks straight back to sleep regardless of any pending
+    // job. Only once claimedSleepSpot has actually been released (by FinishSleepingAndReturnToPrevious)
+    // does the job -> relax -> idle chain below get a turn.
+    private void ReturnToPreviousActivity()
+    {
+        if (claimedSleepSpot != null)
+        {
+            BedroomRoom sleepRoomBase = claimedSleepRoom;
+
+            if (currentRoom != null && currentFloorIndex != sleepRoomBase.FloorIndex)
+            {
+                if (!TryBeginCrossFloorTripToSpot(sleepRoomBase, claimedSleepSpot, BunnyState.Sleeping))
+                {
+                    // No lift back to the sleep floor — release the spot and let a later needs-check retry.
+                    claimedSleepRoom.ReleaseSpot(claimedSleepSpot, this);
+                    claimedSleepSpot = null;
+                    claimedSleepRoom = null;
+                    CurrentState = BunnyState.Idle;
+                }
+                return;
+            }
+
+            // Spot was never released while eating/drinking — walk straight back to it.
+            List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, sleepRoomBase, claimedSleepSpot, currentFloorIndex);
+            MoveAlongPath(path, claimedSleepSpot, BunnyState.Sleeping);
+            return;
         }
 
         if (assignedJobRoom != null)
@@ -951,7 +1460,7 @@ public class NPCBunny : MonoBehaviour
                     return;
                 }
 
-                // Spot was never released while eating — walk straight back to it.
+                // Spot was never released while eating/drinking/sleeping — walk straight back to it.
                 List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, jobRoomBase, claimedWorkSpot, currentFloorIndex);
                 MoveAlongPath(path, claimedWorkSpot, BunnyState.Working);
             }
@@ -977,7 +1486,7 @@ public class NPCBunny : MonoBehaviour
                 return;
             }
 
-            // Spot was never released while eating — walk straight back to it.
+            // Spot was never released while eating/drinking — walk straight back to it.
             List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, relaxRoomBase, claimedRelaxSpot, currentFloorIndex);
             MoveAlongPath(path, claimedRelaxSpot, BunnyState.Relaxing);
         }
@@ -995,6 +1504,8 @@ public class NPCBunny : MonoBehaviour
         animator.SetBool(isMovingParam, CurrentState == BunnyState.MovingToSpot);
         animator.SetBool(isWorkingParam, CurrentState == BunnyState.Working);
         animator.SetBool(isEatingParam, CurrentState == BunnyState.Eating);
+        animator.SetBool(isDrinkingParam, CurrentState == BunnyState.Drinking);
+        animator.SetBool(isSleepingParam, CurrentState == BunnyState.Sleeping);
 
         bool isSlowWander = CurrentState == BunnyState.MovingToSpot && IsWanderPacedLeg();
         animator.speed = isSlowWander ? wanderSpeedMultiplier : 1f;

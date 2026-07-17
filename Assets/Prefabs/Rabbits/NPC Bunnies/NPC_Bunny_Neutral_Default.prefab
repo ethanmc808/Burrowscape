@@ -80,6 +80,7 @@ GameObject:
   - component: {fileID: 2411426728429763008}
   - component: {fileID: 3142430252561249029}
   - component: {fileID: 9037851013046202201}
+  - component: {fileID: -990441668920863948}
   m_Layer: 0
   m_Name: NPC_Bunny_Neutral_Default
   m_TagString: Untagged
@@ -197,19 +198,44 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCBunny
   moveSpeed: 2
+  wanderSpeedMultiplier: 0.5
   arrivalThreshold: 0.05
   hunger: 100
   hungerDecayPerSecond: 0.1
   hungerThresholdLow: 35
-  hungerThresholdFull: 75
+  hungerThresholdFull: 90
+  hungerThresholdCritical: 15
   hungerGainPerCarrot: 25
+  thirst: 100
+  thirstDecayPerSecond: 0.1
+  thirstThresholdLow: 35
+  thirstThresholdFull: 90
+  thirstThresholdCritical: 15
+  thirstGainPerDrink: 25
+  energy: 100
+  energyDecayPerSecond: 0.05
+  energyDecayPerSecondWorking: 0.2
+  energyDecayPerSecondQuesting: 0.2
+  energyDecayPerSecondForaging: 0.2
+  energyThresholdLow: 35
+  energyGainPerSecondSleeping: 2
+  mood: 100
+  moodDecayPerSecondWorking: 0.05
+  moodGainPerSecondRelaxing: 0.2
+  moodGainPerSecondEatingOrDrinking: 0.2
+  moodGainPerSecondSleeping: 0.02
+  moodDecayPerSecondIdlePacing: 0.1
   animator: {fileID: 5682828441522450851}
   isMovingParam: IsMoving
   isWorkingParam: IsWorking
   isEatingParam: IsEating
+  isDrinkingParam: IsDrinking
+  isSleepingParam: IsSleeping
   bunnyScaleRoot: {fileID: 5325006013901068792}
   bunnyFacesLeftByDefault: 1
   wanderPauseDuration: 3
+  noSpotWarningCooldown: 5
+  liftDisembarkRevealDelay: 0.5
 --- !u!114 &9037851013046202201
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -222,6 +248,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd5ee84e73ab68349babe433b0689b7e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BunnyApprovalClickHandler
+--- !u!114 &-990441668920863948
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601990158651218953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f3fb0b50e3090143af987f28dcc4dc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BunnyStatsClickHandler
 --- !u!1001 &3917498231033039267
 PrefabInstance:
   m_ObjectHideFlags: 0
