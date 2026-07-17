@@ -201,13 +201,13 @@ MonoBehaviour:
   wanderSpeedMultiplier: 0.5
   arrivalThreshold: 0.05
   hunger: 100
-  hungerDecayPerSecond: 0.1
+  hungerDecayPerSecond: 0.2
   hungerThresholdLow: 35
   hungerThresholdFull: 90
   hungerThresholdCritical: 15
   hungerGainPerCarrot: 25
   thirst: 100
-  thirstDecayPerSecond: 0.1
+  thirstDecayPerSecond: 0.4
   thirstThresholdLow: 35
   thirstThresholdFull: 90
   thirstThresholdCritical: 15

@@ -552,6 +552,9 @@ public class NPCBunny : MonoBehaviour
         }
 
         List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, room, spot, currentFloorIndex);
+
+        Debug.Log($"[PathDebug] {name} TryClaimRelaxSpot pos={transform.position} currentRoom={(currentRoom != null ? currentRoom.name : "NULL")} currentSpot={(currentSpot != null ? currentSpot.name : "NULL")} currentFloorIndex={currentFloorIndex} targetRoom={room.name} pathCount={path.Count} firstWaypoint={(path.Count > 0 ? path[0].position.ToString() : "N/A")}");
+
         MoveAlongPath(path, spot, BunnyState.Relaxing);
         return true;
     }
@@ -647,6 +650,8 @@ public class NPCBunny : MonoBehaviour
         {
             CurrentState = pendingStateOnArrival;
 
+            Debug.Log($"[PathDebug] {name} ARRIVED pendingStateOnArrival={pendingStateOnArrival} pos={transform.position} currentRoom={(currentRoom != null ? currentRoom.name : "NULL")} currentSpot={(currentSpot != null ? currentSpot.name : "NULL")} currentFloorIndex={currentFloorIndex} currentTargetSpot={(currentTargetSpot != null ? currentTargetSpot.name : "NULL")}");
+
             if (pendingFacingOverride.HasValue)
             {
                 SetFacing(pendingFacingOverride.Value);
@@ -677,6 +682,8 @@ public class NPCBunny : MonoBehaviour
                 OnArrivedAtLiftLanding();
             else if (pendingStateOnArrival == BunnyState.DisembarkingLift)
                 OnArrivedAtDisembarkLanding();
+            else if (pendingStateOnArrival == BunnyState.Idle)
+                OnArrivedIdleAfterCancelledTrip();
 
             return;
         }
@@ -751,6 +758,29 @@ public class NPCBunny : MonoBehaviour
         pendingStateOnArrival = BunnyState.Despawning;
         CurrentState = BunnyState.MovingToSpot;
         AdvanceToNextWaypoint();
+    }
+
+    // A job or relax trip was cancelled (UnassignFromJob/TryClaimRelaxSpot pulling a spot out from
+    // under a bunny) while a same-floor walk toward it was already in progress. The walk itself is
+    // still let to finish along its already-valid path (see UnassignFromJob), but the eventual arrival
+    // state gets flipped to plain Idle — so currentRoom/currentSpot/currentFloorIndex, which every
+    // other arrival state updates via its own OnArrivedAt*, would otherwise stay stale at wherever the
+    // bunny was BEFORE this trip started. That stale room then feeds the very next HandleIdle routing
+    // call as the (wrong) starting point, producing a straight-line path across the base back to
+    // whatever real spot is picked next. currentTargetSpot still correctly identifies the RoomSpot the
+    // bunny actually just walked to and is physically standing at (the trip itself wasn't touched, only
+    // its claim), so derive the arrival room from that rather than any now-cleared claimed*/assigned*
+    // field. currentTargetSpot is null for the (separate, HasEnteredBase-gated) gate-queue arrival —
+    // nothing to correct there.
+    private void OnArrivedIdleAfterCancelledTrip()
+    {
+        RoomBase arrivedRoom = currentTargetSpot != null ? currentTargetSpot.GetComponentInParent<RoomBase>() : null;
+        if (arrivedRoom == null) return;
+
+        currentRoom = arrivedRoom;
+        currentSpot = null; // the spot claim was already released by whichever caller cancelled this trip
+        currentWanderPoint = null;
+        currentFloorIndex = arrivedRoom.FloorIndex;
     }
 
     // ---------- WORKING (GARDEN) ----------
