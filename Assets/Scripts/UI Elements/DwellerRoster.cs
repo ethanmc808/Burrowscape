@@ -37,6 +37,21 @@ public class DwellerRoster : MonoBehaviour
         return allBunnies.Where(b => b.AssignedJobRoom == room).ToList();
     }
 
+    // Used by RoomTransitionService's Evacuate step to gather everyone tied to any of the rooms being
+    // replaced by a merge/upgrade — reuses the same per-bunny check RoomBase.CanBeDeleted relies on
+    // (via IsRoomOccupied, below), just collecting names instead of only checking "any at all."
+    public List<NPCBunny> GetBunniesAssociatedWithRooms(List<RoomBase> rooms)
+    {
+        return allBunnies.Where(b => rooms.Any(r => b.IsAssociatedWithRoom(r))).ToList();
+    }
+
+    // Used by RoomTransitionService's quiescence wait — true while anyone is still mid-flight into,
+    // through, or actively eating/drinking in any of the rooms about to be replaced.
+    public bool IsAnyBunnyTransientlyInRooms(List<RoomBase> rooms)
+    {
+        return allBunnies.Any(b => rooms.Any(r => b.IsTransientlyInRoom(r)));
+    }
+
     // Used by RoomBase.CanBeDeleted to block demolishing a room that's currently in use.
     public bool IsRoomOccupied(RoomBase room)
     {

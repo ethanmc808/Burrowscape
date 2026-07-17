@@ -138,7 +138,13 @@ public class BuildModeController : MonoBehaviour
 
         // Existing RoomBase.OnEnable -> BaseLayoutManager.RegisterRoom handles registration. For lift
         // segments, LiftRoom.Start()'s existing auto-grouping takes over from here automatically.
-        Instantiate(selectedDefinition.prefab, position, Quaternion.Euler(0f, 180f, 0f));
+        GameObject instance = Instantiate(selectedDefinition.prefab, position, Quaternion.Euler(0f, 180f, 0f));
+
+        // Auto-merge check — only on explicit player placement, never on RegisterRoom generically (which
+        // also fires for every hand-placed room at scene load, where auto-merge should never trigger).
+        RoomBase newRoom = instance.GetComponent<RoomBase>();
+        if (newRoom != null && RoomMergeResolver.TryResolveMerge(newRoom, out var roomsToMerge, out var mergeTarget))
+            RoomTransitionService.Instance?.MergeRooms(roomsToMerge, mergeTarget);
 
         // Deliberately stay in build mode with the same definition selected — a lift shaft is meant to
         // be extended by placing several segments in a row (see design doc), and there's no reason a

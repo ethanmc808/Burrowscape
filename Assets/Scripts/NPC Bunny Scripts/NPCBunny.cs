@@ -28,6 +28,15 @@ public enum BunnyGender
     Male,
     Female
 }
+// What a bunny was doing in a room being merged/upgraded, returned by EvacuateForRoomTransition so
+// RoomTransitionService knows how (or whether) to resettle it into the replacement room afterward.
+public enum RoomTransitionRole
+{
+    None,
+    Working,
+    Relaxing,
+    Sleeping
+}
 
 [RequireComponent(typeof(Animator))]
 public class NPCBunny : MonoBehaviour
@@ -376,6 +385,147 @@ public class NPCBunny : MonoBehaviour
         if (claimedRelaxRoom == room) return true;
         if (claimedSleepRoom == room) return true;
         return false;
+    }
+
+    // ---------- ROOM TRANSITION (MERGE/UPGRADE) ----------
+    // Supports RoomTransitionService's Evacuate -> Swap -> Resettle coroutine. See
+    // RoomMergeUpgrade_DesignDoc.md at the project root for the full design.
+
+    // Narrower than IsAssociatedWithRoom, above — that method covers everything from "settled and
+    // working here" to "still walking toward it," which is exactly what's needed to gather WHO to
+    // evacuate. This one instead answers "is this bunny mid-flight into/through the room right now, in
+    // a state with no clean claim to detach?" — used to make RoomTransitionService's quiescence wait
+    // defer until every associated bunny has settled into an actual claimed RoomSpot (or dropped back
+    // to plain Idle), so Evacuate never has to interrupt a walk or a lift trip in progress.
+    public bool IsTransientlyInRoom(RoomBase room)
+    {
+        bool midLiftTrip = (CurrentState == BunnyState.WaitingForLift
+            || CurrentState == BunnyState.RidingLift
+            || CurrentState == BunnyState.DisembarkingLift)
+            && pendingFinalRoom == room;
+
+        if (midLiftTrip) return true;
+
+        if (CurrentState == BunnyState.MovingToSpot)
+        {
+            if (pendingFinalRoom == room) return true;
+            if (pendingWanderRoom == room) return true;
+
+            RoomBase directTarget = currentTargetSpot != null ? currentTargetSpot.GetComponentInParent<RoomBase>() : null;
+            if (directTarget == room) return true;
+        }
+
+        if (CurrentState == BunnyState.Eating && cafeteriaBeingUsed == room) return true;
+        if (CurrentState == BunnyState.Drinking && waterRoomBeingUsed == room) return true;
+
+        // Idle-pacing-without-a-claim: standing in the room on a raw wander-point Transform, with no
+        // job/relax/sleep claim at all to cleanly release. Rare now that base-wide wandering is gone,
+        // but still possible for a beat between losing a job and claiming a relax spot.
+        if (CurrentState == BunnyState.Idle && currentRoom == room && currentSpot == null
+            && assignedJobRoom == null && claimedRelaxSpot == null && claimedSleepSpot == null)
+            return true;
+
+        return false;
+    }
+
+    // Called by RoomTransitionService once quiescence is confirmed, for every bunny where
+    // IsAssociatedWithRoom is true for one of the rooms being replaced. Releases whichever claim ties
+    // this bunny to one of those rooms (at most one of the three checks below can match, since a bunny
+    // can only hold one of a job/relax/sleep claim at a time) and reports which one, so the caller knows
+    // whether a resettle call is needed afterward. Deliberately does NOT touch currentRoom/currentSpot —
+    // see RelocateToRoomAfterTransition for that, which must run separately once the replacement room
+    // actually exists.
+    public RoomTransitionRole EvacuateForRoomTransition(List<RoomBase> rooms)
+    {
+        if (assignedJobRoom is RoomBase jobRoomBase && rooms.Contains(jobRoomBase))
+        {
+            UnassignFromJob();
+            return RoomTransitionRole.Working;
+        }
+
+        if (claimedRelaxRoom != null && rooms.Contains(claimedRelaxRoom))
+        {
+            claimedRelaxRoom.ReleaseSpot(claimedRelaxSpot, this);
+            claimedRelaxSpot = null;
+            claimedRelaxRoom = null;
+            if (CurrentState == BunnyState.Relaxing)
+                CurrentState = BunnyState.Idle;
+            return RoomTransitionRole.Relaxing;
+        }
+
+        if (claimedSleepRoom != null && rooms.Contains(claimedSleepRoom))
+        {
+            claimedSleepRoom.ReleaseSpot(claimedSleepSpot, this);
+            claimedSleepSpot = null;
+            claimedSleepRoom = null;
+            if (CurrentState == BunnyState.Sleeping)
+                CurrentState = BunnyState.Idle;
+            return RoomTransitionRole.Sleeping;
+        }
+
+        return RoomTransitionRole.None;
+    }
+
+    // Called by RoomTransitionService right after the replacement room is instantiated, for every
+    // evacuated bunny, BEFORE any resettle call. Only actually relocates if this bunny was PHYSICALLY
+    // standing in one of the old rooms (currentRoom is one of oldRooms) — a Working/Sleeping evacuee can
+    // be evicted while off eating/drinking at a completely different room (their claim pointed at the
+    // room being replaced, but currentRoom already correctly points at wherever they actually are, e.g.
+    // via OnArrivedAtEatingSpot), and that valid pointer must NOT be overwritten. For the case that DOES
+    // apply: the bunny's transform.position never moves during a merge/upgrade (the new room is built at
+    // the same world location the old one(s) occupied), but currentRoom/currentSpot would otherwise keep
+    // pointing at the just-destroyed old room — and the next path-building call
+    // (BaseLayoutManager.GetRouteToSpot) treats a null startRoom as "arriving from the base entrance,"
+    // which would route a resettling bunny across the entire base instead of the short hop it actually
+    // needs. currentSpot/currentWanderPoint are cleared rather than carried over since neither survives
+    // the swap (the old spot/wander-point Transforms are gone); routing falls back to the new room's own
+    // root Transform as a start point, same fallback GetRouteToSpot already uses elsewhere.
+    public void RelocateToRoomAfterTransition(RoomBase newRoom, List<RoomBase> oldRooms)
+    {
+        if (currentRoom == null || !oldRooms.Contains(currentRoom)) return;
+
+        currentRoom = newRoom;
+        currentSpot = null;
+        currentWanderPoint = null;
+        currentFloorIndex = newRoom.FloorIndex;
+    }
+
+    // Called by RoomTransitionService's Resettle step for a Working-role evacuee. Unlike AssignToJob
+    // (called directly by every other reassignment path in the game, e.g. AssignmentUI), this defers
+    // until the bunny reaches a state where a job hand-off can't corrupt something already in flight —
+    // specifically not mid-walk toward a spot and not mid-Eating/Drinking, both of which are driven by
+    // their own external coroutines (e.g. CafeteriaRoom.EatingRoutine) that have no idea CurrentState
+    // was just hijacked out from under them. This case is reachable here in a way it normally isn't:
+    // Evacuate can release a Working bunny's job claim while they're off eating/drinking at a completely
+    // different room (assignedJobRoom pointed at the room being replaced, but they were never physically
+    // there), so RequestNewJobSpot's existing IsHeadedToRelaxSpot/IsAsleepOrHeadedToSleepSpot guards
+    // don't cover it. Idle and Relaxing are both safe hand-off points — Relaxing already supports exactly
+    // this interruption via its own Update() case (NPCBunny.cs's BunnyState.Relaxing branch).
+    public void ResettleJobWhenSafe(IJobRoom newJobRoom)
+    {
+        StartCoroutine(ResettleJobWhenSafeRoutine(newJobRoom));
+    }
+
+    private IEnumerator ResettleJobWhenSafeRoutine(IJobRoom newJobRoom)
+    {
+        while (CurrentState != BunnyState.Idle && CurrentState != BunnyState.Relaxing)
+            yield return null;
+
+        AssignToJob(newJobRoom);
+    }
+
+    // Called by RoomTransitionService's Resettle step for a Sleeping-role evacuee. Only reclaims a
+    // bedroom spot if the bunny was genuinely settled asleep — EvacuateForRoomTransition already drops
+    // CurrentState straight to Idle for that case, with no yield in between, so it's still true here.
+    // If instead they were mid-Eating/Drinking elsewhere (woken by a critical need, sleep spot reserved
+    // but not physically occupied), does nothing: claimedSleepSpot was already cleared during Evacuate,
+    // so FinishEatingAndReturnToWork's/FinishDrinkingAndReturnToPrevious's own IsTired check already
+    // re-chains them to a fresh bedroom on its own once they finish — calling this immediately would
+    // race that same coroutine-driven trip.
+    public void RequestBedroomFromCurrentPosition()
+    {
+        if (CurrentState == BunnyState.Idle)
+            ChainToBedroomFromCurrentSpot();
     }
 
     public string DebugState()

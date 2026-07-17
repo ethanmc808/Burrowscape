@@ -48,6 +48,14 @@ public class RoomBase : MonoBehaviour
     [SerializeField] protected int grade = 1;
     public int Grade => grade;
 
+    // Identifies a room's TYPE (e.g. "Garden", "Kitchen", "Storage Room") independent of which
+    // MonoBehaviour subclass it uses — needed because purely decorative room types share the bare
+    // RoomBase class with no way to tell them apart via GetType(). Authored per-prefab, same pattern
+    // as footprintWidth/grade. Merge eligibility and the upgrade Swap-step catalog lookup both key off
+    // this rather than the concrete component type.
+    [SerializeField] protected string roomTypeId;
+    public string RoomTypeId => roomTypeId;
+
     // Floor-aware entrance/waypoint lookups. A normal room only has one set of these regardless of
     // floor (the floorIndex parameter is ignored), but LiftRoom overrides all three to return the
     // correct set for whichever floor is actually being routed through — a lift spans multiple floors

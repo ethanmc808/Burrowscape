@@ -6,7 +6,9 @@ using System.Linq;
 // is a genuinely different axis (vertical/floor-based) than every other room's (horizontal/same-floor).
 public static class RoomPlacementValidator
 {
-    private const float Epsilon = 0.01f;
+    // Internal (not private) — RoomMergeResolver reuses this exact edge-touching math to find merge
+    // neighbors rather than duplicating it.
+    internal const float Epsilon = 0.01f;
 
     public static bool IsValidPlacement(RoomDefinition definition, float centerX, int floorIndex, out string reason)
     {
@@ -100,7 +102,7 @@ public static class RoomPlacementValidator
             .Any(r => r is LiftRoom && Mathf.Abs(r.transform.position.x - centerX) < Epsilon);
     }
 
-    private static void GetInterval(RoomBase room, out float min, out float max)
+    internal static void GetInterval(RoomBase room, out float min, out float max)
     {
         float half = room.FootprintWidth / 2f;
         min = room.transform.position.x - half;

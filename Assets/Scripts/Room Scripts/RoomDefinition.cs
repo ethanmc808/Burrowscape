@@ -19,6 +19,12 @@ public class RoomDefinition : ScriptableObject
     [Tooltip("Width x Height x Depth in world units. Only the width (X) is currently consumed by grid/placement math — height and depth are stored for future reference.")]
     public Vector3Int footprint = new Vector3Int(4, 2, 6);
 
+    [Header("Type & Grade")]
+    [Tooltip("Must match the RoomTypeId authored on this prefab's RoomBase component. Every width/Grade variant of a room type shares the same RoomTypeId, which is how the merge/upgrade Swap step finds the right asset to swap to.")]
+    public string roomTypeId;
+    [Tooltip("Must match the Grade authored on this prefab's RoomBase component.")]
+    public int grade = 1;
+
     [Header("Cost")]
     public int goldCost;
 
