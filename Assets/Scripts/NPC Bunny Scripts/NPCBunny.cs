@@ -1676,18 +1676,6 @@ public class NPCBunny : MonoBehaviour
 
     // ---------- FACING (reused from BunnyMovement) ----------
 
-    private Vector3 GetVisualCenterWorld()
-    {
-        SpriteRenderer[] renderers = bunnyScaleRoot.GetComponentsInChildren<SpriteRenderer>();
-        if (renderers.Length == 0) return bunnyScaleRoot.position;
-
-        Bounds bounds = renderers[0].bounds;
-        foreach (SpriteRenderer r in renderers)
-            bounds.Encapsulate(r.bounds);
-
-        return bounds.center;
-    }
-
     private void SetFacing(bool shouldFaceRight)
     {
         if (bunnyScaleRoot == null) return;
@@ -1702,19 +1690,10 @@ public class NPCBunny : MonoBehaviour
         }
 
         facingRight = shouldFaceRight;
-
-        Vector3 worldCenterBefore = GetVisualCenterWorld();
-
         bool flip = bunnyFacesLeftByDefault ? shouldFaceRight : !shouldFaceRight;
+
         Vector3 scale = bunnyScaleRoot.localScale;
-        scale.x = flip ? -Mathf.Abs(scale.x) : Mathf.Abs(scale.x);
-        bunnyScaleRoot.localScale = scale;
-
-        Vector3 worldCenterAfter = GetVisualCenterWorld();
-        Vector3 correction = worldCenterBefore - worldCenterAfter;
-        correction.y = 0f;
-        correction.z = 0f;
-
-        bunnyScaleRoot.position += correction;
+        float magnitude = Mathf.Abs(scale.x);
+        bunnyScaleRoot.localScale = new Vector3(flip ? -magnitude : magnitude, scale.y, scale.z);
     }
 }
