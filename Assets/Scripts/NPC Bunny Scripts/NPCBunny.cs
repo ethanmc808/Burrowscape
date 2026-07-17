@@ -1379,6 +1379,33 @@ public class NPCBunny : MonoBehaviour
             cafeteriaBeingUsed = null;
         }
 
+        // If thirst has ALSO crossed its threshold, chain straight to the Water Room from here instead
+        // of walking all the way back to work/relaxing just to immediately leave again — saves a
+        // pointless round trip, especially on a large base. Sleep-origin trips only chain on the
+        // CRITICAL threshold (matching Sleeping's own critical-only interrupt rule — normal thirst is
+        // ignored while asleep); Working/Relaxing-origin trips chain on the normal LOW threshold, since
+        // that's what would trigger the interrupt in the first place. claimedSleepSpot/claimedWorkSpot/
+        // claimedRelaxSpot all stay reserved through the whole chain, so the eventual
+        // ReturnToPreviousActivity() at the end still routes back to the SAME spot regardless of how
+        // many stops were chained first.
+        bool shouldChainToWater = claimedSleepSpot != null ? IsCriticallyThirsty : IsThirsty;
+        if (shouldChainToWater)
+        {
+            ChainToWaterRoomFromCurrentSpot();
+            return;
+        }
+
+        // Hunger and thirst are both settled — if tiredness is ALSO a problem, chain straight to the
+        // Bedroom instead of walking back to work/relaxing first. Only when NOT already mid-sleep
+        // (claimedSleepSpot == null): a bunny woken from sleep for a critical need always resumes the
+        // SAME sleep spot via ReturnToPreviousActivity's own priority below, never a fresh Bedroom trip
+        // from here — tiredness is checked last and only matters for a Working/Relaxing-origin chain.
+        if (claimedSleepSpot == null && IsTired)
+        {
+            ChainToBedroomFromCurrentSpot();
+            return;
+        }
+
         ReturnToPreviousActivity();
     }
 
@@ -1391,7 +1418,143 @@ public class NPCBunny : MonoBehaviour
             waterRoomBeingUsed = null;
         }
 
+        // Reverse of FinishEatingAndReturnToWork's chain, above — same critical-vs-low threshold split
+        // by origin.
+        bool shouldChainToCafeteria = claimedSleepSpot != null ? IsCriticallyHungry : IsHungry;
+        if (shouldChainToCafeteria)
+        {
+            ChainToCafeteriaFromCurrentSpot();
+            return;
+        }
+
+        // Same tiredness fallback as FinishEatingAndReturnToWork, above — reached here when Thirst was
+        // the originally-triggering need instead of Hunger.
+        if (claimedSleepSpot == null && IsTired)
+        {
+            ChainToBedroomFromCurrentSpot();
+            return;
+        }
+
         ReturnToPreviousActivity();
+    }
+
+    // Structural copy of the LeaveXForWaterRoom methods, but routes from the bunny's CURRENT position
+    // (it just finished eating at the Cafeteria) rather than from whatever spot it left behind — used to
+    // chain directly from Eating to Drinking without detouring back to work/relaxing/bed first, whatever
+    // the origin was. See FinishEatingAndReturnToWork.
+    private void ChainToWaterRoomFromCurrentSpot()
+    {
+        WaterRoom waterRoom = BaseManager.Instance.FindNearestWaterRoomWithDrinkingSpot(transform.position);
+        if (waterRoom == null)
+        {
+            WarnNoDrinkSpot();
+            ReturnToPreviousActivity(); // no Water Room available — fall back to sleep; the next critical check retries once actually asleep again
+            return;
+        }
+
+        RoomSpot drinkSpot = waterRoom.RequestDrinkingSpot(this);
+        if (drinkSpot == null)
+        {
+            WarnNoDrinkSpot();
+            ReturnToPreviousActivity();
+            return;
+        }
+
+        waterRoomBeingUsed = waterRoom;
+
+        if (currentRoom != null && currentFloorIndex != waterRoom.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(waterRoom, drinkSpot, BunnyState.Drinking))
+            {
+                waterRoom.ReleaseDrinkingSpot(drinkSpot, this);
+                waterRoomBeingUsed = null;
+                ReturnToPreviousActivity();
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, waterRoom, drinkSpot, currentFloorIndex);
+        MoveAlongPath(path, drinkSpot, BunnyState.Drinking);
+    }
+
+    // Structural copy of the LeaveXForCafeteria methods, but routes from the bunny's CURRENT position
+    // (it just finished drinking at the Water Room) rather than from whatever spot it left behind —
+    // reverse of ChainToWaterRoomFromCurrentSpot, see FinishDrinkingAndReturnToPrevious.
+    private void ChainToCafeteriaFromCurrentSpot()
+    {
+        CafeteriaRoom cafeteria = BaseManager.Instance.FindNearestCafeteriaWithSpot(transform.position);
+        if (cafeteria == null)
+        {
+            WarnNoEatSpot();
+            ReturnToPreviousActivity();
+            return;
+        }
+
+        RoomSpot eatSpot = cafeteria.RequestSpot(this);
+        if (eatSpot == null)
+        {
+            WarnNoEatSpot();
+            ReturnToPreviousActivity();
+            return;
+        }
+
+        cafeteriaBeingUsed = cafeteria;
+
+        if (currentRoom != null && currentFloorIndex != cafeteria.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(cafeteria, eatSpot, BunnyState.Eating))
+            {
+                cafeteria.ReleaseSpot(eatSpot, this);
+                cafeteriaBeingUsed = null;
+                ReturnToPreviousActivity();
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, cafeteria, eatSpot, currentFloorIndex);
+        MoveAlongPath(path, eatSpot, BunnyState.Eating);
+    }
+
+    // Structural copy of the LeaveXForBedroom methods, but routes from the bunny's CURRENT position (it
+    // just finished eating/drinking) rather than from whatever spot it left behind — chains straight to
+    // the Bedroom as the last link in the hunger/thirst/tired chain. Only ever called when
+    // claimedSleepSpot == null (see FinishEatingAndReturnToWork/FinishDrinkingAndReturnToPrevious), so
+    // this always represents a genuinely NEW sleep claim, never a currently-sleeping bunny.
+    private void ChainToBedroomFromCurrentSpot()
+    {
+        BedroomRoom bedroom = BaseManager.Instance.FindNearestBedroomWithSpot(transform.position);
+        if (bedroom == null)
+        {
+            WarnNoSleepSpot();
+            ReturnToPreviousActivity();
+            return;
+        }
+
+        RoomSpot sleepSpot = bedroom.RequestSpot(this);
+        if (sleepSpot == null)
+        {
+            WarnNoSleepSpot();
+            ReturnToPreviousActivity();
+            return;
+        }
+
+        claimedSleepSpot = sleepSpot;
+        claimedSleepRoom = bedroom;
+
+        if (currentRoom != null && currentFloorIndex != bedroom.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(bedroom, sleepSpot, BunnyState.Sleeping))
+            {
+                bedroom.ReleaseSpot(sleepSpot, this);
+                claimedSleepSpot = null;
+                claimedSleepRoom = null;
+                ReturnToPreviousActivity();
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, bedroom, sleepSpot, currentFloorIndex);
+        MoveAlongPath(path, sleepSpot, BunnyState.Sleeping);
     }
 
     // Called from Update()'s Sleeping case once energy reaches 100. Releases the sleep claim FIRST —

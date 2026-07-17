@@ -211,14 +211,14 @@ MonoBehaviour:
   thirstThresholdLow: 35
   thirstThresholdFull: 90
   thirstThresholdCritical: 15
-  thirstGainPerDrink: 25
+  thirstGainPerDrink: 5
   energy: 100
   energyDecayPerSecond: 0.05
   energyDecayPerSecondWorking: 0.2
   energyDecayPerSecondQuesting: 0.2
   energyDecayPerSecondForaging: 0.2
   energyThresholdLow: 35
-  energyGainPerSecondSleeping: 2
+  energyGainPerSecondSleeping: 5
   mood: 100
   moodDecayPerSecondWorking: 0.05
   moodGainPerSecondRelaxing: 0.2
