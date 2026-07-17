@@ -88,6 +88,7 @@ GameObject:
   - component: {fileID: 656667274383277941}
   - component: {fileID: 6556248090089998753}
   - component: {fileID: 5995781407820028525}
+  - component: {fileID: 7272064039639948736}
   m_Layer: 0
   m_Name: EntranceRoom_4x2x6_Grade1
   m_TagString: Untagged
@@ -133,8 +134,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EntranceRoom
   leftEntrance: {fileID: 9213148216188798901}
   rightEntrance: {fileID: 4489546531400349566}
-  middleLeft: {fileID: 0}
-  middleRight: {fileID: 0}
+  middleLeft: {fileID: 752035971000661442}
+  middleRight: {fileID: 7671422005047717199}
   passThroughWaypoints: []
   paths:
   - entrance: {fileID: 9213148216188798901}
@@ -165,6 +166,9 @@ MonoBehaviour:
     waypoints:
     - {fileID: 7045471705470254009}
     - {fileID: 2354981106535409420}
+  footprintWidth: 4
+  grade: 1
+  roomTypeId: EntranceRoom
   guardSpots:
   - {fileID: 4979276418371817488}
   - {fileID: 6958286060065839923}
@@ -201,6 +205,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
+--- !u!114 &7272064039639948736
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3104813913501034110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
 --- !u!1 &3301114632728859887
 GameObject:
   m_ObjectHideFlags: 0
@@ -405,7 +421,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7748780986088135040}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0.412, z: 1.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -585,6 +601,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d0d69547b4f4abb46845874fedef77a1, type: 3}
+--- !u!4 &752035971000661442 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1423003967682540139, guid: d0d69547b4f4abb46845874fedef77a1, type: 3}
+  m_PrefabInstance: {fileID: 1860059396852090793}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4489546531400349566 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2854808145472745687, guid: d0d69547b4f4abb46845874fedef77a1, type: 3}
@@ -593,6 +614,11 @@ Transform:
 --- !u!4 &6542111121583416191 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4835314923114570966, guid: d0d69547b4f4abb46845874fedef77a1, type: 3}
+  m_PrefabInstance: {fileID: 1860059396852090793}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7671422005047717199 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8333382802469087974, guid: d0d69547b4f4abb46845874fedef77a1, type: 3}
   m_PrefabInstance: {fileID: 1860059396852090793}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &9213148216188798901 stripped

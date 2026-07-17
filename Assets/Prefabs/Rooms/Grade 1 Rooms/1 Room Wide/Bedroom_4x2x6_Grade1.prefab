@@ -251,6 +251,8 @@ GameObject:
   m_Component:
   - component: {fileID: 415546469983656584}
   - component: {fileID: 3349577251108988804}
+  - component: {fileID: 7690743166328097291}
+  - component: {fileID: -8464898415878664651}
   m_Layer: 0
   m_Name: Bedroom_4x2x6_Grade1
   m_TagString: Untagged
@@ -333,11 +335,45 @@ MonoBehaviour:
     - {fileID: 6149477345612189714}
   footprintWidth: 4
   grade: 1
+  roomTypeId: Bedroom
   sleepingSpots:
   - {fileID: 5563456925174585746}
   - {fileID: 454055652844193241}
   - {fileID: 169297696909091818}
   - {fileID: 1442134276718478345}
+--- !u!65 &7690743166328097291
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7817451797394071272}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 1
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 4, y: 2, z: 6}
+  m_Center: {x: 0, y: 0, z: 4}
+--- !u!114 &-8464898415878664651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7817451797394071272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
 --- !u!1 &8118935278310753915
 GameObject:
   m_ObjectHideFlags: 0

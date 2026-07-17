@@ -137,7 +137,7 @@ public class NPCBunny : MonoBehaviour
     private RoomSpot claimedRelaxSpot; // Living Room spot reserved/occupied while idle; mirrors claimedWorkSpot
     private LivingRoom claimedRelaxRoom; // which room claimedRelaxSpot belongs to
     private RoomSpot claimedSleepSpot; // Bedroom spot reserved/occupied while sleeping; mirrors claimedRelaxSpot
-    private BedroomRoom claimedSleepRoom; // which room claimedSleepSpot belongs to
+    private Bedroom claimedSleepRoom; // which room claimedSleepSpot belongs to
     private RoomBase currentRoom;
     private RoomSpot currentSpot; // the spot bunny is currently occupying, null if none/mid-transit
     private Transform currentWanderPoint; // last wander destination reached, null if occupying a RoomSpot instead
@@ -1382,7 +1382,7 @@ public class NPCBunny : MonoBehaviour
         RoomBase departingRoom = (RoomBase)assignedJobRoom;
         RoomSpot departingSpot = claimedWorkSpot;
 
-        BedroomRoom bedroom = BaseManager.Instance.FindNearestBedroomWithSpot(transform.position);
+        Bedroom bedroom = BaseManager.Instance.FindNearestBedroomWithSpot(transform.position);
         if (bedroom == null)
         {
             WarnNoSleepSpot();
@@ -1421,7 +1421,7 @@ public class NPCBunny : MonoBehaviour
         RoomBase departingRoom = claimedRelaxRoom;
         RoomSpot departingSpot = claimedRelaxSpot;
 
-        BedroomRoom bedroom = BaseManager.Instance.FindNearestBedroomWithSpot(transform.position);
+        Bedroom bedroom = BaseManager.Instance.FindNearestBedroomWithSpot(transform.position);
         if (bedroom == null)
         {
             WarnNoSleepSpot();
@@ -1702,7 +1702,7 @@ public class NPCBunny : MonoBehaviour
     // this always represents a genuinely NEW sleep claim, never a currently-sleeping bunny.
     private void ChainToBedroomFromCurrentSpot()
     {
-        BedroomRoom bedroom = BaseManager.Instance.FindNearestBedroomWithSpot(transform.position);
+        Bedroom bedroom = BaseManager.Instance.FindNearestBedroomWithSpot(transform.position);
         if (bedroom == null)
         {
             WarnNoSleepSpot();
@@ -1764,7 +1764,7 @@ public class NPCBunny : MonoBehaviour
     {
         if (claimedSleepSpot != null)
         {
-            BedroomRoom sleepRoomBase = claimedSleepRoom;
+            Bedroom sleepRoomBase = claimedSleepRoom;
 
             if (currentRoom != null && currentFloorIndex != sleepRoomBase.FloorIndex)
             {

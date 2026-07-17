@@ -280,6 +280,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2896676963235504331}
   - component: {fileID: -1003542549026725901}
+  - component: {fileID: 5962576015227861623}
+  - component: {fileID: -5744938095974907900}
   m_Layer: 0
   m_Name: LivingRoom_4x2x6_Grade1
   m_TagString: Untagged
@@ -366,6 +368,7 @@ MonoBehaviour:
     waypoints: []
   footprintWidth: 4
   grade: 1
+  roomTypeId: LivingRoom
   relaxingSpots:
   - {fileID: 4900263022155415585}
   - {fileID: 7952691015681800052}
@@ -373,6 +376,39 @@ MonoBehaviour:
   - {fileID: 2381545736012901059}
   - {fileID: 3270073912794860043}
   - {fileID: 2910053837223811349}
+--- !u!65 &5962576015227861623
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6621298121848127321}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 4, y: 2, z: 6}
+  m_Center: {x: 0, y: 0, z: 4}
+--- !u!114 &-5744938095974907900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6621298121848127321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
 --- !u!1 &8077443085342860352
 GameObject:
   m_ObjectHideFlags: 0

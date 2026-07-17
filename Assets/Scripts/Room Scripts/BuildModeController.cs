@@ -86,8 +86,13 @@ public class BuildModeController : MonoBehaviour
 
         UpdateGhostFromMouse();
 
-        if (Input.GetMouseButtonDown(0) && !IsPointerOverUI())
-            TryConfirmPlacement();
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (IsPointerOverUI())
+                Debug.Log($"[BuildDebug] Click blocked by UI at floor {pendingFloorIndex}, x={pendingCenterX}.");
+            else
+                TryConfirmPlacement();
+        }
     }
 
     private bool IsPointerOverUI()
@@ -124,17 +129,25 @@ public class BuildModeController : MonoBehaviour
 
     private void TryConfirmPlacement()
     {
-        if (!pendingIsValid) return;
+        if (!pendingIsValid)
+        {
+            RoomPlacementValidator.IsValidPlacement(selectedDefinition, pendingCenterX, pendingFloorIndex, out string reason);
+            Debug.Log($"[BuildDebug] Placement rejected at floor {pendingFloorIndex}, x={pendingCenterX}: {reason}");
+            return;
+        }
 
         if (GoldManager.Instance == null || !GoldManager.Instance.TrySpendGold(selectedDefinition.goldCost))
         {
             NotificationToast.Instance?.Show("Not enough gold.");
+            Debug.Log($"[BuildDebug] Placement blocked by insufficient gold at floor {pendingFloorIndex}, x={pendingCenterX}.");
             return;
         }
 
         BaseLayoutManager layout = BaseLayoutManager.Instance;
         float y = layout.GetWorldYForFloor(pendingFloorIndex);
         Vector3 position = new Vector3(pendingCenterX, y, layout.EntranceWorldZ);
+
+        Debug.Log($"[BuildDebug] Placing {selectedDefinition.displayName} at floor {pendingFloorIndex}, x={pendingCenterX}, worldPos={position}.");
 
         // Existing RoomBase.OnEnable -> BaseLayoutManager.RegisterRoom handles registration. For lift
         // segments, LiftRoom.Start()'s existing auto-grouping takes over from here automatically.
@@ -144,7 +157,10 @@ public class BuildModeController : MonoBehaviour
         // also fires for every hand-placed room at scene load, where auto-merge should never trigger).
         RoomBase newRoom = instance.GetComponent<RoomBase>();
         if (newRoom != null && RoomMergeResolver.TryResolveMerge(newRoom, out var roomsToMerge, out var mergeTarget))
+        {
+            Debug.Log($"[BuildDebug] Auto-merge triggered: {roomsToMerge.Count} rooms -> {mergeTarget.name}.");
             RoomTransitionService.Instance?.MergeRooms(roomsToMerge, mergeTarget);
+        }
 
         // Deliberately stay in build mode with the same definition selected — a lift shaft is meant to
         // be extended by placing several segments in a row (see design doc), and there's no reason a

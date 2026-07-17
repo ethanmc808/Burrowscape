@@ -5,7 +5,7 @@ using TMPro;
 // Click-to-open panel showing a room's current Grade and, if a higher-Grade variant of this room type
 // has been authored, an "Upgrade to Grade N" button with its Gold cost. Deliberately independent of
 // AssignmentUI/RoomClickHandler (which only exist for IJobRoom rooms) — upgrading applies to every room
-// type, including purely decorative ones like LivingRoom/BedroomRoom that have no job-assignment flow
+// type, including purely decorative ones like LivingRoom/Bedroom that have no job-assignment flow
 // at all. Opened by RoomUpgradeClickHandler.
 public class RoomUpgradeUI : MonoBehaviour
 {

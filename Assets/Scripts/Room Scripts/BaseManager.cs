@@ -9,7 +9,7 @@ public class BaseManager : MonoBehaviour
     private List<CafeteriaRoom> cafeterias = new List<CafeteriaRoom>();
     private List<LivingRoom> livingRooms = new List<LivingRoom>();
     private List<WaterRoom> waterRooms = new List<WaterRoom>();
-    private List<BedroomRoom> bedrooms = new List<BedroomRoom>();
+    private List<Bedroom> bedrooms = new List<Bedroom>();
 
     private void Awake()
     {
@@ -125,24 +125,24 @@ public class BaseManager : MonoBehaviour
         return nearest;
     }
 
-    public void RegisterBedroom(BedroomRoom room)
+    public void RegisterBedroom(Bedroom room)
     {
         if (!bedrooms.Contains(room))
             bedrooms.Add(room);
     }
 
-    public void UnregisterBedroom(BedroomRoom room)
+    public void UnregisterBedroom(Bedroom room)
     {
         bedrooms.Remove(room);
     }
 
     // Nearest Bedroom with an open sleeping spot — same shape as FindNearestLivingRoomWithSpot.
-    public BedroomRoom FindNearestBedroomWithSpot(Vector3 fromPosition)
+    public Bedroom FindNearestBedroomWithSpot(Vector3 fromPosition)
     {
-        BedroomRoom nearest = null;
+        Bedroom nearest = null;
         float nearestDist = float.MaxValue;
 
-        foreach (BedroomRoom room in bedrooms)
+        foreach (Bedroom room in bedrooms)
         {
             if (room == null) continue; // safety check for destroyed rooms
             if (!room.HasAvailableSpot()) continue;

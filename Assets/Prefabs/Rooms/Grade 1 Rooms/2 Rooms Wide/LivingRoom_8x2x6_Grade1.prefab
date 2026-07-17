@@ -235,6 +235,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2896676963235504331}
   - component: {fileID: 7244856312514240383}
+  - component: {fileID: 2098054389991157299}
+  - component: {fileID: -8262201189183879710}
   m_Layer: 0
   m_Name: LivingRoom_8x2x6_Grade1
   m_TagString: Untagged
@@ -277,15 +279,91 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f864a118f6874b46bcb22d85837921a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LivingRoom
-  leftEntrance: {fileID: 0}
-  rightEntrance: {fileID: 0}
-  middleLeft: {fileID: 0}
-  middleRight: {fileID: 0}
+  leftEntrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  rightEntrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  middleLeft: {fileID: 1847831922530222264, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  middleRight: {fileID: 8772247122763192373, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
   passThroughWaypoints: []
-  paths: []
-  footprintWidth: 4
+  paths:
+  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 4900263022155415585, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 7952691015681800052, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 1075532895725137891, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 2381545736012901059, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 3270073912794860043, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 2910053837223811349, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 4900263022155415585, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 7952691015681800052, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 1075532895725137891, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 2381545736012901059, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 3270073912794860043, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    targetSpot: {fileID: 2910053837223811349, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+    waypoints: []
+  footprintWidth: 8
   grade: 1
-  relaxingSpots: []
+  roomTypeId: LivingRoom
+  relaxingSpots:
+  - {fileID: 4900263022155415585, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - {fileID: 7952691015681800052, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - {fileID: 1075532895725137891, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - {fileID: 2381545736012901059, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - {fileID: 3270073912794860043, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - {fileID: 2910053837223811349, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+--- !u!65 &2098054389991157299
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6621298121848127321}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8, y: 2, z: 6}
+  m_Center: {x: 0, y: 0, z: 4}
+--- !u!114 &-8262201189183879710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6621298121848127321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
 --- !u!1 &8077443085342860352
 GameObject:
   m_ObjectHideFlags: 0

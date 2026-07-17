@@ -169,6 +169,7 @@ GameObject:
   - component: {fileID: 5459355222701611808}
   - component: {fileID: 4991280497254301588}
   - component: {fileID: 7037124140991272582}
+  - component: {fileID: 8305722264171185516}
   m_Layer: 0
   m_Name: Garden_4x2x6_Grade1
   m_TagString: Untagged
@@ -231,6 +232,7 @@ MonoBehaviour:
     waypoints: []
   footprintWidth: 4
   grade: 1
+  roomTypeId: Garden
   farmingSpots:
   - {fileID: 87078019840192008}
   - {fileID: 4191936910316496395}
@@ -252,7 +254,7 @@ BoxCollider:
     m_Bits: 0
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
-  m_ProvidesContacts: 1
+  m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 4, y: 2, z: 6}
@@ -269,6 +271,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
+--- !u!114 &8305722264171185516
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4599289299516092969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
 --- !u!1 &6338536673585140341
 GameObject:
   m_ObjectHideFlags: 0

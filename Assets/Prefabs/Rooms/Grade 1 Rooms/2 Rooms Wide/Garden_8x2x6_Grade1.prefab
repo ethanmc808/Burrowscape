@@ -169,6 +169,7 @@ GameObject:
   - component: {fileID: 5459355222701611808}
   - component: {fileID: 4991280497254301588}
   - component: {fileID: 7037124140991272582}
+  - component: {fileID: 8400835335517221706}
   m_Layer: 0
   m_Name: Garden_8x2x6_Grade1
   m_TagString: Untagged
@@ -209,29 +210,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e84680ea1999ff94babfb14c764942d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GardenRoom
-  leftEntrance: {fileID: 0}
-  rightEntrance: {fileID: 0}
-  middleLeft: {fileID: 0}
-  middleRight: {fileID: 0}
+  leftEntrance: {fileID: 3474706250198758161, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
+  rightEntrance: {fileID: 8191235567018329050, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
+  middleLeft: {fileID: 5011603870109352294, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
+  middleRight: {fileID: 2708161163516172779, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
   passThroughWaypoints: []
   paths:
-  - entrance: {fileID: 0}
-    targetSpot: {fileID: 87078019840192008}
+  - entrance: {fileID: 3474706250198758161, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
+    targetSpot: {fileID: 87078019840192008, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
     waypoints: []
-  - entrance: {fileID: 0}
-    targetSpot: {fileID: 4191936910316496395}
+  - entrance: {fileID: 3474706250198758161, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
+    targetSpot: {fileID: 4191936910316496395, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
     waypoints:
-    - {fileID: 7020160883281837471}
-  - entrance: {fileID: 0}
-    targetSpot: {fileID: 87078019840192008}
+    - {fileID: 7020160883281837471, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
+  - entrance: {fileID: 8191235567018329050, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
+    targetSpot: {fileID: 87078019840192008, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
     waypoints:
-    - {fileID: 4924082843956903607}
-  - entrance: {fileID: 0}
-    targetSpot: {fileID: 4191936910316496395}
+    - {fileID: 4924082843956903607, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
+  - entrance: {fileID: 8191235567018329050, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
+    targetSpot: {fileID: 4191936910316496395, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
     waypoints: []
+  footprintWidth: 8
+  grade: 1
+  roomTypeId: Garden
   farmingSpots:
-  - {fileID: 87078019840192008}
-  - {fileID: 4191936910316496395}
+  - {fileID: 87078019840192008, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
+  - {fileID: 4191936910316496395, guid: a3f9d7300425dc44e85dcf4987e4bbac, type: 3}
   productionInterval: 10
   carrotsPerProduction: 1
 --- !u!65 &4991280497254301588
@@ -253,7 +257,7 @@ BoxCollider:
   m_ProvidesContacts: 1
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 4, y: 2, z: 6}
+  m_Size: {x: 8, y: 2, z: 6}
   m_Center: {x: 0, y: 0, z: 4}
 --- !u!114 &7037124140991272582
 MonoBehaviour:
@@ -267,6 +271,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
+--- !u!114 &8400835335517221706
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4599289299516092969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
 --- !u!1 &6338536673585140341
 GameObject:
   m_ObjectHideFlags: 0
