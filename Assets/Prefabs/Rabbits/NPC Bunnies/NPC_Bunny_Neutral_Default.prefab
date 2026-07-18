@@ -200,19 +200,19 @@ MonoBehaviour:
   moveSpeed: 2
   wanderSpeedMultiplier: 0.5
   arrivalThreshold: 0.05
-  hunger: 50
+  hunger: 100
   hungerDecayPerSecond: 0.2
   hungerThresholdLow: 35
   hungerThresholdFull: 90
   hungerThresholdCritical: 15
   hungerGainPerCarrot: 25
-  thirst: 50
+  thirst: 100
   thirstDecayPerSecond: 0.4
   thirstThresholdLow: 35
   thirstThresholdFull: 90
   thirstThresholdCritical: 15
   thirstGainPerDrink: 5
-  energy: 60
+  energy: 100
   energyDecayPerSecond: 0.05
   energyDecayPerSecondWorking: 0.2
   energyDecayPerSecondQuesting: 0.2

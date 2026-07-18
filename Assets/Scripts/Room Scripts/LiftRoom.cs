@@ -61,20 +61,42 @@ public class LiftRoom : RoomBase
     [Tooltip("Where bunnies actually step onto the car, near the shaft opening. Leave unset to fall back to Landing Spot.")]
     [SerializeField] private Transform boardingSpot;
 
+    // Each panel's own Transform is a fixed anchor pinned to its outer edge (against the side wall) —
+    // its visible mesh is a CHILD offset inward, so animating the anchor's own localScale.x shrinks the
+    // panel toward the wall it's pinned to rather than translating it. That's deliberate: a Lift segment
+    // is only 1 unit wide, so a door that visually SLIDES sideways to open would have nowhere to go
+    // without poking into whatever's built next to the lift; a squish never moves past its own
+    // full-closed footprint, so there's nothing to clip regardless of how little clearance there is.
     [Header("This Floor's Doors (optional, purely visual)")]
-    [SerializeField] private Transform doorTransform;
-    [SerializeField] private Vector3 doorClosedLocalPosition;
-    [SerializeField] private Vector3 doorOpenLocalPosition;
-    [SerializeField] private float doorAnimDuration = 0.5f;
+    [SerializeField] private Transform leftDoorPanel;
+    [SerializeField] private Transform rightDoorPanel;
+    [Tooltip("Doors only open once a bunny is already standing at the landing spot, so this can be snappy.")]
+    [SerializeField] private float doorOpenDuration = 0.2f;
+    [Tooltip("Slower than opening on purpose, to give a boarding/disembarking bunny time to fully clear the doorway before it visually closes.")]
+    [SerializeField] private float doorCloseDuration = 0.6f;
+
+    private Vector3 leftDoorClosedScale;
+    private Vector3 rightDoorClosedScale;
 
     [Header("Lift-Wide Settings (only used by whichever segment becomes the coordinator)")]
     [SerializeField] private float travelTimePerFloor = 1f; // seconds to move between two adjacent floors
-    [SerializeField] private float boardingGracePeriod = 3f; // seconds to wait for stragglers once doors open at pickup
-    [SerializeField] private float dropoffDwellTime = .5f; // seconds doors stay open at a drop-off before moving on
+    [Tooltip("Seconds to wait for stragglers once the doors are actually fully open (not from the moment the lift arrives) — ends early if nobody's left to wait for. See TickBoarding's BoardingPhase.")]
+    [SerializeField] private float boardingGracePeriod = 3f;
+    [Tooltip("Extra pause stacked on top of Boarding Grace Period once it elapses — purely so the doors visibly stay open a beat longer before closing, independent of the straggler wait above.")]
+    [SerializeField] private float doorHoldOpenDuration = 1f;
+    [SerializeField] private float dropoffDwellTime = .5f; // seconds doors stay open at a drop-off before moving on, once actually open
 
     public int DetectedFloorIndex { get; private set; }
     public LiftState CurrentState { get; private set; } = LiftState.Idle;
     public int CurrentFloor { get; private set; }
+
+    // Per-segment — true once THIS segment's own doors have fully finished an open animation, false once
+    // a close animation starts/finishes. Defaults to true if this segment has no door panels wired up at
+    // all, so a lift without door visuals authored behaves as it always did (nothing to wait for).
+    // Queried by the coordinator (which may be a different segment — see FindSegment) so its own
+    // boarding/dropoff timers don't start counting down until the doors at the ACTUAL floor being
+    // serviced are visibly open, not just the moment the lift's abstract travel finishes.
+    public bool DoorsFullyOpen { get; private set; }
 
     // Always exactly 1 unit wide, regardless of any Inspector-set footprintWidth — a Lift segment never
     // has a merged/upgraded variant (it extends vertically, not horizontally), so there's no reason to
@@ -84,7 +106,22 @@ public class LiftRoom : RoomBase
     private LiftRoom coordinator; // the segment actually running the shared state machine (may be `this`)
     private List<LiftRoom> shaftSegments; // only populated on the coordinator: every segment in this shaft
 
+    // Two sub-phases of "boarding window open at a pickup floor": wait for stragglers (but end EARLY the
+    // moment nobody's left to wait for — see TickBoarding), then a final fixed cosmetic pause that always
+    // runs its full duration regardless. Deliberately NOT gated on the doors having visibly finished
+    // opening first — that was tried and caused a real stall: if the bunny who called the lift never
+    // physically reaches the landing spot (for any reason, e.g. an unrelated pathing hiccup or a
+    // reassignment mid-walk), the doors never open, so a wait gated on "doors are open" never ends —
+    // freezing the WHOLE coordinator forever, not just that one bunny, since nothing else can use this
+    // shaft while its single state machine is stuck. Both phases below are bounded no matter what.
+    private enum BoardingPhase { WaitingForStragglers, HoldingOpen }
+
     private float stateTimer;
+    private BoardingPhase boardingPhase;
+    // Unlike boardingPhase, this one is safe to gate on DoorsFullyOpen with no timeout — OnArrivedAtDropoffFloor
+    // always opens the door unconditionally (nothing bunny-dependent to wait on), so it's bounded by the
+    // door's own fixed animation duration and can never stall the way the boarding wait could.
+    private bool dropoffCountdownStarted;
     private Coroutine doorRoutine;
 
     private readonly List<LiftCall> activeCalls = new List<LiftCall>(); // called, not yet boarded
@@ -104,6 +141,15 @@ public class LiftRoom : RoomBase
     {
         base.Awake();
         allSegments.Add(this);
+
+        // Cache each panel's authored (closed) scale once — "open" is just this same scale with X
+        // zeroed, so there's no separate open/closed value to hand-author or keep in sync.
+        if (leftDoorPanel != null) leftDoorClosedScale = leftDoorPanel.localScale;
+        if (rightDoorPanel != null) rightDoorClosedScale = rightDoorPanel.localScale;
+
+        // No door panels wired up means nothing to visibly wait for — treat as already "open" so the
+        // coordinator's boarding/dropoff timers never stall waiting for an animation that will never run.
+        DoorsFullyOpen = leftDoorPanel == null || rightDoorPanel == null;
     }
 
     // FootprintWidth (below) already hardcodes the value every placement/grid check actually reads, so
@@ -261,31 +307,44 @@ public class LiftRoom : RoomBase
     private void OpenDoorsOnFloor(int floorIndex) => FindSegment(floorIndex)?.OpenDoors();
     private void CloseDoorsOnFloor(int floorIndex) => FindSegment(floorIndex)?.CloseDoors();
 
-    public void OpenDoors() => AnimateDoors(doorOpenLocalPosition);
-    public void CloseDoors() => AnimateDoors(doorClosedLocalPosition);
+    public void OpenDoors() => AnimateDoors(opening: true);
+    public void CloseDoors() => AnimateDoors(opening: false);
 
-    private void AnimateDoors(Vector3 targetLocalPosition)
+    private void AnimateDoors(bool opening)
     {
-        if (doorTransform == null) return;
+        if (leftDoorPanel == null || rightDoorPanel == null) return;
 
+        DoorsFullyOpen = false; // true only once the target animation actually finishes, below — covers both directions
         if (doorRoutine != null)
             StopCoroutine(doorRoutine);
-        doorRoutine = StartCoroutine(AnimateDoorRoutine(targetLocalPosition));
+        doorRoutine = StartCoroutine(AnimateDoorRoutine(opening));
     }
 
-    private IEnumerator AnimateDoorRoutine(Vector3 targetLocalPosition)
+    // Squishes both panels' anchor scale toward zero-width (open) or back to their authored full width
+    // (closed) together, in lockstep — only the X component changes; Y/Z stay at their closed values the
+    // whole time, so the panel never gets shorter/thinner, only narrower as it retreats into the wall.
+    private IEnumerator AnimateDoorRoutine(bool opening)
     {
-        Vector3 start = doorTransform.localPosition;
-        float elapsed = 0f;
+        Vector3 leftStart = leftDoorPanel.localScale;
+        Vector3 rightStart = rightDoorPanel.localScale;
 
-        while (elapsed < doorAnimDuration)
+        Vector3 leftTarget = opening ? new Vector3(0f, leftDoorClosedScale.y, leftDoorClosedScale.z) : leftDoorClosedScale;
+        Vector3 rightTarget = opening ? new Vector3(0f, rightDoorClosedScale.y, rightDoorClosedScale.z) : rightDoorClosedScale;
+
+        float duration = opening ? doorOpenDuration : doorCloseDuration;
+        float elapsed = 0f;
+        while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            doorTransform.localPosition = Vector3.Lerp(start, targetLocalPosition, Mathf.Clamp01(elapsed / doorAnimDuration));
+            float t = Mathf.Clamp01(elapsed / duration);
+            leftDoorPanel.localScale = Vector3.Lerp(leftStart, leftTarget, t);
+            rightDoorPanel.localScale = Vector3.Lerp(rightStart, rightTarget, t);
             yield return null;
         }
 
-        doorTransform.localPosition = targetLocalPosition;
+        leftDoorPanel.localScale = leftTarget;
+        rightDoorPanel.localScale = rightTarget;
+        DoorsFullyOpen = opening;
     }
 
     // Called once a bunny commits to riding this lift — before it's necessarily arrived at the landing spot.
@@ -326,8 +385,19 @@ public class LiftRoom : RoomBase
         }
 
         LiftCall call = activeCalls.FirstOrDefault(c => c.bunny == bunny && c.originFloor == floorIndex);
-        if (call != null)
-            call.hasArrived = true;
+        if (call == null) return;
+
+        call.hasArrived = true;
+
+        // The bunny calls the lift and starts walking toward the landing spot immediately (see
+        // TryBeginCrossFloorTripToSpot), well before the lift's own abstract travel-time countdown
+        // necessarily finishes — so a bunny reaching the landing spot AFTER the lift already arrived and
+        // started boarding is a real, common ordering. Doors must open right here in that case, since
+        // OnArrivedAtPickupFloor's own check already ran and found nobody arrived yet. If instead the
+        // bunny arrives BEFORE the lift does, this is a no-op (wrong state/floor) and
+        // OnArrivedAtPickupFloor's own check picks it up once the lift actually gets there.
+        if (CurrentState == LiftState.BoardingAtPickup && floorIndex == CurrentFloor)
+            OpenDoorsOnFloor(floorIndex);
     }
 
     private void EnqueuePickupFloor(int floorIndex)
@@ -391,10 +461,18 @@ public class LiftRoom : RoomBase
 
     private void OnArrivedAtPickupFloor()
     {
-        DebugLog.Log($"{name}: doors open at floor {CurrentFloor} for boarding.");
+        DebugLog.Log($"{name}: arrived at floor {CurrentFloor}, boarding window open.");
         CurrentState = LiftState.BoardingAtPickup;
+        boardingPhase = BoardingPhase.WaitingForStragglers;
         stateTimer = boardingGracePeriod;
-        OpenDoorsOnFloor(CurrentFloor);
+        // Doors only open once a bunny is actually AT the landing spot, not the instant the lift itself
+        // arrives — a bunny that's still walking there shouldn't see the doors pop open early. If
+        // someone already reached the landing spot before the lift's own travel finished (hasArrived set
+        // via NotifyArrivedAtLanding), open right away; otherwise NotifyArrivedAtLanding opens them the
+        // moment the first bunny actually gets here. Either way, this is purely a VISUAL trigger now —
+        // it no longer gates how long the state machine waits (see the enum comment above for why).
+        if (activeCalls.Any(c => c.originFloor == CurrentFloor && c.hasArrived))
+            OpenDoorsOnFloor(CurrentFloor);
         BoardArrivedRiders();
     }
 
@@ -402,10 +480,33 @@ public class LiftRoom : RoomBase
     {
         BoardArrivedRiders();
 
-        stateTimer -= Time.deltaTime;
-        if (stateTimer > 0f) return;
+        switch (boardingPhase)
+        {
+            case BoardingPhase.WaitingForStragglers:
+            {
+                stateTimer -= Time.deltaTime;
+                // End early the moment nobody who called this floor is still out there mid-walk — no
+                // sense burning the full grace period waiting for a straggler who doesn't exist (e.g. a
+                // single bunny that already boarded). The stateTimer <= 0f fallback still applies
+                // regardless, so a genuine straggler who never shows up (or a call that's gone stale for
+                // some other reason) is still capped at boardingGracePeriod and re-queued as before (see
+                // CloseBoardingAndDepart) — the lift moves on instead of freezing forever either way.
+                bool stragglersRemain = activeCalls.Any(c => c.originFloor == CurrentFloor && !c.hasArrived);
+                if (stragglersRemain && stateTimer > 0f) return;
+                boardingPhase = BoardingPhase.HoldingOpen;
+                stateTimer = doorHoldOpenDuration;
+                break;
+            }
 
-        CloseBoardingAndDepart();
+            case BoardingPhase.HoldingOpen:
+                // Fixed, unconditional pause — purely cosmetic (lets the door visibly stay open a beat
+                // longer), so unlike the phase above this always runs its full duration regardless of
+                // whether anyone's still around.
+                stateTimer -= Time.deltaTime;
+                if (stateTimer > 0f) return;
+                CloseBoardingAndDepart();
+                break;
+        }
     }
 
     private void BoardArrivedRiders()
@@ -460,7 +561,7 @@ public class LiftRoom : RoomBase
     {
         DebugLog.Log($"{name}: doors open at floor {CurrentFloor} for drop-off.");
         CurrentState = LiftState.DoorsOpenAtDropoff;
-        stateTimer = dropoffDwellTime;
+        dropoffCountdownStarted = false; // see TickDropoffDwell — mirrors the same fix as pickup boarding
         OpenDoorsOnFloor(CurrentFloor);
         DisembarkArrivedRiders();
     }
@@ -483,6 +584,17 @@ public class LiftRoom : RoomBase
 
     private void TickDropoffDwell()
     {
+        if (!dropoffCountdownStarted)
+        {
+            // Same reasoning as TickBoarding: don't start dropoffDwellTime until the doors have actually
+            // finished opening, not the instant the lift arrives — otherwise the door-open animation's
+            // own duration silently eats into the dwell time.
+            if (!(FindSegment(CurrentFloor)?.DoorsFullyOpen ?? true)) return;
+
+            dropoffCountdownStarted = true;
+            stateTimer = dropoffDwellTime;
+        }
+
         stateTimer -= Time.deltaTime;
         if (stateTimer > 0f) return;
 

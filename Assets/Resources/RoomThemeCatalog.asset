@@ -58,8 +58,3 @@ MonoBehaviour:
     lowerWallMaterial: {fileID: 2100000, guid: b4f6230a6abc73e4da4e85d894a31390, type: 2}
     ceilingMaterial: {fileID: 2100000, guid: ff6faca641cba7041b4e922d566afed5, type: 2}
     floorMaterial: {fileID: 2100000, guid: b4f6230a6abc73e4da4e85d894a31390, type: 2}
-  - roomTypeId: DefaultRoom
-    upperWallMaterial: {fileID: 2100000, guid: fcb6abeea9fd5a34dbe7a5402341500b, type: 2}
-    lowerWallMaterial: {fileID: 2100000, guid: 0ebba3747f4fc564dad9fec6c1c6addf, type: 2}
-    ceilingMaterial: {fileID: 2100000, guid: fcb6abeea9fd5a34dbe7a5402341500b, type: 2}
-    floorMaterial: {fileID: 2100000, guid: 0ebba3747f4fc564dad9fec6c1c6addf, type: 2}

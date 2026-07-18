@@ -155,13 +155,13 @@ private void ApplyRoomTheme()
         string n = renderer.gameObject.name;
         if (n.Contains("Wall") && n.Contains("Upper"))       renderer.sharedMaterial = theme.upperWallMaterial;
         else if (n.Contains("Wall"))                          renderer.sharedMaterial = theme.lowerWallMaterial; // Lower_Big, Lower_Small, Filler
-        else if (n == "Ceiling")                              renderer.sharedMaterial = theme.ceilingMaterial;
-        else if (n == "Floor")                                renderer.sharedMaterial = theme.floorMaterial;
+        else if (n.Contains("Ceiling"))                       renderer.sharedMaterial = theme.ceilingMaterial;
+        else if (n.Contains("Floor"))                         renderer.sharedMaterial = theme.floorMaterial; // LiftRoom's own "Floor_Front"/"Floor _Back" included
     }
 }
 ```
 
-Because this matches by substring rather than an exact list of piece names, `LeftWall_Filler`/`RightWall_Filler` automatically pick up the lower-band color the moment they're added (no extra theming work), and `BackWall_Upper`/`BackWall_Lower` (see §5) automatically pick up upper/lower the same way `LeftWall_Upper`/`Lower` do. `LeftDoorFrame`/`RightDoorFrame` don't contain `"Wall"` and aren't named `Ceiling`/`Floor`, so they're correctly left untouched by this pass — they keep whatever material their own custom art uses, exactly as intended in §3.
+Because this matches by substring rather than an exact list of piece names, `LeftWall_Filler`/`RightWall_Filler` automatically pick up the lower-band color the moment they're added (no extra theming work), and `BackWall_Upper`/`BackWall_Lower` (see §5) automatically pick up upper/lower the same way `LeftWall_Upper`/`Lower` do. `LeftDoorFrame`/`RightDoorFrame` don't contain `"Wall"` and aren't named `Ceiling`/`Floor`, so they're correctly left untouched by this pass — they keep whatever material their own custom art uses, exactly as intended in §3. Floor/Ceiling were originally an exact-name match, but `LiftRoom_1x2x6_Grade1.prefab` is the one prefab in the whole catalog that splits its floor into two pieces (`Floor_Front`/`Floor _Back`, to leave a gap for the elevator car) rather than one plain `Floor` — found via playtest, fixed by switching both to substring matching, same as the wall pieces.
 
 `sharedMaterial` (not `material`) is used deliberately — it assigns the same Material *asset* to every instance of that room type rather than cloning a new Material per room, keeping batching intact and letting you tweak "Garden Green (Light)" once and have every Garden update.
 
@@ -266,6 +266,10 @@ No changes needed to `BuildModeController.cs`, `RoomTransitionService.cs`, or `D
 
 ## 9. Open items
 
-- Whether the 6 orphaned Grade‑2/3 `DefaultRoom` prefabs are actually player-reachable is unconfirmed (see §7, item 5–10) — recommend editing them anyway since it's cheap insurance.
+- ~~Whether the 6 orphaned Grade‑2/3 `DefaultRoom` prefabs are actually player-reachable is unconfirmed (see §7, item 5–10) — recommend editing them anyway since it's cheap insurance.~~ **Resolved 2026-07-18**: confirmed never buildable by the player. Left unsplit (no `BackWall_Upper`/`Lower`) and without a door frame — no further work needed on them.
+
+## 10. Status
+
+All four features (wall filler, door frames, room theming, `BackWall` split) implemented, playtested, and confirmed working as of 2026-07-18, including the Entrance Room and Lift edge cases fixed along the way (§2's Entrance Room exception, and the `Floor`/`Ceiling` substring-matching fix for `LiftRoom`'s split floor). No open items remain.
 - `BackWall_Upper`/`BackWall_Lower`'s exact seam height should be computed per structural file from that file's own side-wall seam, not assumed identical to the 4-wide Grade‑1 sample.
 - `RoomThemeCatalog`'s load mechanism (`Resources.Load`) requires the asset to live in a folder literally named `Resources` somewhere under `Assets` — a one-time Editor-side placement detail to get right when the asset is first created.

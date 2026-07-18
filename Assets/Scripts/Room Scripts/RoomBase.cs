@@ -111,8 +111,11 @@ public class RoomBase : MonoBehaviour
             string n = r.gameObject.name;
             if (n.Contains("Wall") && n.Contains("Upper")) r.sharedMaterial = theme.upperWallMaterial;
             else if (n.Contains("Wall")) r.sharedMaterial = theme.lowerWallMaterial;
-            else if (n == "Ceiling") r.sharedMaterial = theme.ceilingMaterial;
-            else if (n == "Floor") r.sharedMaterial = theme.floorMaterial;
+            else if (n.Contains("Ceiling")) r.sharedMaterial = theme.ceilingMaterial;
+            // Contains rather than an exact "Floor" match — LiftRoom splits its floor into "Floor_Front"/
+            // "Floor _Back" (to leave a gap for the elevator car) instead of one plain "Floor" piece like
+            // every other room, so an exact match silently themed neither half.
+            else if (n.Contains("Floor")) r.sharedMaterial = theme.floorMaterial;
         }
     }
 

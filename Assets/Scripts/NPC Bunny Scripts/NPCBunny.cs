@@ -1466,9 +1466,13 @@ public class NPCBunny : MonoBehaviour
         RoomBase departingRoom = (RoomBase)assignedJobRoom;
         RoomSpot departingSpot = claimedWorkSpot;
 
+        // TEMP diagnostic — remove once the "thirsty but no drinking spot" false-warning bug is root-caused.
+        Debug.Log($"[ThirstDebug] {BunnyName} LeaveWorkForWaterRoom: currentRoom={(currentRoom != null ? currentRoom.name : "NULL")}, assignedJobRoom={(departingRoom != null ? departingRoom.name : "NULL")}, pos={transform.position}");
+
         WaterRoom waterRoom = BaseManager.Instance.FindNearestWaterRoomWithDrinkingSpot(transform.position);
         if (waterRoom == null)
         {
+            Debug.Log($"[ThirstDebug] {BunnyName}: no water room with a drinking spot found.");
             WarnNoDrinkSpot();
             return;
         }
@@ -1476,6 +1480,7 @@ public class NPCBunny : MonoBehaviour
         RoomSpot drinkSpot = waterRoom.RequestDrinkingSpot(this);
         if (drinkSpot == null)
         {
+            Debug.Log($"[ThirstDebug] {BunnyName}: found {waterRoom.name} but RequestDrinkingSpot returned null (claimed by someone else between the check and this call?).");
             WarnNoDrinkSpot();
             return;
         }

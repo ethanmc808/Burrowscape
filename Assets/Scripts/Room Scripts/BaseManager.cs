@@ -109,6 +109,13 @@ public class BaseManager : MonoBehaviour
         WaterRoom nearest = null;
         float nearestDist = float.MaxValue;
 
+        // TEMP diagnostic — remove once the "thirsty but no drinking spot" false-warning bug is root-caused.
+        Debug.Log($"[ThirstDebug] FindNearestWaterRoomWithDrinkingSpot from {fromPosition}: {waterRooms.Count} registered water room(s).");
+        foreach (WaterRoom room in waterRooms)
+        {
+            Debug.Log($"[ThirstDebug]   {(room != null ? room.name : "NULL")} hasSpot={(room != null ? room.HasAvailableDrinkingSpot().ToString() : "N/A")} pos={(room != null ? room.transform.position.ToString() : "N/A")}");
+        }
+
         foreach (WaterRoom room in waterRooms)
         {
             if (room == null) continue; // safety check for destroyed rooms
@@ -122,6 +129,7 @@ public class BaseManager : MonoBehaviour
             }
         }
 
+        Debug.Log($"[ThirstDebug] result: {(nearest != null ? nearest.name : "NULL")}");
         return nearest;
     }
 
