@@ -30,12 +30,17 @@ public enum BunnyGender
 }
 // What a bunny was doing in a room being merged/upgraded, returned by EvacuateForRoomTransition so
 // RoomTransitionService knows how (or whether) to resettle it into the replacement room afterward.
+// The "Away" variants (WorkingAway/SleepingAway) mean the bunny wasn't physically standing in the room
+// at all — they were off Eating/Drinking/Sleeping elsewhere with their claim just reserved on it — so
+// Resettle can hold an equivalent spot on the replacement room instead of dropping them to Idle first.
 public enum RoomTransitionRole
 {
     None,
     Working,
+    WorkingAway,
     Relaxing,
-    Sleeping
+    Sleeping,
+    SleepingAway
 }
 
 [RequireComponent(typeof(Animator))]
@@ -428,6 +433,23 @@ public class NPCBunny : MonoBehaviour
         return false;
     }
 
+    // True if the bunny is either literally in needState right now, mid-walk toward it (MovingToSpot with
+    // pendingStateOnArrival == needState), or mid-lift-trip toward it (WaitingForLift/RidingLift/
+    // DisembarkingLift with pendingFinalState == needState — NOT pendingStateOnArrival, which gets
+    // overwritten with each individual lift-leg's own arrival state as the trip progresses; the ultimate
+    // destination activity survives the whole trip only in pendingFinalState, see TryBeginCrossFloorTripToSpot).
+    // Used by EvacuateForRoomTransition below to recognize "away and guaranteed to self-resolve," since
+    // arriving at any of these leads to a dedicated finish callback (FinishEatingAndReturnToWork /
+    // FinishDrinkingAndReturnToPrevious / waking) that routes back through ReturnToPreviousActivity.
+    private bool IsHeadedToOrCurrentlyInState(BunnyState needState)
+    {
+        if (CurrentState == needState) return true;
+        if (CurrentState == BunnyState.MovingToSpot && pendingStateOnArrival == needState) return true;
+        if ((CurrentState == BunnyState.WaitingForLift || CurrentState == BunnyState.RidingLift || CurrentState == BunnyState.DisembarkingLift)
+            && pendingFinalState == needState) return true;
+        return false;
+    }
+
     // Called by RoomTransitionService once quiescence is confirmed, for every bunny where
     // IsAssociatedWithRoom is true for one of the rooms being replaced. Releases whichever claim ties
     // this bunny to one of those rooms (at most one of the three checks below can match, since a bunny
@@ -435,12 +457,49 @@ public class NPCBunny : MonoBehaviour
     // whether a resettle call is needed afterward. Deliberately does NOT touch currentRoom/currentSpot —
     // see RelocateToRoomAfterTransition for that, which must run separately once the replacement room
     // actually exists.
+    //
+    // Working/Sleeping split into a physically-present and an "Away" variant. Physical presence is judged
+    // by CurrentState, NOT currentRoom — currentRoom is deliberately not committed until actual arrival
+    // (see IsAssociatedWithRoom's own doc comment), so a bunny who just started walking away to go
+    // Eat/Drink still has currentRoom pointing at the room they're leaving right up until they arrive
+    // somewhere else. Checking currentRoom here would misclassify that bunny as still physically present
+    // (this was tried and confirmed wrong against a real playtest log: a bunny mid-walk away from her job
+    // to go eat still got fully unassigned instead of held, because currentRoom hadn't moved yet).
+    // "Away" additionally requires CurrentState to be genuinely Eating/Drinking/Sleeping OR headed toward
+    // one of those (via IsHeadedToOrCurrentlyInState, above) — states with a dedicated "finish" callback
+    // guaranteed to route back through ReturnToPreviousActivity on its own, since hunger/thirst/tiredness
+    // interrupts all keep the original claim reserved rather than releasing it (see LeaveWorkForCafeteria
+    // and friends). Anything else away from the room (e.g. Idle after some other bail, or MovingToSpot on
+    // an unrelated errand) has no such guaranteed callback to pick a held claim back up, so it falls back
+    // to the old unassign-then-Idle-then-reassign path, which HandleIdle's own retry already covers.
+    // "Away" bunnies keep their claim pending (just the now-doomed spot on the OLD room instance is
+    // released) so Resettle can immediately hold an equivalent spot on the NEW room for them — see
+    // TryHoldJobSpotOnNewRoom/TryHoldSleepSpotOnNewRoom — letting them walk straight there once their trip
+    // finishes instead of detouring through Idle/a Living Room and (for jobs) flickering "unassigned" in
+    // the Assignment Menu in the meantime.
     public RoomTransitionRole EvacuateForRoomTransition(List<RoomBase> rooms)
     {
         if (assignedJobRoom is RoomBase jobRoomBase && rooms.Contains(jobRoomBase))
         {
-            UnassignFromJob();
-            return RoomTransitionRole.Working;
+            bool physicallyWorking = CurrentState == BunnyState.Working && currentRoom == jobRoomBase;
+            bool away = !physicallyWorking
+                && (IsHeadedToOrCurrentlyInState(BunnyState.Eating)
+                    || IsHeadedToOrCurrentlyInState(BunnyState.Drinking)
+                    || IsHeadedToOrCurrentlyInState(BunnyState.Sleeping));
+
+            if (!away)
+            {
+                UnassignFromJob();
+                return RoomTransitionRole.Working;
+            }
+
+            if (claimedWorkSpot != null)
+            {
+                assignedJobRoom.ReleaseSpot(claimedWorkSpot, this);
+                claimedWorkSpot = null;
+            }
+            assignedJobRoom = null;
+            return RoomTransitionRole.WorkingAway;
         }
 
         if (claimedRelaxRoom != null && rooms.Contains(claimedRelaxRoom))
@@ -455,12 +514,26 @@ public class NPCBunny : MonoBehaviour
 
         if (claimedSleepRoom != null && rooms.Contains(claimedSleepRoom))
         {
+            bool physicallySleeping = CurrentState == BunnyState.Sleeping && currentRoom == claimedSleepRoom;
+            // Sleeping role can only be "away" via Eating/Drinking (a critical-need wake) — CurrentState
+            // can never be/head-toward Sleeping while away from claimedSleepRoom in the first place.
+            bool away = !physicallySleeping
+                && (IsHeadedToOrCurrentlyInState(BunnyState.Eating) || IsHeadedToOrCurrentlyInState(BunnyState.Drinking));
+
+            if (!away)
+            {
+                claimedSleepRoom.ReleaseSpot(claimedSleepSpot, this);
+                claimedSleepSpot = null;
+                claimedSleepRoom = null;
+                if (CurrentState == BunnyState.Sleeping)
+                    CurrentState = BunnyState.Idle;
+                return RoomTransitionRole.Sleeping;
+            }
+
             claimedSleepRoom.ReleaseSpot(claimedSleepSpot, this);
             claimedSleepSpot = null;
             claimedSleepRoom = null;
-            if (CurrentState == BunnyState.Sleeping)
-                CurrentState = BunnyState.Idle;
-            return RoomTransitionRole.Sleeping;
+            return RoomTransitionRole.SleepingAway;
         }
 
         return RoomTransitionRole.None;
@@ -518,18 +591,52 @@ public class NPCBunny : MonoBehaviour
         AssignToJob(newJobRoom);
     }
 
+    // Called by RoomTransitionService's Resettle step for a WorkingAway evacuee (job claim was in a
+    // room being replaced, but the bunny is off Eating/Drinking/asleep elsewhere, not physically there).
+    // Claims a spot on the replacement room and re-points assignedJobRoom/claimedWorkSpot directly —
+    // deliberately NOT via AssignToJob/RequestNewJobSpot, which would call MoveAlongPath immediately and
+    // yank the bunny out of whatever they're currently mid-way through. Once their trip actually
+    // finishes, FinishEatingAndReturnToWork/FinishDrinkingAndReturnToPrevious -> ReturnToPreviousActivity
+    // finds assignedJobRoom/claimedWorkSpot already set and walks straight there — the same "spot was
+    // never released while eating" path already used for an ordinary (non-transition) eating trip, so no
+    // Idle/Living-Room detour and no "unassigned" flicker in the Assignment Menu. Returns false if the
+    // new room has no spot free right now (shouldn't normally happen — same or greater capacity than the
+    // room(s) it replaced); the caller falls back to ResettleJobWhenSafe in that case.
+    public bool TryHoldJobSpotOnNewRoom(IJobRoom newJobRoom)
+    {
+        RoomSpot spot = newJobRoom.RequestSpot(this);
+        if (spot == null) return false;
+
+        assignedJobRoom = newJobRoom;
+        claimedWorkSpot = spot;
+        return true;
+    }
+
     // Called by RoomTransitionService's Resettle step for a Sleeping-role evacuee. Only reclaims a
     // bedroom spot if the bunny was genuinely settled asleep — EvacuateForRoomTransition already drops
     // CurrentState straight to Idle for that case, with no yield in between, so it's still true here.
-    // If instead they were mid-Eating/Drinking elsewhere (woken by a critical need, sleep spot reserved
-    // but not physically occupied), does nothing: claimedSleepSpot was already cleared during Evacuate,
-    // so FinishEatingAndReturnToWork's/FinishDrinkingAndReturnToPrevious's own IsTired check already
-    // re-chains them to a fresh bedroom on its own once they finish — calling this immediately would
-    // race that same coroutine-driven trip.
     public void RequestBedroomFromCurrentPosition()
     {
         if (CurrentState == BunnyState.Idle)
             ChainToBedroomFromCurrentSpot();
+    }
+
+    // Mirrors TryHoldJobSpotOnNewRoom, above, for a SleepingAway evacuee (sleep claim was in a room being
+    // replaced, but the bunny is off Eating/Drinking elsewhere, woken by a critical need). Claims a spot
+    // directly on the replacement Bedroom and re-points claimedSleepRoom/claimedSleepSpot without
+    // touching CurrentState or starting any movement, so FinishEatingAndReturnToWork's/
+    // FinishDrinkingAndReturnToPrevious's ReturnToPreviousActivity finds the sleep claim already pointing
+    // at the new room and walks straight back to it — same reasoning as the job case. Returns false if
+    // the new room has no spot free right now; the caller falls back to RequestBedroomFromCurrentPosition
+    // (which self-resolves to the nearest bed with a spot once tiredness routes them there).
+    public bool TryHoldSleepSpotOnNewRoom(Bedroom newBedroom)
+    {
+        RoomSpot spot = newBedroom.RequestSpot(this);
+        if (spot == null) return false;
+
+        claimedSleepRoom = newBedroom;
+        claimedSleepSpot = spot;
+        return true;
     }
 
     public string DebugState()
@@ -575,6 +682,12 @@ public class NPCBunny : MonoBehaviour
         // settles in, at worst a single frame late.
         if (IsHeadedToRelaxSpot())
         { Debug.Log($"[PathDebug] {name} RequestNewJobSpot: bailed, IsHeadedToRelaxSpot true (CurrentState={CurrentState})."); return; }
+
+        // Like Sleeping (below), a job assignment never interrupts Eating/Drinking at all — the job is
+        // left pending until FinishEatingAndReturnToWork/FinishDrinkingAndReturnToPrevious's
+        // ReturnToPreviousActivity picks it back up once satiated.
+        if (IsHeadedToOrCurrentlyEatingOrDrinking())
+        { Debug.Log($"[PathDebug] {name} RequestNewJobSpot: bailed, IsHeadedToOrCurrentlyEatingOrDrinking true (CurrentState={CurrentState})."); return; }
 
         // Unlike Relaxing (above), a job assignment never interrupts Sleeping at all — the job is left
         // pending (assignedJobRoom set, claimedWorkSpot never claimed) until the bunny actually wakes.
@@ -653,6 +766,24 @@ public class NPCBunny : MonoBehaviour
     private bool IsAsleepOrHeadedToSleepSpot()
     {
         return claimedSleepSpot != null;
+    }
+
+    // Mirrors IsAsleepOrHeadedToSleepSpot, above, for Eating/Drinking: a job assignment must never
+    // interrupt a meal either (bunnies finish eating/drinking until satiated, THEN walk to a newly
+    // assigned job — never mid-bite), so this stays true for the whole reservation window, not just
+    // mid-transit. Same reasoning for checking the fields instead of CurrentState: FinishEatingAndReturnToWork/
+    // FinishDrinkingAndReturnToPrevious clear cafeteriaBeingUsed/waterRoomBeingUsed FIRST, before their
+    // ReturnToPreviousActivity -> RequestNewJobSpot re-entrant call, so CurrentState is still Eating/
+    // Drinking for that one call but the field is already null — checking CurrentState would wrongly
+    // block that call forever. Without this guard, RequestNewJobSpot used to yank the bunny straight to
+    // its work spot mid-meal via MoveAlongPath, which overwrites currentTargetSpot with the work spot —
+    // orphaning the cafeteria/water room's own EatingRoutine/DrinkingRoutine coroutine (it has no idea
+    // CurrentState changed and keeps ticking hunger/thirst up), and corrupting spot claims once it
+    // eventually finished and tried to release currentTargetSpot (by then pointing at the work spot, not
+    // the eating spot).
+    private bool IsHeadedToOrCurrentlyEatingOrDrinking()
+    {
+        return cafeteriaBeingUsed != null || waterRoomBeingUsed != null;
     }
 
     private void HandleIdle()

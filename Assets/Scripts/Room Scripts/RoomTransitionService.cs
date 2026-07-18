@@ -109,8 +109,29 @@ public class RoomTransitionService : MonoBehaviour
                         evacuee.bunny.ResettleJobWhenSafe(jobRoom);
                     break;
 
+                // Away eating/drinking/asleep elsewhere while their job was in one of the replaced rooms
+                // — hold a spot on the new room immediately (no Idle/Living-Room detour, no "unassigned"
+                // flicker in the Assignment Menu) rather than waiting for them to go Idle first. Falls
+                // back to the deferred path only if the new room genuinely has no room for them.
+                case RoomTransitionRole.WorkingAway:
+                    if (newRoom is IJobRoom jobRoomAway)
+                    {
+                        if (!evacuee.bunny.TryHoldJobSpotOnNewRoom(jobRoomAway))
+                            evacuee.bunny.ResettleJobWhenSafe(jobRoomAway);
+                    }
+                    break;
+
                 case RoomTransitionRole.Sleeping:
                     evacuee.bunny.RequestBedroomFromCurrentPosition();
+                    break;
+
+                // Mirrors WorkingAway, above, for a sleep claim.
+                case RoomTransitionRole.SleepingAway:
+                    if (newRoom is Bedroom bedroomAway)
+                    {
+                        if (!evacuee.bunny.TryHoldSleepSpotOnNewRoom(bedroomAway))
+                            evacuee.bunny.RequestBedroomFromCurrentPosition();
+                    }
                     break;
 
                 // Relaxing / None: nothing further — TryClaimRelaxSpot already re-polls every Idle tick
