@@ -34,17 +34,22 @@ public class RoomTransitionService : MonoBehaviour
     public void MergeRooms(List<RoomBase> rooms, RoomDefinition target)
     {
         if (rooms == null || rooms.Count == 0 || target == null) return;
-        StartCoroutine(SwapRooms(rooms, target));
+        StartCoroutine(SwapRooms(rooms, target, RoomTransitionKind.Merge));
     }
 
     public void UpgradeRoom(RoomBase room, RoomDefinition target)
     {
         if (room == null || target == null) return;
-        StartCoroutine(SwapRooms(new List<RoomBase> { room }, target));
+        StartCoroutine(SwapRooms(new List<RoomBase> { room }, target, RoomTransitionKind.Upgrade));
     }
 
-    private IEnumerator SwapRooms(List<RoomBase> rooms, RoomDefinition target)
+    private IEnumerator SwapRooms(List<RoomBase> rooms, RoomDefinition target, RoomTransitionKind kind)
     {
+        // Shown for the full duration of this coroutine (quiescence wait through Resettle) so the player
+        // isn't left wondering why the upgrade/merge they just triggered hasn't visibly happened yet —
+        // see RoomTransitionNotice for why Upgrade/Merge get independent slots rather than one shared one.
+        RoomTransitionNotice.Instance?.Show(kind);
+
         // 1. Wait for quiescence. Never forcibly redirect anyone — just defer the whole operation until
         // every bunny associated with these rooms has settled into a claimed RoomSpot (or dropped back
         // to plain Idle), so nothing has to be interrupted mid-walk or mid-lift-trip.
@@ -112,6 +117,8 @@ public class RoomTransitionService : MonoBehaviour
                 // and will find the new room on its own.
             }
         }
+
+        RoomTransitionNotice.Instance?.Hide(kind);
 
         // 5. Chain-check. The auto-merge check normally only runs right after BuildModeController places
         // a room — but an upgrade can make a room newly merge-eligible too (e.g. upgrade Room B to Grade

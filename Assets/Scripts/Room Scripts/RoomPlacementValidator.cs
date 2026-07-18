@@ -28,6 +28,16 @@ public static class RoomPlacementValidator
             return false;
         }
 
+        // 1b. On the entrance's own floor specifically, nothing may be built past its outward (left) edge
+        // — that's where bunnies physically enter/exit the base (gate, queue, BaseEntrance transform), not
+        // buildable floor space. Floors below the entrance have no such restriction (no gate to protect
+        // down there) and may extend past this same X freely.
+        if (floorIndex == layout.EntranceFloorIndex && centerX + width / 2f > layout.EntranceLeftEdgeX + Epsilon)
+        {
+            reason = "can't build past the entrance";
+            return false;
+        }
+
         // 4. Buildable bounds.
         if (Mathf.Abs(centerX - layout.EntranceWorldX) > layout.MaxGridXFromEntrance)
         {

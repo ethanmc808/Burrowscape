@@ -52,6 +52,14 @@ public class BaseLayoutManager : MonoBehaviour
     public float EntranceWorldZ => entranceRoom != null ? entranceRoom.transform.position.z : 0f;
     public int EntranceFloorIndex => entranceRoom != null ? entranceRoom.FloorIndex : 1;
 
+    // The entrance room's own outward-facing edge (the higher-X side, since higher X = visually left in
+    // this project — see GetRouteToSpot's BaseEntrance-ordering comment) — the boundary past which
+    // nothing may be built on the entrance's OWN floor, since that's where bunnies physically enter/exit
+    // the base (gate, queue spots, BaseEntrance transform), not real floor space. Only meaningful on
+    // EntranceFloorIndex — floors below it have no gate to protect and may build past this X freely (see
+    // RoomPlacementValidator.IsValidPlacement).
+    public float EntranceLeftEdgeX => entranceRoom != null ? entranceRoom.transform.position.x + entranceRoom.FootprintWidth / 2f : 0f;
+
     // Called by EntranceRoom.OnEnable() so this reference stays valid across a room-upgrade swap, where
     // RoomTransitionService destroys the old EntranceRoom instance and instantiates a new one in its
     // place. Without this, the Inspector-wired reference above goes stale the moment the old instance is
