@@ -85,6 +85,20 @@ Call `RequestDoorwayRefresh(floorIndex)` at the end of both `RegisterRoomOnFloor
 
 Toggling is instant (`SetActive`), no slide/fade animation — confirmed decision.
 
+### Entrance Room exception
+
+**Correction to the original design doc**, which assumed the entrance's outward-facing edge (left, per the "higher X = visually left" convention — see `BaseLayoutManager.EntranceLeftEdgeX`) should stay permanently *sealed* since nothing is ever registered there. Found via playtest to be backwards: that side always leads to the gate/surface, so it must always read as a real, open doorway (filler hidden, frame shown), not a sealed wall. Fixed with a targeted override rather than teaching `BaseLayoutManager` a `room is EntranceRoom` special case — `SetLeftDoorwayOpen`/`SetRightDoorwayOpen` on `RoomBase` are now `virtual`, and `EntranceRoom` overrides just the left one to force `true` regardless of what the generic adjacency check computes:
+
+```csharp
+// EntranceRoom.cs
+public override void SetLeftDoorwayOpen(bool open)
+{
+    base.SetLeftDoorwayOpen(true);
+}
+```
+
+Mirrors the existing `EntranceRoom.CanBeDeleted()` override pattern (special-case behavior lives on the specific room type, not scattered into a manager). The right side (where rooms actually get built into the base) is untouched and behaves like any other room's edge.
+
 ## 3. Feature B — Decorative door frames
 
 Unlike the wall filler, the frame is owned per **individual** room prefab, not the 10 shared structural files, since each room type should eventually look different. That means it touches all ~76 individual room-type prefabs (every `{RoomType}_{width}x2x6_Grade{n}.prefab`, plus `LiftRoom_1x2x6_Grade1.prefab`) — each needs its own `LeftDoorFrame`/`RightDoorFrame` GameObject directly under its own root, not under the nested structural instance.

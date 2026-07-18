@@ -102,12 +102,73 @@ public class BaseLayoutManager : MonoBehaviour
 
         if (!roomsByFloor[floorIndex].Contains(room))
             roomsByFloor[floorIndex].Add(room);
+
+        RequestDoorwayRefresh(floorIndex);
     }
 
     public void UnregisterRoomOnFloor(RoomBase room, int floorIndex)
     {
         if (roomsByFloor.ContainsKey(floorIndex))
             roomsByFloor[floorIndex].Remove(room);
+
+        RequestDoorwayRefresh(floorIndex);
+    }
+
+    // ---------- DOORWAY ADJACENCY (dynamic wall filler / door frame) ----------
+    // See Docs/RoomVisualSystems_Design.md Feature A. Deliberately centralized here rather than added
+    // to BuildModeController/RoomTransitionService/DeleteModeController individually — every placement,
+    // deletion, merge/upgrade swap, and scene-load registration already funnels through
+    // RegisterRoomOnFloor/UnregisterRoomOnFloor above, so hooking in here covers all of them for free.
+
+    private readonly HashSet<int> dirtyDoorwayFloors = new HashSet<int>();
+    private Coroutine doorwayRefreshRoutine;
+
+    // Deferred one frame (same pattern as RequestLiftColumnRegroup) so multiple rooms registering or
+    // unregistering on the same floor within one frame — e.g. a multi-room merge's Evacuate->Swap, or
+    // several hand-placed rooms all enabling at scene load — collapse into a single recompute pass
+    // instead of recomputing (and briefly showing stale state) after each individual change.
+    private void RequestDoorwayRefresh(int floorIndex)
+    {
+        dirtyDoorwayFloors.Add(floorIndex);
+        if (doorwayRefreshRoutine == null)
+            doorwayRefreshRoutine = StartCoroutine(DoorwayRefreshRoutine());
+    }
+
+    private IEnumerator DoorwayRefreshRoutine()
+    {
+        yield return null; // let this frame's registrations/unregistrations settle first
+        foreach (int floor in dirtyDoorwayFloors)
+            RefreshDoorwaysForFloor(floor);
+        dirtyDoorwayFloors.Clear();
+        doorwayRefreshRoutine = null;
+    }
+
+    // Recomputes every room's left/right doorway state on a floor from scratch, purely from live
+    // transform positions (never cached) — same edge-touching adjacency test RoomPlacementValidator and
+    // RoomMergeResolver already use, so a room only ever shows an open doorway on a side that's
+    // genuinely touching another registered room right now.
+    private void RefreshDoorwaysForFloor(int floorIndex)
+    {
+        List<RoomBase> rooms = GetOrderedRooms(floorIndex);
+
+        foreach (RoomBase room in rooms)
+        {
+            RoomPlacementValidator.GetInterval(room, out float min, out float max);
+            bool hasLeftNeighbor = false;  // higher-X side — see "higher X = visually left" convention above
+            bool hasRightNeighbor = false; // lower-X side
+
+            foreach (RoomBase other in rooms)
+            {
+                if (other == room) continue;
+
+                RoomPlacementValidator.GetInterval(other, out float otherMin, out float otherMax);
+                if (Mathf.Abs(otherMin - max) < RoomPlacementValidator.Epsilon) hasLeftNeighbor = true;
+                if (Mathf.Abs(otherMax - min) < RoomPlacementValidator.Epsilon) hasRightNeighbor = true;
+            }
+
+            room.SetLeftDoorwayOpen(hasLeftNeighbor);
+            room.SetRightDoorwayOpen(hasRightNeighbor);
+        }
     }
 
     // Every floor that currently has at least one registered room (or lift stop) on it.

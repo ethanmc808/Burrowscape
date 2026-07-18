@@ -64,6 +64,75 @@ public class RoomBase : MonoBehaviour
     public virtual Transform GetRightEntranceForFloor(int floorIndex) => rightEntrance;
     public virtual List<Transform> GetPassThroughWaypointsForFloor(int floorIndex) => passThroughWaypoints;
 
+    // Doorway filler/frame pieces — resolved by NAME rather than a serialized field, since most room
+    // prefabs nest their wall geometry from a shared DefaultRoom instance (filler) or, for the frame,
+    // are meant to differ per room type and so live directly on THIS prefab instead. A serialized
+    // reference would need re-wiring on every one of the ~76 individual room prefabs the way
+    // leftEntrance/rightEntrance already had to be; resolving by name at Awake needs the objects to
+    // exist somewhere in this room's hierarchy, nothing more. See Docs/RoomVisualSystems_Design.md.
+    private GameObject leftWallFiller;
+    private GameObject rightWallFiller;
+    private GameObject leftDoorFrame;
+    private GameObject rightDoorFrame;
+
+    protected virtual void Awake()
+    {
+        ResolveDoorwayPieces();
+        ApplyRoomTheme();
+    }
+
+    private void ResolveDoorwayPieces()
+    {
+        foreach (Transform t in GetComponentsInChildren<Transform>(true))
+        {
+            switch (t.name)
+            {
+                case "LeftWall_Filler": leftWallFiller = t.gameObject; break;
+                case "RightWall_Filler": rightWallFiller = t.gameObject; break;
+                case "LeftDoorFrame": leftDoorFrame = t.gameObject; break;
+                case "RightDoorFrame": rightDoorFrame = t.gameObject; break;
+            }
+        }
+    }
+
+    // Applies this room's TYPE-level palette (see RoomThemeCatalog) to whichever of its own wall/
+    // ceiling/floor renderers it finds, matched by name substring rather than an exhaustive per-piece
+    // list — this is what lets the wall filler (added by this same feature) and a split BackWall (an
+    // independent, optional change) both pick up the right color automatically with no extra code, and
+    // lets LeftDoorFrame/RightDoorFrame (which contain neither "Wall" nor "Ceiling"/"Floor") correctly
+    // stay untouched, keeping whatever material their own custom art uses.
+    private void ApplyRoomTheme()
+    {
+        RoomTheme theme = RoomThemeCatalog.Load(roomTypeId);
+        if (theme == null) return; // no palette authored yet for this room type — keep the prefab's baked-in default
+
+        foreach (Renderer r in GetComponentsInChildren<Renderer>(true))
+        {
+            string n = r.gameObject.name;
+            if (n.Contains("Wall") && n.Contains("Upper")) r.sharedMaterial = theme.upperWallMaterial;
+            else if (n.Contains("Wall")) r.sharedMaterial = theme.lowerWallMaterial;
+            else if (n == "Ceiling") r.sharedMaterial = theme.ceilingMaterial;
+            else if (n == "Floor") r.sharedMaterial = theme.floorMaterial;
+        }
+    }
+
+    // open = true means an adjacent room is present on that side: the filler wall piece hides (the
+    // doorway becomes a real opening) and the decorative frame shows (dressing the now-real opening).
+    // open = false is the sealed/edge-of-base state: filler shows, frame hides. Both `?.` calls are
+    // no-ops on a prefab that hasn't had one piece or the other added yet, so the wall filler and door
+    // frame features can be rolled out independently without either breaking the other.
+    public virtual void SetLeftDoorwayOpen(bool open)
+    {
+        leftWallFiller?.SetActive(!open);
+        leftDoorFrame?.SetActive(open);
+    }
+
+    public virtual void SetRightDoorwayOpen(bool open)
+    {
+        rightWallFiller?.SetActive(!open);
+        rightDoorFrame?.SetActive(open);
+    }
+
     protected virtual void OnEnable()
     {
         if (BaseLayoutManager.Instance != null)

@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78116cf20e1314445b5b8f1c69f4b7a3, type: 3}
+  m_Name: RoomThemeCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::RoomThemeCatalog
+  themes:
+  - roomTypeId: Bedroom
+    upperWallMaterial: {fileID: 2100000, guid: cf9c8f773c011bd46b2002101cebd472, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: 2b9f2a29576e076418a8d59d7354588d, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: cf9c8f773c011bd46b2002101cebd472, type: 2}
+    floorMaterial: {fileID: 2100000, guid: 2b9f2a29576e076418a8d59d7354588d, type: 2}
+  - roomTypeId: Cafeteria
+    upperWallMaterial: {fileID: 2100000, guid: 3d3e72b4fe81b9045b5374856026b420, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: 068cbd77063efe949b57cf9c9b4ec800, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: 3d3e72b4fe81b9045b5374856026b420, type: 2}
+    floorMaterial: {fileID: 2100000, guid: 068cbd77063efe949b57cf9c9b4ec800, type: 2}
+  - roomTypeId: EntranceRoom
+    upperWallMaterial: {fileID: 2100000, guid: c3ee69cf0e141e640be344c0848e23b8, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: f76e8ccdff95e6e45853512cd3db9084, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: c3ee69cf0e141e640be344c0848e23b8, type: 2}
+    floorMaterial: {fileID: 2100000, guid: f76e8ccdff95e6e45853512cd3db9084, type: 2}
+  - roomTypeId: Garden
+    upperWallMaterial: {fileID: 2100000, guid: 37a5a69780f77624392e498cf45fc852, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: b26038b979cccee44afb22eb561d22f4, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: 37a5a69780f77624392e498cf45fc852, type: 2}
+    floorMaterial: {fileID: 2100000, guid: b26038b979cccee44afb22eb561d22f4, type: 2}
+  - roomTypeId: Kitchen
+    upperWallMaterial: {fileID: 2100000, guid: c763982c0510f7d4cb221e911c84393c, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: dbd8e60a5437f314b9415b7a9d542ce4, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: c763982c0510f7d4cb221e911c84393c, type: 2}
+    floorMaterial: {fileID: 2100000, guid: dbd8e60a5437f314b9415b7a9d542ce4, type: 2}
+  - roomTypeId: LiftRoom
+    upperWallMaterial: {fileID: 2100000, guid: 92e5808e5f2d24f4f9816c448d1f0b59, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: c24c18990271bc84d864812a222f1042, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: 92e5808e5f2d24f4f9816c448d1f0b59, type: 2}
+    floorMaterial: {fileID: 2100000, guid: c24c18990271bc84d864812a222f1042, type: 2}
+  - roomTypeId: LivingRoom
+    upperWallMaterial: {fileID: 2100000, guid: ac6677d2efe76d948b6314c9b0bd6df6, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: 2d0ed63213b816c43a3bc68e70e74ad5, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: ac6677d2efe76d948b6314c9b0bd6df6, type: 2}
+    floorMaterial: {fileID: 2100000, guid: 2d0ed63213b816c43a3bc68e70e74ad5, type: 2}
+  - roomTypeId: StorageRoom
+    upperWallMaterial: {fileID: 2100000, guid: 288c16e84fd02124191c410d1c17e12c, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: 3dedbf3434b5bde4db81db6e7d6d453c, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: 288c16e84fd02124191c410d1c17e12c, type: 2}
+    floorMaterial: {fileID: 2100000, guid: 3dedbf3434b5bde4db81db6e7d6d453c, type: 2}
+  - roomTypeId: WaterRoom
+    upperWallMaterial: {fileID: 2100000, guid: ff6faca641cba7041b4e922d566afed5, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: b4f6230a6abc73e4da4e85d894a31390, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: ff6faca641cba7041b4e922d566afed5, type: 2}
+    floorMaterial: {fileID: 2100000, guid: b4f6230a6abc73e4da4e85d894a31390, type: 2}
+  - roomTypeId: DefaultRoom
+    upperWallMaterial: {fileID: 2100000, guid: fcb6abeea9fd5a34dbe7a5402341500b, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: 0ebba3747f4fc564dad9fec6c1c6addf, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: fcb6abeea9fd5a34dbe7a5402341500b, type: 2}
+    floorMaterial: {fileID: 2100000, guid: 0ebba3747f4fc564dad9fec6c1c6addf, type: 2}

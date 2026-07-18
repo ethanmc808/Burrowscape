@@ -95,8 +95,14 @@ public class LiftRoom : RoomBase
     private int pickupTargetFloor;
     private int dropoffTargetFloor;
 
-    private void Awake()
+    // Must explicitly chain to base.Awake() — Unity's Awake dispatch isn't governed by C# virtual
+    // rules the way OnEnable is elsewhere in this hierarchy; a base-class Awake() and a derived-class
+    // Awake() are two distinct methods unless the derived one is declared override and calls base
+    // itself, so without this RoomBase's doorway-filler/theme resolution (see RoomBase.Awake) would
+    // silently never run on any LiftRoom instance.
+    protected override void Awake()
     {
+        base.Awake();
         allSegments.Add(this);
     }
 

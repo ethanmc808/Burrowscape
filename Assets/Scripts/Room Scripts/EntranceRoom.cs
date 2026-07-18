@@ -59,4 +59,15 @@ public class EntranceRoom : RoomBase, IJobRoom
         blockedReason = "the Entrance Room can never be deleted";
         return false;
     }
+
+    // The Entrance Room's outward-facing side (left, per this project's "higher X = visually left"
+    // convention — see BaseLayoutManager.EntranceLeftEdgeX) always leads to the gate/surface, never
+    // another room, so it must always read as a real doorway (filler hidden, frame shown). Nothing is
+    // ever registered there for BaseLayoutManager's generic adjacency check to detect, so left
+    // uncorrected it would always compute "no neighbor" and incorrectly seal shut. The right side
+    // (where rooms actually get built into the base) is unaffected and behaves like any other room.
+    public override void SetLeftDoorwayOpen(bool open)
+    {
+        base.SetLeftDoorwayOpen(true);
+    }
 }
