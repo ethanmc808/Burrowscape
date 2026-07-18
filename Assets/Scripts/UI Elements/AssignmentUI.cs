@@ -52,9 +52,16 @@ public class AssignmentUI : MonoBehaviour
 
     public void Close()
     {
+        // Room clicks always open AssignmentUI and RoomUpgradeUI together (see RoomClickHandler/
+        // RoomUpgradeClickHandler), so either one's Close button should close both rather than making
+        // the player dismiss each separately. The activeSelf guard makes this idempotent, which is what
+        // stops the two Close() calls from recursing into each other forever.
+        if (!panelRoot.activeSelf) return;
+
         panelRoot.SetActive(false);
         currentRoom = null;
         ClearSelection();
+        RoomUpgradeUI.Instance?.Close();
     }
 
     private void PopulateLists()

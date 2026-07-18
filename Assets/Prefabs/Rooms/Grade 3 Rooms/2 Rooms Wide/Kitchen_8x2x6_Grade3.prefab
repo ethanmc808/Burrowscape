@@ -48,10 +48,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d89d1e59e0d5916448e2a8a8515c9c2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomBase
-  leftEntrance: {fileID: 8240320741292344357, guid: 827722e0c17817a449fb8ee74e995839, type: 3}
-  rightEntrance: {fileID: 3732991216787322094, guid: 827722e0c17817a449fb8ee74e995839, type: 3}
-  middleLeft: {fileID: 571932724801697362, guid: 827722e0c17817a449fb8ee74e995839, type: 3}
-  middleRight: {fileID: 7491299105072574175, guid: 827722e0c17817a449fb8ee74e995839, type: 3}
+  leftEntrance: {fileID: 7780064237004574343}
+  rightEntrance: {fileID: 3057355384917442124}
+  middleLeft: {fileID: 2183189143861509360}
+  middleRight: {fileID: 9103366826278921341}
   passThroughWaypoints: []
   paths: []
   footprintWidth: 8
@@ -339,9 +339,29 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+--- !u!4 &2183189143861509360 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1423003967682540139, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 1005349882055806619}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &3057355384917442124 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2854808145472745687, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 1005349882055806619}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &5686292788502161997 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4835314923114570966, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 1005349882055806619}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7780064237004574343 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7353233977220136988, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 1005349882055806619}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &9103366826278921341 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8333382802469087974, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
   m_PrefabInstance: {fileID: 1005349882055806619}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1089257933955516700

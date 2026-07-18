@@ -102,6 +102,7 @@ GameObject:
   - component: {fileID: 7547990812579546900}
   - component: {fileID: 3641928843851173251}
   - component: {fileID: 5949455963816126925}
+  - component: {fileID: -7777021844144418203}
   m_Layer: 0
   m_Name: WaterRoom_8x2x6_Grade1
   m_TagString: Untagged
@@ -237,6 +238,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
+--- !u!114 &-7777021844144418203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3104813913501034110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &4530081617928641931
 GameObject:
   m_ObjectHideFlags: 0

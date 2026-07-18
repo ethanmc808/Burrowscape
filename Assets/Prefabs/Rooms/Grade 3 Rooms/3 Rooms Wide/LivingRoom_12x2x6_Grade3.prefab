@@ -279,58 +279,58 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f864a118f6874b46bcb22d85837921a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LivingRoom
-  leftEntrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-  rightEntrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-  middleLeft: {fileID: 1847831922530222264, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-  middleRight: {fileID: 8772247122763192373, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  leftEntrance: {fileID: 5914534907505738965}
+  rightEntrance: {fileID: 1405432719538025502}
+  middleLeft: {fileID: 2855510789169444514}
+  middleRight: {fileID: 5168257700626820655}
   passThroughWaypoints: []
   paths:
-  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 4900263022155415585, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 5914534907505738965}
+    targetSpot: {fileID: 4809642487935340429}
     waypoints: []
-  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 7952691015681800052, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 5914534907505738965}
+    targetSpot: {fileID: 5283974310354053792}
     waypoints: []
-  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 1075532895725137891, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 5914534907505738965}
+    targetSpot: {fileID: 7500644980340485055}
     waypoints: []
-  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 2381545736012901059, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 5914534907505738965}
+    targetSpot: {fileID: 1880588272177748366}
     waypoints: []
-  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 3270073912794860043, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 5914534907505738965}
+    targetSpot: {fileID: 8716593336849616794}
     waypoints: []
-  - entrance: {fileID: 7786926691018928847, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 2910053837223811349, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 5914534907505738965}
+    targetSpot: {fileID: 7959923864677018911}
     waypoints: []
-  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 4900263022155415585, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 1405432719538025502}
+    targetSpot: {fileID: 4809642487935340429}
     waypoints: []
-  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 7952691015681800052, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 1405432719538025502}
+    targetSpot: {fileID: 5283974310354053792}
     waypoints: []
-  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 1075532895725137891, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 1405432719538025502}
+    targetSpot: {fileID: 7500644980340485055}
     waypoints: []
-  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 2381545736012901059, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 1405432719538025502}
+    targetSpot: {fileID: 1880588272177748366}
     waypoints: []
-  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 3270073912794860043, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 1405432719538025502}
+    targetSpot: {fileID: 8716593336849616794}
     waypoints: []
-  - entrance: {fileID: 3280035756159107588, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-    targetSpot: {fileID: 2910053837223811349, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - entrance: {fileID: 1405432719538025502}
+    targetSpot: {fileID: 7959923864677018911}
     waypoints: []
   footprintWidth: 12
   grade: 3
   roomTypeId: LivingRoom
   relaxingSpots:
-  - {fileID: 4900263022155415585, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-  - {fileID: 7952691015681800052, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-  - {fileID: 1075532895725137891, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-  - {fileID: 2381545736012901059, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-  - {fileID: 3270073912794860043, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
-  - {fileID: 2910053837223811349, guid: b7880efff2bd2cc4d9cda57354e545c7, type: 3}
+  - {fileID: 4809642487935340429}
+  - {fileID: 5283974310354053792}
+  - {fileID: 7500644980340485055}
+  - {fileID: 1880588272177748366}
+  - {fileID: 8716593336849616794}
+  - {fileID: 7959923864677018911}
 --- !u!65 &1440665424537373051
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -800,6 +800,26 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c150dabee4e1cc14991ec89d7ed7105e, type: 3}
+--- !u!4 &1405432719538025502 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2854808145472745687, guid: c150dabee4e1cc14991ec89d7ed7105e, type: 3}
+  m_PrefabInstance: {fileID: 3755801422836073673}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2855510789169444514 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1423003967682540139, guid: c150dabee4e1cc14991ec89d7ed7105e, type: 3}
+  m_PrefabInstance: {fileID: 3755801422836073673}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5168257700626820655 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8333382802469087974, guid: c150dabee4e1cc14991ec89d7ed7105e, type: 3}
+  m_PrefabInstance: {fileID: 3755801422836073673}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5914534907505738965 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7353233977220136988, guid: c150dabee4e1cc14991ec89d7ed7105e, type: 3}
+  m_PrefabInstance: {fileID: 3755801422836073673}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8576318460763480095 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4835314923114570966, guid: c150dabee4e1cc14991ec89d7ed7105e, type: 3}

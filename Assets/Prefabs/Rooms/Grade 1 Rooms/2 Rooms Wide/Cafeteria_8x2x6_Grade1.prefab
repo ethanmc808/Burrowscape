@@ -274,64 +274,64 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 63089d183906a3b49bd6197a18eb49a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CafeteriaRoom
-  leftEntrance: {fileID: 4210332918705664644, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  rightEntrance: {fileID: 8933915493372576335, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  middleLeft: {fileID: 5754037630407786739, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  middleRight: {fileID: 3441853668932671614, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+  leftEntrance: {fileID: 4873677866655568268}
+  rightEntrance: {fileID: 159727735545078087}
+  middleLeft: {fileID: 3897480600277885947}
+  middleRight: {fileID: 6201237767234435958}
   passThroughWaypoints: []
   paths:
-  - entrance: {fileID: 4210332918705664644, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 2518894067146143134, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+  - entrance: {fileID: 4873677866655568268}
+    targetSpot: {fileID: 2518894067146143134}
     waypoints: []
-  - entrance: {fileID: 4210332918705664644, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 7810830859199185687, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+  - entrance: {fileID: 4873677866655568268}
+    targetSpot: {fileID: 7810830859199185687}
     waypoints: []
-  - entrance: {fileID: 4210332918705664644, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 3807161215354593399, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+  - entrance: {fileID: 4873677866655568268}
+    targetSpot: {fileID: 3807161215354593399}
     waypoints: []
-  - entrance: {fileID: 4210332918705664644, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 508301753283788062, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+  - entrance: {fileID: 4873677866655568268}
+    targetSpot: {fileID: 508301753283788062}
     waypoints:
-    - {fileID: 6699755132340559661, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  - entrance: {fileID: 4210332918705664644, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 5127504078940945192, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+    - {fileID: 6699755132340559661}
+  - entrance: {fileID: 4873677866655568268}
+    targetSpot: {fileID: 5127504078940945192}
     waypoints:
-    - {fileID: 6699755132340559661, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  - entrance: {fileID: 4210332918705664644, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 5056922321378981394, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+    - {fileID: 6699755132340559661}
+  - entrance: {fileID: 4873677866655568268}
+    targetSpot: {fileID: 5056922321378981394}
     waypoints:
-    - {fileID: 6699755132340559661, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  - entrance: {fileID: 8933915493372576335, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 2518894067146143134, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+    - {fileID: 6699755132340559661}
+  - entrance: {fileID: 159727735545078087}
+    targetSpot: {fileID: 2518894067146143134}
     waypoints:
-    - {fileID: 4981293052502470363, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  - entrance: {fileID: 8933915493372576335, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 7810830859199185687, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+    - {fileID: 4981293052502470363}
+  - entrance: {fileID: 159727735545078087}
+    targetSpot: {fileID: 7810830859199185687}
     waypoints:
-    - {fileID: 4981293052502470363, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  - entrance: {fileID: 8933915493372576335, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 3807161215354593399, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+    - {fileID: 4981293052502470363}
+  - entrance: {fileID: 159727735545078087}
+    targetSpot: {fileID: 3807161215354593399}
     waypoints:
-    - {fileID: 4981293052502470363, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  - entrance: {fileID: 8933915493372576335, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 508301753283788062, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+    - {fileID: 4981293052502470363}
+  - entrance: {fileID: 159727735545078087}
+    targetSpot: {fileID: 508301753283788062}
     waypoints: []
-  - entrance: {fileID: 8933915493372576335, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 5127504078940945192, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+  - entrance: {fileID: 159727735545078087}
+    targetSpot: {fileID: 5127504078940945192}
     waypoints: []
-  - entrance: {fileID: 8933915493372576335, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-    targetSpot: {fileID: 5056922321378981394, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+  - entrance: {fileID: 159727735545078087}
+    targetSpot: {fileID: 5056922321378981394}
     waypoints: []
   footprintWidth: 8
   grade: 1
   roomTypeId: Cafeteria
   eatingSpots:
-  - {fileID: 2518894067146143134, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  - {fileID: 7810830859199185687, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  - {fileID: 3807161215354593399, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  - {fileID: 508301753283788062, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  - {fileID: 5127504078940945192, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
-  - {fileID: 5056922321378981394, guid: 444a3a3be205a8d4d8c4e2051a986599, type: 3}
+  - {fileID: 2518894067146143134}
+  - {fileID: 7810830859199185687}
+  - {fileID: 3807161215354593399}
+  - {fileID: 508301753283788062}
+  - {fileID: 5127504078940945192}
+  - {fileID: 5056922321378981394}
   eatingTickInterval: 7.5
 --- !u!65 &8993977471740039730
 BoxCollider:
@@ -603,6 +603,26 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+--- !u!4 &159727735545078087 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2854808145472745687, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 2713743567313588624}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &3897480600277885947 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1423003967682540139, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 2713743567313588624}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4873677866655568268 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7353233977220136988, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 2713743567313588624}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &6201237767234435958 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8333382802469087974, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 2713743567313588624}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7400357743436625222 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4835314923114570966, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}

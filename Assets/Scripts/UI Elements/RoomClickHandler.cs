@@ -15,6 +15,9 @@ public class RoomClickHandler : MonoBehaviour
 
     private void OnMouseDown()
     {
+        if (UIPointerGuard.IsPointerOverUI()) return;
+        if (BunnyClickPriority.TryOpenInstead()) return;
+
         if (jobRoom != null)
             AssignmentUI.Instance.OpenForRoom(jobRoom, name);
     }

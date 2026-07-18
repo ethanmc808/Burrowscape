@@ -18,6 +18,9 @@ public class RoomUpgradeClickHandler : MonoBehaviour
 
     private void OnMouseDown()
     {
+        if (UIPointerGuard.IsPointerOverUI()) return;
+        if (BunnyClickPriority.TryOpenInstead()) return;
+
         if (room != null)
             RoomUpgradeUI.Instance.OpenForRoom(room);
     }

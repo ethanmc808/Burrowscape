@@ -18,6 +18,6 @@ MonoBehaviour:
   footprint: {x: 12, y: 2, z: 6}
   roomTypeId: LivingRoom
   grade: 1
-  goldCost: 0
+  goldCost: 1000
   isLiftSegment: 0
   unlockConditions: []

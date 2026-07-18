@@ -57,9 +57,15 @@ public class RoomTransitionService : MonoBehaviour
             ? DwellerRoster.Instance.GetBunniesAssociatedWithRooms(rooms)
             : new List<NPCBunny>();
 
+        Debug.Log($"[PathDebug] SwapRooms: rooms=[{string.Join(", ", rooms.ConvertAll(r => r != null ? $"{r.name}({r.GetInstanceID()})" : "NULL"))}], associated bunnies=[{string.Join(", ", associated.ConvertAll(b => b.name))}]");
+
         List<Evacuee> evacuees = new List<Evacuee>();
         foreach (NPCBunny bunny in associated)
-            evacuees.Add(new Evacuee(bunny, bunny.EvacuateForRoomTransition(rooms)));
+        {
+            RoomTransitionRole role = bunny.EvacuateForRoomTransition(rooms);
+            Debug.Log($"[PathDebug] SwapRooms: evacuated {bunny.name} with role={role}");
+            evacuees.Add(new Evacuee(bunny, role));
+        }
 
         // 3. Swap. Unregister explicitly rather than relying on OnDisable (which Unity defers to
         // end-of-frame) so nothing can query BaseLayoutManager mid-frame and see both the dying room(s)
@@ -78,6 +84,8 @@ public class RoomTransitionService : MonoBehaviour
         // normal player-placed room (BuildModeController.TryConfirmPlacement).
         GameObject newInstance = Instantiate(target.prefab, position, Quaternion.Euler(0f, 180f, 0f));
         RoomBase newRoom = newInstance.GetComponent<RoomBase>();
+
+        Debug.Log($"[PathDebug] SwapRooms: newRoom={(newRoom != null ? newRoom.name : "NULL")}, isIJobRoom={(newRoom is IJobRoom)}");
 
         // 4. Resettle. Relocate must run before any resettle call for every evacuee — it's what stops
         // the next path-building call from either dereferencing the just-destroyed old room or treating
@@ -104,6 +112,17 @@ public class RoomTransitionService : MonoBehaviour
                 // and will find the new room on its own.
             }
         }
+
+        // 5. Chain-check. The auto-merge check normally only runs right after BuildModeController places
+        // a room — but an upgrade can make a room newly merge-eligible too (e.g. upgrade Room B to Grade
+        // 2 so it now matches an already-Grade-2 Room A sitting next to it), and that path never went
+        // through BuildModeController at all. Re-running the same check here catches that case, and as a
+        // side effect also catches a merge leaving behind a third neighbor that's now eligible too.
+        // Recursing via MergeRooms (a fresh StartCoroutine) rather than inlining is deliberate — it goes
+        // through the exact same Evacuate/Swap/Resettle path a chained merge already needs, including a
+        // fresh quiescence wait for whoever was just resettled into newRoom.
+        if (newRoom != null && RoomMergeResolver.TryResolveMerge(newRoom, out List<RoomBase> chainRooms, out RoomDefinition chainTarget))
+            MergeRooms(chainRooms, chainTarget);
     }
 
     private Vector3 ComputeSwapPosition(List<RoomBase> rooms)

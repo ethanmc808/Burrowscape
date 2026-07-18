@@ -1,5 +1,247 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1263822929010917928
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5462621956461337593}
+  - component: {fileID: 7559580664707311736}
+  m_Layer: 0
+  m_Name: SleepingSpot_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5462621956461337593
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1263822929010917928}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: -1.279, y: -0.894, z: 3.583}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 415546469983656584}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7559580664707311736
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1263822929010917928}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 1
+--- !u!1 &1931290164759495338
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1412918421594722237}
+  m_Layer: 0
+  m_Name: Waypoint_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1412918421594722237
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1931290164759495338}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: -0.27900004, y: -0.894, z: 4.583}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 415546469983656584}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3169612518958139891
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4141894506884414049}
+  - component: {fileID: 3855220082914236271}
+  m_Layer: 0
+  m_Name: SleepingSpot_04
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4141894506884414049
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3169612518958139891}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: 1.471, y: -0.894, z: 5.083}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 415546469983656584}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &3855220082914236271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3169612518958139891}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 0
+--- !u!1 &4297261951627782749
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1392889112981422382}
+  m_Layer: 0
+  m_Name: Waypoint_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1392889112981422382
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4297261951627782749}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: -0.27900004, y: -0.894, z: 3.333}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 415546469983656584}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6357471249193038279
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6130890629433358329}
+  - component: {fileID: 7360681699525707467}
+  m_Layer: 0
+  m_Name: SleepingSpot_03
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6130890629433358329
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6357471249193038279}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: -1.279, y: -0.894, z: 4.833}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 415546469983656584}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7360681699525707467
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6357471249193038279}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 1
+--- !u!1 &6674019545017568731
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2519539047026793974}
+  - component: {fileID: 3241529421114187268}
+  m_Layer: 0
+  m_Name: SleepingSpot_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2519539047026793974
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6674019545017568731}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: -1.279, y: -0.894, z: 2.333}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 415546469983656584}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3241529421114187268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6674019545017568731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 1
 --- !u!1 &7021294394311413692
 GameObject:
   m_ObjectHideFlags: 0
@@ -75,6 +317,13 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 2519539047026793974}
+  - {fileID: 5462621956461337593}
+  - {fileID: 6130890629433358329}
+  - {fileID: 4141894506884414049}
+  - {fileID: 1392889112981422382}
+  - {fileID: 1412918421594722237}
+  - {fileID: 983753710428284775}
   - {fileID: 8231823299307115612}
   - {fileID: 6949009037813450557}
   m_Father: {fileID: 0}
@@ -91,51 +340,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65a8bfa1e290b564c81f49b527ae7f70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BedroomRoom
-  leftEntrance: {fileID: 5323580939151087997, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-  rightEntrance: {fileID: 609278001575979446, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-  middleLeft: {fileID: 4347452960127478538, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-  middleRight: {fileID: 6650928789543646087, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
+  leftEntrance: {fileID: 6281639359180812438}
+  rightEntrance: {fileID: 1637447704237097053}
+  middleLeft: {fileID: 2492940792754062049}
+  middleRight: {fileID: 4792161374729624172}
   passThroughWaypoints: []
   paths:
-  - entrance: {fileID: 5323580939151087997, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-    targetSpot: {fileID: 5563456925174585746, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
+  - entrance: {fileID: 6281639359180812438}
+    targetSpot: {fileID: 3241529421114187268}
     waypoints: []
-  - entrance: {fileID: 5323580939151087997, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-    targetSpot: {fileID: 454055652844193241, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
+  - entrance: {fileID: 6281639359180812438}
+    targetSpot: {fileID: 7559580664707311736}
     waypoints:
-    - {fileID: 4271106673068988215, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-  - entrance: {fileID: 5323580939151087997, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-    targetSpot: {fileID: 169297696909091818, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
+    - {fileID: 1392889112981422382}
+  - entrance: {fileID: 6281639359180812438}
+    targetSpot: {fileID: 7360681699525707467}
     waypoints:
-    - {fileID: 932437037023485954, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-  - entrance: {fileID: 5323580939151087997, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-    targetSpot: {fileID: 1442134276718478345, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
+    - {fileID: 1412918421594722237}
+  - entrance: {fileID: 6281639359180812438}
+    targetSpot: {fileID: 3855220082914236271}
     waypoints:
-    - {fileID: 6149477345612189714, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-  - entrance: {fileID: 609278001575979446, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-    targetSpot: {fileID: 5563456925174585746, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
+    - {fileID: 983753710428284775}
+  - entrance: {fileID: 1637447704237097053}
+    targetSpot: {fileID: 3241529421114187268}
     waypoints: []
-  - entrance: {fileID: 609278001575979446, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-    targetSpot: {fileID: 454055652844193241, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
+  - entrance: {fileID: 1637447704237097053}
+    targetSpot: {fileID: 7559580664707311736}
     waypoints:
-    - {fileID: 4271106673068988215, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-  - entrance: {fileID: 609278001575979446, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-    targetSpot: {fileID: 169297696909091818, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
+    - {fileID: 1392889112981422382}
+  - entrance: {fileID: 1637447704237097053}
+    targetSpot: {fileID: 7360681699525707467}
     waypoints:
-    - {fileID: 932437037023485954, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-  - entrance: {fileID: 609278001575979446, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-    targetSpot: {fileID: 1442134276718478345, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
+    - {fileID: 1412918421594722237}
+  - entrance: {fileID: 1637447704237097053}
+    targetSpot: {fileID: 3855220082914236271}
     waypoints:
-    - {fileID: 6650928789543646087, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-    - {fileID: 6149477345612189714, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
+    - {fileID: 4792161374729624172}
+    - {fileID: 983753710428284775}
   footprintWidth: 8
   grade: 3
   roomTypeId: Bedroom
   sleepingSpots:
-  - {fileID: 5563456925174585746, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-  - {fileID: 454055652844193241, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-  - {fileID: 169297696909091818, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
-  - {fileID: 1442134276718478345, guid: ef280174a2b394d49ae94f0445c8d014, type: 3}
+  - {fileID: 3241529421114187268}
+  - {fileID: 7559580664707311736}
+  - {fileID: 7360681699525707467}
+  - {fileID: 3855220082914236271}
 --- !u!65 &-2150092325950006145
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -169,6 +418,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
+--- !u!1 &8605870208143182414
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 983753710428284775}
+  m_Layer: 0
+  m_Name: Waypoint_03
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &983753710428284775
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8605870208143182414}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: 0.47099996, y: -0.894, z: 4.583}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 415546469983656584}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &937718050707521249
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -522,6 +802,26 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+--- !u!4 &1637447704237097053 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2854808145472745687, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 3541855573523804298}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2492940792754062049 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1423003967682540139, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 3541855573523804298}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4792161374729624172 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8333382802469087974, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 3541855573523804298}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &6281639359180812438 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7353233977220136988, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 3541855573523804298}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8231823299307115612 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4835314923114570966, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}

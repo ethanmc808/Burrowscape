@@ -477,16 +477,20 @@ public class NPCBunny : MonoBehaviour
     // pointing at the just-destroyed old room — and the next path-building call
     // (BaseLayoutManager.GetRouteToSpot) treats a null startRoom as "arriving from the base entrance,"
     // which would route a resettling bunny across the entire base instead of the short hop it actually
-    // needs. currentSpot/currentWanderPoint are cleared rather than carried over since neither survives
-    // the swap (the old spot/wander-point Transforms are gone); routing falls back to the new room's own
-    // root Transform as a start point, same fallback GetRouteToSpot already uses elsewhere.
+    // needs. currentSpot is cleared since it doesn't survive the swap (the old spot's RoomSpot is gone).
+    // currentWanderPoint is set to this bunny's own transform, NOT cleared — GetRouteToSpot's same-room
+    // fallback (no known spot AND no wander point) resorts to the room's own root/pivot Transform, which
+    // is a grid-alignment anchor floating outside the walkable floor, not an actual position; visually
+    // that sent resettling bunnies on a detour up and out of the room before walking back in. The bunny's
+    // own transform is always exactly where they're really standing (it never moves during the swap), so
+    // using it here keeps the eventual path starting from the truth instead of a fake anchor point.
     public void RelocateToRoomAfterTransition(RoomBase newRoom, List<RoomBase> oldRooms)
     {
         if (currentRoom == null || !oldRooms.Contains(currentRoom)) return;
 
         currentRoom = newRoom;
         currentSpot = null;
-        currentWanderPoint = null;
+        currentWanderPoint = transform;
         currentFloorIndex = newRoom.FloorIndex;
     }
 
@@ -553,7 +557,7 @@ public class NPCBunny : MonoBehaviour
 
     private void RequestNewJobSpot()
     {
-        if (assignedJobRoom == null) return;
+        if (assignedJobRoom == null) { Debug.Log($"[PathDebug] {name} RequestNewJobSpot: bailed, assignedJobRoom is null."); return; }
 
         RoomBase jobRoomBase = (RoomBase)assignedJobRoom;
 
@@ -562,7 +566,7 @@ public class NPCBunny : MonoBehaviour
         // That's cheap enough to just defer: let the current leg finish naturally, and HandleIdle's
         // existing retry (once idle) picks the job back up.
         if (CurrentState == BunnyState.MovingToSpot && IsWanderPacedLeg())
-            return;
+        { Debug.Log($"[PathDebug] {name} RequestNewJobSpot: bailed, mid wander-paced leg."); return; }
 
         // A relax trip CAN cross floors via lift, unlike fallback pacing — interrupting it mid-flight
         // would corrupt the in-progress lift bookkeeping (pendingLift/pendingFinalRoom etc. are single-
@@ -570,7 +574,7 @@ public class NPCBunny : MonoBehaviour
         // BunnyState.Relaxing case in Update() immediately pulls the bunny back out for the job once it
         // settles in, at worst a single frame late.
         if (IsHeadedToRelaxSpot())
-            return;
+        { Debug.Log($"[PathDebug] {name} RequestNewJobSpot: bailed, IsHeadedToRelaxSpot true (CurrentState={CurrentState})."); return; }
 
         // Unlike Relaxing (above), a job assignment never interrupts Sleeping at all — the job is left
         // pending (assignedJobRoom set, claimedWorkSpot never claimed) until the bunny actually wakes.
@@ -580,7 +584,7 @@ public class NPCBunny : MonoBehaviour
         // reaching 100) clears claimedSleepSpot, at which point ReturnToPreviousActivity's own
         // job-check calls this method again and it proceeds normally.
         if (IsAsleepOrHeadedToSleepSpot())
-            return;
+        { Debug.Log($"[PathDebug] {name} RequestNewJobSpot: bailed, IsAsleepOrHeadedToSleepSpot true (CurrentState={CurrentState})."); return; }
 
         // Pull the bunny out of any already-claimed Living Room spot — a job takes priority. Mirrors
         // UnassignFromJob's claimedWorkSpot release.
@@ -592,13 +596,18 @@ public class NPCBunny : MonoBehaviour
         }
 
         RoomSpot spot = assignedJobRoom.RequestSpot(this);
-        if (spot == null) return;
+        if (spot == null)
+        { Debug.Log($"[PathDebug] {name} RequestNewJobSpot: bailed, RequestSpot returned null (room full or no spots authored)."); return; }
 
         claimedWorkSpot = spot;
 
+        Debug.Log($"[PathDebug] {name} RequestNewJobSpot: claimed {spot.name}, currentRoom={(currentRoom != null ? currentRoom.name : "NULL")}, currentFloorIndex={currentFloorIndex}, jobRoomBase.FloorIndex={jobRoomBase.FloorIndex}");
+
         if (currentRoom != null && currentFloorIndex != jobRoomBase.FloorIndex)
         {
-            if (!TryBeginCrossFloorTripToSpot(jobRoomBase, spot, BunnyState.Working))
+            bool started = TryBeginCrossFloorTripToSpot(jobRoomBase, spot, BunnyState.Working);
+            Debug.Log($"[PathDebug] {name} RequestNewJobSpot: took cross-floor branch, TryBeginCrossFloorTripToSpot={started}.");
+            if (!started)
             {
                 // No lift connects these floors — don't leave the spot reserved for an unreachable bunny.
                 assignedJobRoom.ReleaseSpot(spot, this);
@@ -608,6 +617,8 @@ public class NPCBunny : MonoBehaviour
         }
 
         List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, jobRoomBase, spot, currentFloorIndex);
+
+        DebugLogPath("AssignToJob", path);
 
         MoveAlongPath(path, spot, BunnyState.Working);
     }
@@ -703,7 +714,7 @@ public class NPCBunny : MonoBehaviour
 
         List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, room, spot, currentFloorIndex);
 
-        Debug.Log($"[PathDebug] {name} TryClaimRelaxSpot pos={transform.position} currentRoom={(currentRoom != null ? currentRoom.name : "NULL")} currentSpot={(currentSpot != null ? currentSpot.name : "NULL")} currentFloorIndex={currentFloorIndex} targetRoom={room.name} pathCount={path.Count} firstWaypoint={(path.Count > 0 ? path[0].position.ToString() : "N/A")}");
+        DebugLogPath("TryClaimRelaxSpot", path);
 
         MoveAlongPath(path, spot, BunnyState.Relaxing);
         return true;
@@ -776,6 +787,24 @@ public class NPCBunny : MonoBehaviour
     }
 
     // ---------- MOVEMENT ----------
+
+    // Temporary — dumps every waypoint's name+position in order, to see whether a path genuinely
+    // reverses direction (vs. just having many points, which is normal for an authored route around
+    // walls/furniture). Remove once the entrance back-and-forth is root-caused.
+    private void DebugLogPath(string label, List<Transform> path)
+    {
+        if (path.Count == 0)
+        {
+            Debug.Log($"[PathDebug] {name} {label}: (empty path)");
+            return;
+        }
+
+        string waypoints = "";
+        for (int i = 0; i < path.Count; i++)
+            waypoints += $"\n  [{i}] {(path[i] != null ? path[i].name : "NULL")} {(path[i] != null ? path[i].position.ToString() : "")}";
+
+        Debug.Log($"[PathDebug] {name} {label} ({path.Count} points):{waypoints}");
+    }
 
     private void MoveAlongPath(List<Transform> waypoints, RoomSpot spot, BunnyState stateOnArrival)
     {

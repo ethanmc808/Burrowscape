@@ -49,9 +49,13 @@ public class RoomUpgradeUI : MonoBehaviour
 
     public void Close()
     {
+        // See AssignmentUI.Close() — same cross-close pairing, same activeSelf guard against recursion.
+        if (!panelRoot.activeSelf) return;
+
         panelRoot.SetActive(false);
         currentRoom = null;
         targetDefinition = null;
+        AssignmentUI.Instance?.Close();
     }
 
     private void RefreshUpgradeOption()

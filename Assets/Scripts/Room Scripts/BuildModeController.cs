@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 public class BuildModeController : MonoBehaviour
 {
@@ -89,7 +90,7 @@ public class BuildModeController : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             if (IsPointerOverUI())
-                Debug.Log($"[BuildDebug] Click blocked by UI at floor {pendingFloorIndex}, x={pendingCenterX}.");
+                LogUIBlockDetails();
             else
                 TryConfirmPlacement();
         }
@@ -98,6 +99,22 @@ public class BuildModeController : MonoBehaviour
     private bool IsPointerOverUI()
     {
         return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+    }
+
+    // Diagnostic only — IsPointerOverGameObject() only gives yes/no, but naming exactly which UI
+    // GameObject the cursor is over is what actually pins down an intermittent, hard-to-reproduce block
+    // like this one. Remove once the culprit's identified.
+    private void LogUIBlockDetails()
+    {
+        PointerEventData pointerData = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+
+        string hitNames = results.Count > 0
+            ? string.Join(", ", results.ConvertAll(r => r.gameObject.name))
+            : "(none — IsPointerOverGameObject() was true but RaycastAll found nothing, possibly a non-Graphic raycast target)";
+
+        Debug.Log($"[BuildDebug] Click blocked by UI at floor {pendingFloorIndex}, x={pendingCenterX}, mouse={Input.mousePosition}, screen={Screen.width}x{Screen.height}. Hit: {hitNames}");
     }
 
     private void UpdateGhostFromMouse()

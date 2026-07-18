@@ -21,6 +21,9 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
             if (spot.TryClaim(bunny))
                 return spot;
         }
+
+        string spotDump = string.Join(", ", farmingSpots.ConvertAll(s => s != null ? $"{s.name}(id={s.GetInstanceID()}, occupied={s.IsOccupied})" : "NULL"));
+        Debug.Log($"[PathDebug] {name} (id={GetInstanceID()}) RequestSpot FAILED for {bunny.name}: farmingSpots.Count={farmingSpots.Count}, spots=[{spotDump}]");
         return null;
     }
 

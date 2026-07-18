@@ -85,10 +85,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d89d1e59e0d5916448e2a8a8515c9c2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomBase
-  leftEntrance: {fileID: 2705707819162638755, guid: 777b6589309598940949153b743cdc55, type: 3}
-  rightEntrance: {fileID: 7212837341544507752, guid: 777b6589309598940949153b743cdc55, type: 3}
-  middleLeft: {fileID: 5780637489854540756, guid: 777b6589309598940949153b743cdc55, type: 3}
-  middleRight: {fileID: 3468169991820505945, guid: 777b6589309598940949153b743cdc55, type: 3}
+  leftEntrance: {fileID: 4578762362368058605}
+  rightEntrance: {fileID: 9087903056730854438}
+  middleLeft: {fileID: 5350102486753089178}
+  middleRight: {fileID: 3037388560676064791}
   passThroughWaypoints: []
   paths: []
   footprintWidth: 8
@@ -335,6 +335,26 @@ PrefabInstance:
 --- !u!4 &1917013924713709607 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4835314923114570966, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 6449408980760028401}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &3037388560676064791 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8333382802469087974, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 6449408980760028401}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4578762362368058605 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7353233977220136988, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 6449408980760028401}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5350102486753089178 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1423003967682540139, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
+  m_PrefabInstance: {fileID: 6449408980760028401}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &9087903056730854438 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2854808145472745687, guid: 344a407a270dc5543993d31e2d5b74ac, type: 3}
   m_PrefabInstance: {fileID: 6449408980760028401}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6473524825899713663

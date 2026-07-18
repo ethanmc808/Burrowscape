@@ -14,6 +14,8 @@ public class BunnyApprovalClickHandler : MonoBehaviour
 
     private void OnMouseDown()
     {
+        if (UIPointerGuard.IsPointerOverUI()) return;
+
         DebugLog.Log($"{name}: clicked. npcBunny={(npcBunny != null ? npcBunny.name : "NULL")}, IsAwaitingApproval={(npcBunny != null ? npcBunny.IsAwaitingApproval.ToString() : "N/A")}, BunnyApprovalUI.Instance={(BunnyApprovalUI.Instance != null ? "set" : "NULL")}");
 
         if (npcBunny == null || !npcBunny.IsAwaitingApproval) return;

@@ -14,6 +14,8 @@ public class BunnyStatsClickHandler : MonoBehaviour
 
     private void OnMouseDown()
     {
+        if (UIPointerGuard.IsPointerOverUI()) return;
+
         // Opposite gate from BunnyApprovalClickHandler — only opens for bunnies that have already
         // passed the gate and aren't still awaiting approval. Both handlers fire on click since Unity
         // calls every OnMouseDown on the GameObject, but the gates are mutually exclusive so only one
