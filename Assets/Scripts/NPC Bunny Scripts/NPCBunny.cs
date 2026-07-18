@@ -939,6 +939,17 @@ public class NPCBunny : MonoBehaviour
 
     private void MoveAlongPath(List<Transform> waypoints, RoomSpot spot, BunnyState stateOnArrival)
     {
+        // An empty path means BaseLayoutManager couldn't find a physically walkable route (e.g. the
+        // start and target aren't actually connected by contiguous floor — see BaseLayoutManager's
+        // IsContiguousRun) — bail without changing state rather than instantly "arriving" via an
+        // empty waypoint queue, which would fire the arrival callback (claiming the spot as reached,
+        // starting work/eating/etc.) without the bunny's position ever actually moving there.
+        if (waypoints.Count == 0)
+        {
+            Debug.LogWarning($"{name}: MoveAlongPath got an empty path (no walkable route to {(spot != null ? spot.name : "target")}) — staying put.");
+            return;
+        }
+
         pendingFacingOverride = null;
         currentTargetSpot = spot;
         currentPath = new Queue<Transform>(waypoints);
@@ -1144,7 +1155,7 @@ public class NPCBunny : MonoBehaviour
         }
 
         int myFloor = currentFloorIndex;
-        LiftRoom lift = BaseLayoutManager.Instance.FindLiftServicing(myFloor, targetRoom.FloorIndex);
+        LiftRoom lift = BaseLayoutManager.Instance.FindLiftServicing(myFloor, targetRoom.FloorIndex, currentRoom, targetRoom);
         if (lift == null)
         {
             Debug.LogWarning($"{name}: no lift services floor {myFloor} -> {targetRoom.FloorIndex}.");
@@ -1170,6 +1181,20 @@ public class NPCBunny : MonoBehaviour
         LiftRoom originSegment = lift.GetSegmentForFloor(originFloor);
         Transform landingSpot = lift.GetLandingSpot(originFloor);
         List<Transform> path = BaseLayoutManager.Instance.GetRouteToWanderPoint(currentRoom, currentSpot, currentWanderPoint, originSegment, landingSpot, currentFloorIndex);
+
+        // FindLiftServicing only guarantees a contiguous route when at least one candidate lift has
+        // one — its fallback (nearest-overall) can still hand back a lift this bunny genuinely can't
+        // walk to (see BaseLayoutManager.IsContiguousRun). Bail rather than fake-arriving via an
+        // empty path — same reasoning as MoveAlongPath's own guard.
+        if (path.Count == 0)
+        {
+            Debug.LogWarning($"{name}: no walkable route to {lift.name}'s floor {originFloor} landing spot — aborting lift trip.");
+            pendingLift = null;
+            pendingFinalRoom = null;
+            pendingFinalSpot = null;
+            pendingFinalWanderPoint = null;
+            return;
+        }
 
         currentTargetSpot = null;
         pendingFacingOverride = null;
@@ -1292,6 +1317,12 @@ public class NPCBunny : MonoBehaviour
         else if (finalWanderPoint != null)
         {
             List<Transform> path = BaseLayoutManager.Instance.GetRouteToWanderPoint(arrivalSegment, null, landingSpot, finalRoom, finalWanderPoint, currentFloorIndex);
+            if (path.Count == 0)
+            {
+                Debug.LogWarning($"{name}: no walkable route from the lift landing to {finalWanderPoint.name} on floor {currentFloorIndex} — staying put.");
+                CurrentState = BunnyState.Idle;
+                return;
+            }
             currentTargetSpot = null;
             pendingFacingOverride = null;
             currentPath = new Queue<Transform>(path);

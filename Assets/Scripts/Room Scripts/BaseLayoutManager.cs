@@ -205,15 +205,64 @@ public class BaseLayoutManager : MonoBehaviour
         LiftRoom.RegroupColumn(gridX);
     }
 
-    // Finds a lift that services both floors, so a bunny can ride it between them.
-    public LiftRoom FindLiftServicing(int floorA, int floorB)
+    // Finds a lift that services both floors, so a bunny can ride it between them. originRoom/
+    // targetRoom (where the bunny actually is and where it's actually trying to go) are used to
+    // prefer a shaft that's genuinely USABLE for this specific trip over one that merely spans the
+    // right two floors: two lift shafts can both service the same floor pair while each having its
+    // own attached rooms that never connect to the other shaft's (see IsContiguousRun) — picking the
+    // wrong one strands the bunny on the wrong side of an unbuilt gap once it disembarks. Among
+    // shafts where both the origin-floor walk (originRoom -> boarding segment) and the destination-
+    // floor walk (landing segment -> targetRoom) are physically contiguous, the nearest one wins;
+    // if none qualify (e.g. neither shaft actually reaches the target without a gap), falls back to
+    // nearest among ALL servicing shafts so a trip is still attempted rather than doing nothing.
+    public LiftRoom FindLiftServicing(int floorA, int floorB, RoomBase originRoom, RoomBase targetRoom)
     {
-        foreach (LiftRoom lift in allLifts)
+        List<LiftRoom> candidates = allLifts.Where(l => l.ServicesFloor(floorA) && l.ServicesFloor(floorB)).ToList();
+        if (candidates.Count == 0) return null;
+        if (candidates.Count == 1 || originRoom == null || targetRoom == null) return candidates[0];
+
+        List<LiftRoom> fullyReachable = candidates
+            .Where(l => IsRoomReachableOnFloor(originRoom, l.GetSegmentForFloor(floorA), floorA)
+                     && IsRoomReachableOnFloor(l.GetSegmentForFloor(floorB), targetRoom, floorB))
+            .ToList();
+
+        List<LiftRoom> pool = fullyReachable.Count > 0 ? fullyReachable : candidates;
+        return pool.OrderBy(l => Mathf.Abs(l.GridX - originRoom.GridX) + Mathf.Abs(l.GridX - targetRoom.GridX)).First();
+    }
+
+    // True if `from` and `to` are the same room, or connected by an unbroken run of touching rooms
+    // on the given floor (see IsContiguousRun). False if either isn't registered on that floor.
+    private bool IsRoomReachableOnFloor(RoomBase from, RoomBase to, int floorIndex)
+    {
+        if (from == null || to == null) return false;
+        if (from == to) return true;
+
+        List<RoomBase> ordered = GetOrderedRooms(floorIndex);
+        int fromIndex = ordered.IndexOf(from);
+        int toIndex = ordered.IndexOf(to);
+        if (fromIndex == -1 || toIndex == -1) return false;
+
+        return IsContiguousRun(ordered, fromIndex, toIndex);
+    }
+
+    // True if every room from ordered[fromIndex] to ordered[toIndex] (inclusive, walking whichever
+    // direction connects them) touches the next one — i.e. genuinely walkable floor space with no
+    // unbuilt gap. Two rooms can be adjacent in this GridX-sorted list without being physically
+    // connected: a lift segment only needs to stack on its own shaft column to be placed (see
+    // RoomPlacementValidator), not touch a neighbor on its own floor, so two independently-grown
+    // lift+room clusters can end up sharing a floor with an unbuilt gap between them.
+    private static bool IsContiguousRun(List<RoomBase> ordered, int fromIndex, int toIndex)
+    {
+        int step = toIndex >= fromIndex ? 1 : -1;
+        for (int i = fromIndex; i != toIndex; i += step)
         {
-            if (lift.ServicesFloor(floorA) && lift.ServicesFloor(floorB))
-                return lift;
+            RoomPlacementValidator.GetInterval(ordered[i], out float min, out float max);
+            RoomPlacementValidator.GetInterval(ordered[i + step], out float nextMin, out float nextMax);
+            bool touching = Mathf.Abs(max - nextMin) < RoomPlacementValidator.Epsilon
+                || Mathf.Abs(min - nextMax) < RoomPlacementValidator.Epsilon;
+            if (!touching) return false;
         }
-        return null;
+        return true;
     }
 
     private List<RoomBase> GetOrderedRooms(int floor)
@@ -240,6 +289,12 @@ public class BaseLayoutManager : MonoBehaviour
             {
                 Debug.LogWarning("Target room not registered in BaseLayoutManager.");
                 fullPath.Add(targetSpot.transform);
+                return fullPath;
+            }
+
+            if (!IsContiguousRun(orderedFromEntrance, orderedFromEntrance.Count - 1, targetIndexFromEntrance))
+            {
+                Debug.LogWarning($"No contiguous floor path from the base entrance to {targetRoom.name} on floor {targetRoom.FloorIndex} (unbuilt gap in between).");
                 return fullPath;
             }
 
@@ -293,6 +348,12 @@ public class BaseLayoutManager : MonoBehaviour
             return fullPath;
         }
 
+        if (!IsContiguousRun(ordered, startIndex, targetIndex))
+        {
+            Debug.LogWarning($"No contiguous floor path from {startRoom.name} to {targetRoom.name} on floor {startFloor} (unbuilt gap in between) — refusing to route through it.");
+            return fullPath;
+        }
+
         bool movingRight = targetIndex > startIndex;
         int step = movingRight ? 1 : -1;
 
@@ -332,6 +393,12 @@ public class BaseLayoutManager : MonoBehaviour
             int targetIdx = orderedFromEntrance.IndexOf(targetRoom);
             if (targetIdx == -1) return fullPath;
 
+            if (!IsContiguousRun(orderedFromEntrance, orderedFromEntrance.Count - 1, targetIdx))
+            {
+                Debug.LogWarning($"No contiguous floor path from the base entrance to {targetRoom.name} on floor {targetRoom.FloorIndex} (unbuilt gap in between).");
+                return fullPath;
+            }
+
             fullPath.Add(baseEntrance);
             for (int i = orderedFromEntrance.Count - 1; i > targetIdx; i--)
                 fullPath.AddRange(orderedFromEntrance[i].GetPassThroughPath(enteringFromLeft: true, targetRoom.FloorIndex));
@@ -358,6 +425,12 @@ public class BaseLayoutManager : MonoBehaviour
         int startIndex = ordered.IndexOf(startRoom);
         int targetIndex = ordered.IndexOf(targetRoom);
         if (startIndex == -1 || targetIndex == -1) return fullPath;
+
+        if (!IsContiguousRun(ordered, startIndex, targetIndex))
+        {
+            Debug.LogWarning($"No contiguous floor path from {startRoom.name} to {targetRoom.name} on floor {startFloor} (unbuilt gap in between) — refusing to route through it.");
+            return fullPath;
+        }
 
         bool movingRight = targetIndex > startIndex;
         int step = movingRight ? 1 : -1;
