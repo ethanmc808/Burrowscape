@@ -21,13 +21,15 @@ None of these require severing any prefab's link to `DefaultRoom` — that link 
   3. `DefaultRoom_12x2x6_Grade1.prefab`
   4. `LiftRoom_1x2x6_Grade1.prefab`
   5–10. `DefaultRoom_{4,8,12}x2x6_Grade{2,3}.prefab` — six self-contained files nothing else nests, but which `RoomCatalogRegistry`'s superset catalog lists as independently-reachable merge/upgrade targets. Covering them is cheap insurance even though I couldn't fully confirm they're player-visible.
-- Sample gap geometry (Grade 1, 4-wide, left side — right side mirrored at `x = +1.95`):
-  - `LeftWall_Upper`: pos `(-1.95, 0.4505, 4)`, scale `(0.1, 0.9116454, 6)` → spans y `[-0.0053, 0.9063]`
-  - `LeftWall_Lower_Big`: pos `(-1.95, -0.4567, 4.4583)`, scale `(0.1, 0.9028312, 4.6840405)` → spans z `[2.116, 6.800]`
-  - `LeftWall_Lower_Small`: pos `(-1.95, -0.4567, 1.25)`, scale `(0.1, 0.9028312, -0.5)` → spans z `[1.0, 1.5]`
-  - Gap to fill: z `[1.5, 2.116]` → center z ≈ `1.808`, scale.z ≈ `0.616` (consistent with `LeftEntrance` sitting at local z ≈ 1.833)
-  - `BackWall`: pos `(0, 0, 6.9)`, scale `(4, 2, 0.2)` → spans y `[-1, 1]`
-  - The Upper/Lower seam on the side walls sits at y ≈ `-0.0053`, essentially room mid-height. Every other structural file has its own slightly different numbers for all of the above — anything computed below must be derived from each file's own values, not copy-pasted from this sample.
+- **`BackWall` split (§5) is already done** for all 3 Grade‑1 default rooms (4/8/12-wide) — the user completed it by hand before implementation started, deliberately matching the split to the side walls' own Y-values rather than just bisecting the original single piece, which also fixed a pre-existing overlap between the old `BackWall` and the side walls' `Lower_Big` pieces. Current values (Grade 1, 4-wide, left side — right side mirrored at `x = +1.95`; scale.x scales with room width for the 8/12-wide files):
+  - `LeftWall_Upper`/`RightWall_Upper`: pos `(∓1.95, 0.45, 4)`, scale `(0.1, 0.9, 6)` → spans y `[0, 0.9]`
+  - `LeftWall_Lower_Big`/`RightWall_Lower_Big`: pos `(∓1.95, -0.45, 4.5)`, scale `(0.1, 0.9, 4.8)` → spans y `[-0.9, 0]`, z `[2.1, 6.9]`
+  - `LeftWall_Lower_Small`/`RightWall_Lower_Small`: pos `(∓1.95, -0.45, 1.25)`, scale `(0.1, 0.9, -0.5)` → spans z `[1.0, 1.5]`
+  - Gap to fill (wall filler, §2): z `[1.5, 2.1]` → center z = `1.8`, scale.z = `0.6`
+  - `BackWall_Upper`: pos `(0, 0.45, 6.95)`, scale `(4, 0.9, 0.1)` → spans y `[0, 0.9]`, z `[6.9, 7.0]`
+  - `BackWall_Lower`: pos `(0, -0.45, 6.95)`, scale `(4, 0.9, 0.1)` → spans y `[-0.9, 0]`, z `[6.9, 7.0]`
+  - Upper/Lower seam is now a clean y = `0` across every wall on these 3 files (side walls and back wall alike), and `Lower_Big`/`BackWall_Upper`/`BackWall_Lower` all meet flush at z = `6.9` with no gap or overlap.
+  - Still outstanding: the same `BackWall` split on `LiftRoom_1x2x6_Grade1.prefab` and the 6 orphaned Grade‑2/3 `DefaultRoom` files (see §7) — those still have the original single `BackWall` piece and old, unrounded side-wall values. Their gap/seam numbers must be computed from each file's own current values, not copied from this sample.
 
 ## 2. Feature A — Dynamic wall filler
 
@@ -155,12 +157,14 @@ Real `Material` assets — at minimum one light/dark pair per themed room type, 
 
 ## 5. Feature D — `BackWall` split
 
-Split the single `BackWall` piece into `BackWall_Upper`/`BackWall_Lower` (combined dimensions identical to the current single piece) so the two-tone theme wraps around the whole room instead of stopping at the side walls. Lives in the same 10 structural files as the wall filler — no scope change, just one more edit per file.
+**Already done for the 3 Grade‑1 default rooms** (4/8/12-wide) — completed by hand ahead of implementation. Rather than just bisecting the original single piece, the split was matched to the side walls' own Y-values, which incidentally fixed a pre-existing overlap between the old `BackWall` and the side walls' `Lower_Big` pieces (see §1 for current exact values). Still needed on the 6 orphaned Grade‑2/3 `DefaultRoom` files.
+
+**Intentionally skipped on `LiftRoom_1x2x6_Grade1.prefab`** — the elevator car permanently occludes the back wall in that room, so there's no player-visible payoff for splitting it. `LiftRoom` still gets the wall filler (§2) and still gets a theme entry if desired, just not this particular split; its `BackWall` stays a single piece, which will fall into the generic "lower" bucket of the theming rule below (contains `"Wall"`, not `"Upper"`) rather than showing a two-tone back wall. That's fine — it's simply invisible either way.
 
 - **No script depends on `BackWall`'s name or piece count** — nothing in `RoomBase` or elsewhere references it, so splitting it breaks nothing at the code level.
-- **No functional gap is introduced** — unlike the side walls' intentional doorway gap, the two `BackWall` pieces should touch with zero space between them. Computed transform values (not hand-dragged in the Scene view) avoid any risk of a hairline seam a bunny or camera could clip through.
-- **Seam height should match the side walls' existing Upper/Lower seam** (y ≈ `-0.0053` in the 4-wide Grade‑1 sample, computed per-file elsewhere) rather than an arbitrary 50/50 split, so the color line stays visually continuous around the corner where the back wall meets the side walls.
-- **Naming makes it fall out of the theming rule above for free** — `BackWall_Upper` contains `"Wall"` and `"Upper"`, `BackWall_Lower` contains `"Wall"` without `"Upper"`, so `ApplyRoomTheme()` colors them correctly with no extra code.
+- **No functional gap is introduced** — unlike the side walls' intentional doorway gap, the two `BackWall` pieces touch with zero space between them (confirmed flush at z = `6.9` on the completed files).
+- **Seam height should match the side walls' Upper/Lower seam** rather than an arbitrary 50/50 split, so the color line stays visually continuous around the corner where the back wall meets the side walls — confirmed on the completed files (both now split at a clean y = `0`).
+- **Naming makes it fall out of the theming rule below for free** — `BackWall_Upper` contains `"Wall"` and `"Upper"`, `BackWall_Lower` contains `"Wall"` without `"Upper"`, so `ApplyRoomTheme()` colors them correctly with no extra code.
 - Ceiling matching the upper wall tone is just setting the same `Material` asset in both the `ceilingMaterial` and `upperWallMaterial` slots of a given `RoomTheme` entry — no code change needed.
 
 ## 6. Consolidated runtime design on `RoomBase`
@@ -208,18 +212,18 @@ public void SetRightDoorwayOpen(bool open)
 
 ## 7. Prefab / asset editing plan
 
-**10 structural files** — add `LeftWall_Filler`/`RightWall_Filler` and split `BackWall` into `BackWall_Upper`/`BackWall_Lower` (all transform values computed per-file from that file's own existing sibling values, not copied across files):
+**10 structural files** — add `LeftWall_Filler`/`RightWall_Filler`, and split `BackWall` into `BackWall_Upper`/`BackWall_Lower` where not already done (all transform values computed per-file from that file's own existing sibling values, not copied across files):
 
-1. `Assets/Prefabs/Rooms/Grade 1 Rooms/1 Room Wide/DefaultRoom_4x2x6_Grade1.prefab`
-2. `Assets/Prefabs/Rooms/Grade 1 Rooms/2 Rooms Wide/DefaultRoom_8x2x6_Grade1.prefab`
-3. `Assets/Prefabs/Rooms/Grade 1 Rooms/3 Rooms Wide/DefaultRoom_12x2x6_Grade1.prefab`
-4. `Assets/Prefabs/Rooms/Grade 1 Rooms/1 Room Wide/LiftRoom_1x2x6_Grade1.prefab`
-5. `Assets/Prefabs/Rooms/Grade 2 Rooms/1 Room Wide/DefaultRoom_4x2x6_Grade2.prefab`
-6. `Assets/Prefabs/Rooms/Grade 3 Rooms/1 Room Wide/DefaultRoom_4x2x6_Grade3.prefab`
-7. `Assets/Prefabs/Rooms/Grade 2 Rooms/2 Rooms Wide/DefaultRoom_8x2x6_Grade2.prefab`
-8. `Assets/Prefabs/Rooms/Grade 3 Rooms/2 Rooms Wide/DefaultRoom_8x2x6_Grade3.prefab`
-9. `Assets/Prefabs/Rooms/Grade 2 Rooms/3 Rooms Wide/DefaultRoom_12x2x6_Grade2.prefab`
-10. `Assets/Prefabs/Rooms/Grade 3 Rooms/3 Rooms Wide/DefaultRoom_12x2x6_Grade3.prefab`
+1. `Assets/Prefabs/Rooms/Grade 1 Rooms/1 Room Wide/DefaultRoom_4x2x6_Grade1.prefab` — **`BackWall` split ✅ done**, filler still needed
+2. `Assets/Prefabs/Rooms/Grade 1 Rooms/2 Rooms Wide/DefaultRoom_8x2x6_Grade1.prefab` — **`BackWall` split ✅ done**, filler still needed
+3. `Assets/Prefabs/Rooms/Grade 1 Rooms/3 Rooms Wide/DefaultRoom_12x2x6_Grade1.prefab` — **`BackWall` split ✅ done**, filler still needed
+4. `Assets/Prefabs/Rooms/Grade 1 Rooms/1 Room Wide/LiftRoom_1x2x6_Grade1.prefab` — **`BackWall` split intentionally skipped** (occluded by the elevator car), filler still needed
+5. `Assets/Prefabs/Rooms/Grade 2 Rooms/1 Room Wide/DefaultRoom_4x2x6_Grade2.prefab` — split + filler both still needed
+6. `Assets/Prefabs/Rooms/Grade 3 Rooms/1 Room Wide/DefaultRoom_4x2x6_Grade3.prefab` — split + filler both still needed
+7. `Assets/Prefabs/Rooms/Grade 2 Rooms/2 Rooms Wide/DefaultRoom_8x2x6_Grade2.prefab` — split + filler both still needed
+8. `Assets/Prefabs/Rooms/Grade 3 Rooms/2 Rooms Wide/DefaultRoom_8x2x6_Grade3.prefab` — split + filler both still needed
+9. `Assets/Prefabs/Rooms/Grade 2 Rooms/3 Rooms Wide/DefaultRoom_12x2x6_Grade2.prefab` — split + filler both still needed
+10. `Assets/Prefabs/Rooms/Grade 3 Rooms/3 Rooms Wide/DefaultRoom_12x2x6_Grade3.prefab` — split + filler both still needed
 
 **~76 individual room-type files** — add a placeholder `LeftDoorFrame`/`RightDoorFrame`, via a new bulk Editor tool rather than by hand (see §3).
 
