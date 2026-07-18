@@ -22,6 +22,14 @@ public class GateQueueManager : MonoBehaviour
         Instance = this;
     }
 
+    // Called by EntranceRoom.OnEnable() so this reference stays valid across a room-upgrade swap — see
+    // BaseLayoutManager.SetEntranceRoom for the full explanation. Without this, a bunny approved through
+    // the gate after the Entrance Room is upgraded would get handed a destroyed RoomBase reference here.
+    public void SetEntranceRoom(RoomBase room)
+    {
+        entranceRoom = room;
+    }
+
     // Adds a bunny to the back of the queue, returns the spot it should walk to.
     // If the queue is full, the bunny is placed in a backlog and admitted automatically
     // once a spot frees up (see TryAdmitFromWaitingBacklog).

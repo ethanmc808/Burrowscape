@@ -11,7 +11,7 @@ public class BaseLayoutManager : MonoBehaviour
     public Transform BaseEntrance => baseEntrance;
 
     [Header("Floor Detection")]
-    [SerializeField] private RoomBase entranceRoom; // reference point for Y -> floor conversion; there's only ever one per base, and it never moves
+    [SerializeField] private RoomBase entranceRoom; // reference point for Y -> floor conversion; initial scene wiring only — see SetEntranceRoom
     [SerializeField] private float floorHeight = 2f; // vertical world-unit distance between floors
 
     [Header("Buildable Bounds")]
@@ -51,6 +51,17 @@ public class BaseLayoutManager : MonoBehaviour
     public float EntranceWorldX => entranceRoom != null ? entranceRoom.transform.position.x : 0f;
     public float EntranceWorldZ => entranceRoom != null ? entranceRoom.transform.position.z : 0f;
     public int EntranceFloorIndex => entranceRoom != null ? entranceRoom.FloorIndex : 1;
+
+    // Called by EntranceRoom.OnEnable() so this reference stays valid across a room-upgrade swap, where
+    // RoomTransitionService destroys the old EntranceRoom instance and instantiates a new one in its
+    // place. Without this, the Inspector-wired reference above goes stale the moment the old instance is
+    // actually destroyed (end of frame) — entranceRoom == null thereafter — and every Y<->floor
+    // conversion above silently falls back to its 0f/floor-1 default, misaligning every room's grid
+    // position by however far off that default is from the real entrance Y.
+    public void SetEntranceRoom(RoomBase room)
+    {
+        entranceRoom = room;
+    }
 
     public float MaxGridXFromEntrance => maxGridXFromEntrance;
     public int MaxFloorDepth => maxFloorDepth;

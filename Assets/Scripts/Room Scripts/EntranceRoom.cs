@@ -5,6 +5,17 @@ public class EntranceRoom : RoomBase, IJobRoom
 {
     [SerializeField] private List<RoomSpot> guardSpots;
 
+    // Self-registers as THE entrance room on every enable, not just the first — necessary because an
+    // Entrance Room upgrade destroys the old instance and instantiates a new one (RoomTransitionService),
+    // and both BaseLayoutManager and GateQueueManager cache a direct reference to whichever instance is
+    // current. See BaseLayoutManager.SetEntranceRoom for what breaks without this.
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        BaseLayoutManager.Instance?.SetEntranceRoom(this);
+        GateQueueManager.Instance?.SetEntranceRoom(this);
+    }
+
     public RoomSpot RequestSpot(NPCBunny bunny)
     {
         foreach (RoomSpot spot in guardSpots)
