@@ -10,7 +10,9 @@ using System.Collections;
 // collide.
 public class WaterRoom : RoomBase, IJobRoom
 {
+    [SpotNamePrefix("PottingSpot")]
     [SerializeField] private List<RoomSpot> productionSpots;
+    [SpotNamePrefix("DrinkingSpot")]
     [SerializeField] private List<RoomSpot> drinkingSpots;
 
     [SerializeField] private float productionInterval = 10f;

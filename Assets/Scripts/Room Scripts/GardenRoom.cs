@@ -4,6 +4,7 @@ using System.Collections;
 
 public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
 {
+    [SpotNamePrefix("FarmingSpot")]
     [SerializeField] private List<RoomSpot> farmingSpots;
 
     // REMOVE: paths list (now inherited from RoomBase)

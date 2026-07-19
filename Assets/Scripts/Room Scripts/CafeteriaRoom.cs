@@ -4,6 +4,7 @@ using System.Collections;
 
 public class CafeteriaRoom : RoomBase   // CHANGED from : MonoBehaviour
 {
+    [SpotNamePrefix("EatingSpot")]
     [SerializeField] private List<RoomSpot> eatingSpots;
     // REMOVE: paths list (inherited)
     // REMOVE: GetPathToSpot method

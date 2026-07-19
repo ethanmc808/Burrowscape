@@ -5,6 +5,7 @@ using System.Collections.Generic;
 // consumed here (unlike WaterRoom's production side).
 public class Bedroom : RoomBase
 {
+    [SpotNamePrefix("SleepingSpot")]
     [SerializeField] private List<RoomSpot> sleepingSpots;
 
     protected override void OnEnable()

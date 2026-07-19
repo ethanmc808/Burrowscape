@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 public class LivingRoom : RoomBase
 {
+    [SpotNamePrefix("RelaxingSpot")]
     [SerializeField] private List<RoomSpot> relaxingSpots;
 
     protected override void OnEnable()

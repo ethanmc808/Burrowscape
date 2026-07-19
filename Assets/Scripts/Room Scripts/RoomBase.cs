@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class RoomBase : MonoBehaviour
 {
@@ -237,4 +240,46 @@ public class RoomBase : MonoBehaviour
         }
         return null;
     }
+
+#if UNITY_EDITOR
+    // Editor-only visualization for every entrance/middle/waypoint Transform this room references —
+    // added because Unity's custom-icon overlay (the small billboard icons assigned via the GameObject
+    // icon picker) has a known Editor bug where it silently stops rendering until the Editor is
+    // restarted. Gizmos.Draw*/Handles.Label calls here are part of the Scene view's own immediate-mode
+    // render pass each frame, not the icon-atlas system that bugs out, so they can't go stale the same
+    // way. Always-on (not OnDrawGizmosSelected) so these stay visible without having to click each room.
+    private void OnDrawGizmos()
+    {
+        DrawPointGizmo(leftEntrance, Color.green);
+        DrawPointGizmo(rightEntrance, Color.green);
+        DrawPointGizmo(middleLeft, Color.yellow);
+        DrawPointGizmo(middleRight, Color.yellow);
+
+        if (passThroughWaypoints != null)
+            foreach (Transform wp in passThroughWaypoints)
+                DrawPointGizmo(wp, Color.cyan);
+
+        if (paths != null)
+        {
+            foreach (RoomPath path in paths)
+            {
+                if (path?.waypoints == null) continue;
+                foreach (Transform wp in path.waypoints)
+                    DrawPointGizmo(wp, Color.magenta);
+            }
+        }
+    }
+
+    private static void DrawPointGizmo(Transform point, Color color)
+    {
+        if (point == null) return;
+
+        Gizmos.color = color;
+        Gizmos.DrawWireSphere(point.position, 0.15f);
+        Gizmos.DrawLine(point.position, point.position + Vector3.up * 0.3f);
+
+        Handles.color = color;
+        Handles.Label(point.position + Vector3.up * 0.35f, point.name);
+    }
+#endif
 }
