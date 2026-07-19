@@ -256,13 +256,17 @@ public class NPCBunny : MonoBehaviour
     // Passive decay applies in every state except Sleeping (handled separately in Update()). Working
     // drains faster than passive; Questing/Foraging will too once those states exist — their rate
     // fields already exist for tuning ahead of time, this switch is the one-line extension point for
-    // wiring them in once the states themselves are added.
+    // wiring them in once the states themselves are added. Working's rate is authored per-ROOM (see
+    // RoomBase.WorkerEnergyDecayPerSecond) rather than this flat field, so different job rooms (e.g. a
+    // Coal Room vs. a Garden) can drain energy at different rates; the flat field is kept only as a
+    // defensive fallback in case assignedJobRoom somehow isn't a RoomBase (shouldn't happen in practice
+    // — every IJobRoom implementer is also a RoomBase).
     private float GetEnergyDecayRate()
     {
         switch (CurrentState)
         {
             case BunnyState.Working:
-                return energyDecayPerSecondWorking;
+                return (assignedJobRoom is RoomBase jobRoomBase) ? jobRoomBase.WorkerEnergyDecayPerSecond : energyDecayPerSecondWorking;
             // case BunnyState.Questing: return energyDecayPerSecondQuesting;
             // case BunnyState.Foraging: return energyDecayPerSecondForaging;
             default:
@@ -277,7 +281,11 @@ public class NPCBunny : MonoBehaviour
         switch (CurrentState)
         {
             case BunnyState.Working:
-                mood = Mathf.Max(0f, mood - moodDecayPerSecondWorking * Time.deltaTime);
+                {
+                    // Per-room rate, same reasoning as GetEnergyDecayRate above.
+                    float rate = (assignedJobRoom is RoomBase jobRoomBase) ? jobRoomBase.WorkerMoodDecayPerSecond : moodDecayPerSecondWorking;
+                    mood = Mathf.Max(0f, mood - rate * Time.deltaTime);
+                }
                 break;
 
             case BunnyState.Relaxing:
@@ -294,10 +302,25 @@ public class NPCBunny : MonoBehaviour
                 break;
 
             default:
-                if (IsIdlePacingWithoutRelaxSpot())
+                // Idled by a room shutdown (lost Power or Water) rather than genuinely having nothing to
+                // do — treat it like a break for them, same regen as Relaxing, instead of the idle-pacing
+                // penalty below.
+                if (IsIdledByRoomShutdown())
+                    mood = Mathf.Min(100f, mood + moodGainPerSecondRelaxing * Time.deltaTime);
+                else if (IsIdlePacingWithoutRelaxSpot())
                     mood = Mathf.Max(0f, mood - moodDecayPerSecondIdlePacing * Time.deltaTime);
                 break;
         }
+    }
+
+    // True exactly for the signature ForceIdleDueToRoomShutdown/ResumeWorkAfterRoomRestored produce: a
+    // bunny still assigned to (and still holding a claimed spot in) its job room, but parked Idle rather
+    // than Working because the room itself went dark. No dedicated flag is needed to distinguish this
+    // from any other idling — HandleIdle already no-ops on exactly this combination (assignedJobRoom !=
+    // null && claimedWorkSpot != null while Idle just returns), and no other code path produces it.
+    private bool IsIdledByRoomShutdown()
+    {
+        return CurrentState == BunnyState.Idle && assignedJobRoom != null && claimedWorkSpot != null;
     }
 
     // True whenever the bunny has no job and no claimed relax spot, and is either parked Idle waiting
@@ -381,6 +404,28 @@ public class NPCBunny : MonoBehaviour
         // and ResumeTripAfterLift both already check assignedJobRoom == null and fall back to
         // wandering/idle on their own once that leg finishes.
     }
+
+    // Called by a job room's OnRoomShutdown (IJobRoom) when it loses Power or Water while this bunny is
+    // actively Working there. Deliberately NOT routed through ReturnToPreviousActivity — that method
+    // always re-paths the bunny back to its spot, which every OTHER interrupt needs because it
+    // physically walks the bunny away first. A room shutdown never moves the bunny: claimedWorkSpot/
+    // currentRoom/currentSpot are untouched, only CurrentState flips, so the bunny just stands still —
+    // still correctly counted as occupying the room (RoomBase.CanBeDeleted's occupancy check isn't
+    // affected) — until ResumeWorkAfterRoomRestored is called.
+    public void ForceIdleDueToRoomShutdown()
+    {
+        if (CurrentState != BunnyState.Working) return;
+        CurrentState = BunnyState.Idle;
+    }
+
+    // Called by the same job room's OnRoomRestored once it's operational again, for everyone it idled.
+    public void ResumeWorkAfterRoomRestored()
+    {
+        if (assignedJobRoom == null || claimedWorkSpot == null) return;
+        CurrentState = BunnyState.Working;
+        assignedJobRoom.NotifyBunnyReadyToWork(this);
+    }
+
     public bool IsAssociatedWithRoom(RoomBase room)
     {
         if (currentRoom == room) return true;

@@ -5,6 +5,12 @@ public class EntranceRoom : RoomBase, IJobRoom
 {
     [SerializeField] private List<RoomSpot> guardSpots;
 
+    // No per-bunny production coroutine exists here (unlike Garden/Water/Coal) since guarding has no
+    // production loop yet, so shutdown/restore tracks currently-active guards directly instead of
+    // reusing a routines dictionary that doesn't exist for this room.
+    private HashSet<NPCBunny> activeGuards = new HashSet<NPCBunny>();
+    private List<NPCBunny> idledByShutdown = new List<NPCBunny>();
+
     // Self-registers as THE entrance room on every enable, not just the first — necessary because an
     // Entrance Room upgrade destroys the old instance and instantiates a new one (RoomTransitionService),
     // and both BaseLayoutManager and GateQueueManager cache a direct reference to whichever instance is
@@ -39,16 +45,46 @@ public class EntranceRoom : RoomBase, IJobRoom
     public void ReleaseSpot(RoomSpot spot, NPCBunny bunny)
     {
         spot.Release(bunny);
+        activeGuards.Remove(bunny);
     }
 
     public void NotifyBunnyReadyToWork(NPCBunny bunny)
     {
-        // No production loop for guarding — hook for future combat/alert logic
+        // Arrived while this room is dark — idle immediately instead of counting as an active guard;
+        // OnRoomRestored resumes them once it comes back.
+        if (!IsOperational)
+        {
+            if (!idledByShutdown.Contains(bunny))
+                idledByShutdown.Add(bunny);
+            bunny.ForceIdleDueToRoomShutdown();
+            return;
+        }
+
+        activeGuards.Add(bunny); // no production loop for guarding yet — hook for future combat/alert logic
     }
 
     public void NotifyBunnyLeavingToEat(NPCBunny bunny)
     {
-        // No per-bunny routine to pause for guarding
+        activeGuards.Remove(bunny);
+    }
+
+    // ---------- IJobRoom shutdown/restore ----------
+
+    public void OnRoomShutdown()
+    {
+        foreach (NPCBunny bunny in activeGuards)
+        {
+            bunny.ForceIdleDueToRoomShutdown();
+            idledByShutdown.Add(bunny);
+        }
+        activeGuards.Clear();
+    }
+
+    public void OnRoomRestored()
+    {
+        foreach (NPCBunny bunny in idledByShutdown)
+            bunny.ResumeWorkAfterRoomRestored();
+        idledByShutdown.Clear();
     }
 
     // There's only ever one Entrance Room per base (see BaseLayoutManager.entranceRoom, GateQueueManager),

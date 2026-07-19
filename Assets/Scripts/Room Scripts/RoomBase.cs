@@ -1,11 +1,113 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 public class RoomBase : MonoBehaviour
 {
+    [Header("Power")]
+    [SerializeField] protected bool consumesPower = false;
+    [SerializeField] protected float powerConsumptionAmount = 1f;
+    [SerializeField] protected float powerConsumptionInterval = 1f;
+    [SerializeField] protected bool producesPower = false;
+    [SerializeField] protected float powerProductionAmount = 1f;
+    [SerializeField] protected float powerProductionInterval = 1f;
+
+    [Header("Water")]
+    [SerializeField] protected bool consumesWater = false;
+    [SerializeField] protected float waterConsumptionAmount = 1f;
+    [SerializeField] protected float waterConsumptionInterval = 10f;
+
+    [Header("Worker Decay Rates (while Working in this room)")]
+    [SerializeField] protected float workerEnergyDecayPerSecond = 0.2f; // matches NPCBunny's prior flat default
+    [SerializeField] protected float workerMoodDecayPerSecond = 0f;
+
+    public bool ConsumesPower => consumesPower;
+    public float PowerConsumptionAmount => powerConsumptionAmount;
+    public float PowerConsumptionInterval => powerConsumptionInterval;
+    public bool ProducesPower => producesPower;
+    public float PowerProductionAmount => powerProductionAmount;
+    public float PowerProductionInterval => powerProductionInterval;
+    public bool ConsumesWater => consumesWater;
+    public float WorkerEnergyDecayPerSecond => workerEnergyDecayPerSecond;
+    public float WorkerMoodDecayPerSecond => workerMoodDecayPerSecond;
+
+    // Power is arbitrated per-floor by PowerManager (distance-from-producer ranked shutoff); Water is
+    // gated purely on WaterManager.TryConsumeWater() success/failure via this room's own coroutine
+    // below. Both default true so a room that doesn't opt into either (consumesPower/consumesWater both
+    // false) is always operational, matching pre-Power-system behavior exactly.
+    public bool IsPowered { get; private set; } = true;
+    public bool IsWatered { get; private set; } = true; // irrelevant when consumesWater is false
+    public bool IsOperational => IsPowered && (!consumesWater || IsWatered);
+
+    private bool wasOperational = true;
+    private PowerManager powerManager;
+    private Coroutine waterConsumptionRoutine;
+    private GameObject powerWarningIcon;
+    private GameObject waterWarningIcon;
+
+    // Called only by this room's floor's PowerManager.
+    public void SetPowered(bool powered)
+    {
+        if (IsPowered == powered) return;
+        IsPowered = powered;
+        GetComponent<RoomLightFlicker>()?.OnPowerChanged(powered);
+        powerWarningIcon?.SetActive(!powered);
+        RecheckOperational();
+    }
+
+    // Called internally by WaterConsumptionRoutine below, based on TryConsumeWater() success/failure.
+    private void SetWatered(bool watered)
+    {
+        if (IsWatered == watered) return;
+        IsWatered = watered;
+        waterWarningIcon?.SetActive(!watered);
+        RecheckOperational();
+    }
+
+    // Fires the shared shutdown/restore hook only on an actual IsOperational transition, so Power and
+    // Water flipping the same frame (e.g. losing both at once) can never double-fire it.
+    private void RecheckOperational()
+    {
+        bool nowOperational = IsOperational;
+        if (nowOperational == wasOperational) return;
+        wasOperational = nowOperational;
+
+        if (this is IJobRoom jobRoom)
+        {
+            if (nowOperational) jobRoom.OnRoomRestored();
+            else jobRoom.OnRoomShutdown();
+        }
+    }
+
+    // Structurally identical to WaterRoom.DrinkingRoutine's TryConsumeWater() tick. Skips its tick (and
+    // leaves IsWatered as-is) while IsPowered is false — a room that's already dark shouldn't keep
+    // trying to draw water — and resumes attempts the moment power returns.
+    private IEnumerator WaterConsumptionRoutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(waterConsumptionInterval);
+
+            if (!IsPowered) continue;
+
+            int unitsToConsume = Mathf.Max(1, Mathf.RoundToInt(waterConsumptionAmount));
+            bool success = true;
+            for (int i = 0; i < unitsToConsume; i++)
+            {
+                if (!WaterManager.Instance.TryConsumeWater())
+                {
+                    success = false;
+                    break;
+                }
+            }
+
+            SetWatered(success);
+        }
+    }
+
     [Header("Entrances")]
     [SerializeField] protected Transform leftEntrance;
     [SerializeField] protected Transform rightEntrance;
@@ -94,6 +196,12 @@ public class RoomBase : MonoBehaviour
                 case "RightWall_Filler": rightWallFiller = t.gameObject; break;
                 case "LeftDoorFrame": leftDoorFrame = t.gameObject; break;
                 case "RightDoorFrame": rightDoorFrame = t.gameObject; break;
+                // Optional per-prefab icons (see Power system design) — resolved by name rather than a
+                // serialized reference for the same reason as the doorway pieces above. Absent on any
+                // prefab that hasn't had one added yet; the null-conditional calls in SetPowered/
+                // SetWatered are safe no-ops in that case.
+                case "PowerWarning": powerWarningIcon = t.gameObject; break;
+                case "WaterWarning": waterWarningIcon = t.gameObject; break;
             }
         }
     }
@@ -150,12 +258,35 @@ public class RoomBase : MonoBehaviour
         {
             Debug.LogWarning($"{name}: BaseLayoutManager.Instance was null during OnEnable.");
         }
+
+        if (consumesPower || producesPower)
+        {
+            powerManager = PowerManager.GetOrCreate(FloorIndex);
+            if (consumesPower) powerManager.RegisterConsumer(this);
+            if (producesPower) powerManager.RegisterProducer(this);
+        }
+
+        if (consumesWater)
+            waterConsumptionRoutine = StartCoroutine(WaterConsumptionRoutine());
     }
 
     protected virtual void OnDisable()
     {
         if (BaseLayoutManager.Instance != null)
             BaseLayoutManager.Instance.UnregisterRoom(this);
+
+        if (powerManager != null)
+        {
+            if (consumesPower) powerManager.UnregisterConsumer(this);
+            if (producesPower) powerManager.UnregisterProducer(this);
+            powerManager = null;
+        }
+
+        if (waterConsumptionRoutine != null)
+        {
+            StopCoroutine(waterConsumptionRoutine);
+            waterConsumptionRoutine = null;
+        }
     }
 
     // Query only — Unity gives no way to veto an in-progress Destroy(), so whatever future

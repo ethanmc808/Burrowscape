@@ -15,6 +15,10 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
 
     private Dictionary<NPCBunny, Coroutine> activeProductionRoutines = new Dictionary<NPCBunny, Coroutine>();
 
+    // Bunnies idled because this room lost Power or Water while they were actively working — resumed
+    // automatically by OnRoomRestored. See RoomBase.RecheckOperational / IJobRoom.OnRoomShutdown.
+    private List<NPCBunny> idledByShutdown = new List<NPCBunny>();
+
     public RoomSpot RequestSpot(NPCBunny bunny)
     {
         foreach (RoomSpot spot in farmingSpots)
@@ -94,6 +98,16 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
 
     public void NotifyBunnyReadyToWork(NPCBunny bunny)
     {
+        // Arrived while this room is dark (e.g. mid-walk when Power/Water cut out) — idle immediately
+        // instead of starting production; OnRoomRestored resumes them once it comes back.
+        if (!IsOperational)
+        {
+            if (!idledByShutdown.Contains(bunny))
+                idledByShutdown.Add(bunny);
+            bunny.ForceIdleDueToRoomShutdown();
+            return;
+        }
+
         if (!activeProductionRoutines.ContainsKey(bunny))
         {
             Coroutine routine = StartCoroutine(ProduceCarrotsRoutine(bunny));
@@ -115,5 +129,25 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
 
             CarrotManager.Instance.AddCarrots(carrotsPerProduction);
         }
+    }
+
+    // ---------- IJobRoom shutdown/restore ----------
+
+    public void OnRoomShutdown()
+    {
+        foreach (KeyValuePair<NPCBunny, Coroutine> kvp in activeProductionRoutines)
+        {
+            StopCoroutine(kvp.Value);
+            kvp.Key.ForceIdleDueToRoomShutdown();
+            idledByShutdown.Add(kvp.Key);
+        }
+        activeProductionRoutines.Clear();
+    }
+
+    public void OnRoomRestored()
+    {
+        foreach (NPCBunny bunny in idledByShutdown)
+            bunny.ResumeWorkAfterRoomRestored();
+        idledByShutdown.Clear();
     }
 }

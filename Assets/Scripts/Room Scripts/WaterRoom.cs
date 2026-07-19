@@ -22,6 +22,11 @@ public class WaterRoom : RoomBase, IJobRoom
 
     private Dictionary<NPCBunny, Coroutine> activeProductionRoutines = new Dictionary<NPCBunny, Coroutine>();
 
+    // Bunnies idled because this room lost Power (or Water — a WaterRoom producing water can still be
+    // configured to consume Power) while actively working the production side. See
+    // RoomBase.RecheckOperational / IJobRoom.OnRoomShutdown.
+    private List<NPCBunny> idledByShutdown = new List<NPCBunny>();
+
     protected override void OnEnable()
     {
         base.OnEnable();
@@ -84,6 +89,16 @@ public class WaterRoom : RoomBase, IJobRoom
 
     public void NotifyBunnyReadyToWork(NPCBunny bunny)
     {
+        // Arrived while this room is dark (e.g. mid-walk when Power cut out) — idle immediately instead
+        // of starting production; OnRoomRestored resumes them once it comes back.
+        if (!IsOperational)
+        {
+            if (!idledByShutdown.Contains(bunny))
+                idledByShutdown.Add(bunny);
+            bunny.ForceIdleDueToRoomShutdown();
+            return;
+        }
+
         if (!activeProductionRoutines.ContainsKey(bunny))
         {
             Coroutine routine = StartCoroutine(ProduceWaterRoutine(bunny));
@@ -105,6 +120,26 @@ public class WaterRoom : RoomBase, IJobRoom
 
             WaterManager.Instance.AddWater(waterPerProduction);
         }
+    }
+
+    // ---------- IJobRoom shutdown/restore ----------
+
+    public void OnRoomShutdown()
+    {
+        foreach (KeyValuePair<NPCBunny, Coroutine> kvp in activeProductionRoutines)
+        {
+            StopCoroutine(kvp.Value);
+            kvp.Key.ForceIdleDueToRoomShutdown();
+            idledByShutdown.Add(kvp.Key);
+        }
+        activeProductionRoutines.Clear();
+    }
+
+    public void OnRoomRestored()
+    {
+        foreach (NPCBunny bunny in idledByShutdown)
+            bunny.ResumeWorkAfterRoomRestored();
+        idledByShutdown.Clear();
     }
 
     // ---------- DRINKING ----------
