@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class GateQueueManager : MonoBehaviour
 {
@@ -158,4 +161,38 @@ public class GateQueueManager : MonoBehaviour
         pendingRequestBunny = null;
         front.RejectAndDespawn(rejectExitPoint);
     }
+
+#if UNITY_EDITOR
+    // Same reasoning as RoomBase/RoomSpot's OnDrawGizmos (see RoomBase for the full explanation) — a
+    // real Gizmos/Handles draw call instead of a custom icon, immune to the icon-overlay Editor bug.
+    // Queue spots are numbered since their order (index 0 = front, closest to the gate) is functionally
+    // meaningful, not just visual.
+    private void OnDrawGizmos()
+    {
+        if (queueSpots != null)
+        {
+            for (int i = 0; i < queueSpots.Count; i++)
+            {
+                Transform spot = queueSpots[i];
+                if (spot == null) continue;
+                DrawPointGizmo(spot, new Color(1f, 0.5f, 0f), i == 0 ? $"{spot.name} (Front)" : $"{spot.name} (#{i})");
+            }
+        }
+
+        DrawPointGizmo(gateExitPoint, Color.blue, gateExitPoint != null ? gateExitPoint.name : null);
+        DrawPointGizmo(rejectExitPoint, Color.red, rejectExitPoint != null ? rejectExitPoint.name : null);
+    }
+
+    private static void DrawPointGizmo(Transform point, Color color, string label)
+    {
+        if (point == null) return;
+
+        Gizmos.color = color;
+        Gizmos.DrawWireSphere(point.position, 0.15f);
+        Gizmos.DrawLine(point.position, point.position + Vector3.up * 0.3f);
+
+        Handles.color = color;
+        Handles.Label(point.position + Vector3.up * 0.35f, label);
+    }
+#endif
 }

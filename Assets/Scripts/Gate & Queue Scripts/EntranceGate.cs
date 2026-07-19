@@ -18,6 +18,9 @@ public class EntranceGate : MonoBehaviour
     [SerializeField] private float openDuration = 3f;
     [SerializeField] private float closeDuration = 3f;
 
+    [Tooltip("Seconds to wait after the last bunny clears the gate before actually starting to close — gives an approaching bunny time to reach it while it's still open. Canceled (gate just stays open) if new passage is requested before this elapses.")]
+    [SerializeField] private float closeGracePeriod = 2f;
+
     [Header("Visual Gate Model")]
     [SerializeField] private Transform gateTransform;
     [SerializeField] private float closedLocalY = 0f;
@@ -25,6 +28,7 @@ public class EntranceGate : MonoBehaviour
 
     private int activeTraffic = 0; // bunnies currently queued/waiting/passing through
     private Coroutine gateRoutine;
+    private Coroutine closeGraceRoutine;
 
     private void Awake()
     {
@@ -55,8 +59,27 @@ public class EntranceGate : MonoBehaviour
 
         if (activeTraffic <= 0 && CurrentState == GateState.Open)
         {
-            StartTransition(GateState.Closing);
+            if (closeGraceRoutine != null)
+                StopCoroutine(closeGraceRoutine);
+            closeGraceRoutine = StartCoroutine(CloseGraceRoutine());
         }
+    }
+
+    // Waits closeGracePeriod seconds before actually starting to close, bailing out early if a new
+    // RequestPassage() comes in during the wait (activeTraffic goes back above 0) — same "wait for
+    // stragglers, cancel if resolved early" shape LiftRoom's boardingGracePeriod already uses.
+    private IEnumerator CloseGraceRoutine()
+    {
+        float elapsed = 0f;
+        while (elapsed < closeGracePeriod)
+        {
+            if (activeTraffic > 0) yield break;
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (activeTraffic <= 0 && CurrentState == GateState.Open)
+            StartTransition(GateState.Closing);
     }
 
     private void StartTransition(GateState newState)

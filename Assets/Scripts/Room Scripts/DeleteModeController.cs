@@ -23,6 +23,7 @@ public class DeleteModeController : MonoBehaviour
         {
             cancelButton.onClick.RemoveAllListeners();
             cancelButton.onClick.AddListener(ExitDeleteMode);
+            cancelButton.gameObject.SetActive(false); // hidden until Delete mode is actually entered
         }
     }
 
@@ -36,6 +37,7 @@ public class DeleteModeController : MonoBehaviour
     private void HandleModeChanged(PlacementMode mode)
     {
         isActive = mode == PlacementMode.Delete;
+        cancelButton?.gameObject.SetActive(isActive);
     }
 
     public void EnterDeleteMode()
