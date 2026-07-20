@@ -237,7 +237,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomBase
   consumesPower: 1
   powerConsumptionAmount: 1
-  powerConsumptionInterval: 10
+  powerConsumptionInterval: 20
   producesPower: 0
   powerProductionAmount: 1
   powerProductionInterval: 1

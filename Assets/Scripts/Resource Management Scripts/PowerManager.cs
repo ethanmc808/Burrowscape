@@ -6,10 +6,14 @@ using System.Linq;
 
 // Single GLOBAL singleton (not per-floor) — Power is one pool across the whole base: every
 // consumesPower room draws continuously regardless of staffing, producesPower rooms (e.g. CoalRoom)
-// only contribute while genuinely staffed (NotifyProducerActive/Inactive). A "Power Rationing Pool"
-// absorbs short-term deficits before any floor loses power, and banks surplus for later — see Evaluate()
-// below. Shutoff granularity is whole FLOORS, ranked by distance (in floor-index units) to whichever
-// registered ACTIVE producer's floor is nearest.
+// only contribute while genuinely staffed (NotifyProducerActive/Inactive). A "Power Rationing Pool" is a
+// plain battery — it drains at the real deficit rate and refills at the real surplus rate, never masking
+// how much is actually being produced. Modeled on Fallout Shelter's power bar: a "required" threshold
+// scales with current total demand (reserveBufferSeconds), and as long as the banked pool clears that
+// bar, momentary dips are absorbed for free and nobody is cut; once it can't, floor shutoff is judged
+// directly against real, current production — continuous and immediate, farthest floor first, never an
+// all-at-once cliff. See Evaluate(). Shutoff granularity is whole FLOORS, ranked by distance (in
+// floor-index units) to whichever registered ACTIVE producer's floor is nearest.
 //
 // Works whether manually placed in the scene (like CarrotManager/GoldManager, so baseRationingPoolAmount
 // is Inspector-tweakable) or left alone to self-create via EnsureInstance() with the code default.
@@ -29,7 +33,7 @@ public class PowerManager : MonoBehaviour
         // room's OnEnable calls this before the placed instance's own Awake() has run yet, so a
         // hand-tuned baseRationingPoolAmount is never silently replaced or destroyed by a creation-order
         // race.
-        PowerManager existing = FindFirstObjectByType<PowerManager>();
+        PowerManager existing = FindAnyObjectByType<PowerManager>();
         if (existing != null)
         {
             Instance = existing;
@@ -56,6 +60,21 @@ public class PowerManager : MonoBehaviour
     // player has built anything.
     [SerializeField] private float baseRationingPoolAmount = 50f;
 
+    // How many seconds' worth of CURRENT total demand must be banked in the pool before it's considered
+    // a "safe" reserve — mirrors Fallout Shelter's power bar, where a requirement tick mark scales with
+    // total consumption; stay above it and momentary dips are absorbed for free, drop below it and
+    // shutoff begins (farthest floor first, judged against real production — see Evaluate()). Raise this
+    // for a bigger grace window before any floor can flicker; lower it (or set to 0) for near-instant,
+    // no-grace cutoff.
+    [SerializeField] private float reserveBufferSeconds = 15f;
+
+    // NEW — when on, logs the full arbitration pass (production/demand/pool totals, plus every floor's
+    // distance/demand/running-total/on-off verdict) to the Console every evaluation tick. Purely a
+    // debugging aid for tuning/verifying the distance-ranked shutoff — leave off for normal play, it's
+    // noisy at the default 1s evaluationInterval.
+    [Header("Debug")]
+    [SerializeField] private bool debugLogFloorArbitration = false;
+
     private readonly List<RoomBase> consumers = new List<RoomBase>();
     private readonly List<RoomBase> producers = new List<RoomBase>();
 
@@ -69,8 +88,9 @@ public class PowerManager : MonoBehaviour
     private float rationingPoolMax;
     private bool rationingPoolInitialized;
 
-    // Effective production used for this tick's floor arbitration (raw active production + whatever the
-    // rationing pool contributed this tick).
+    // Raw active-producer output — same value as ActiveProductionRate below. Kept as a separate property
+    // (rather than removing it and repointing callers at ActiveProductionRate) purely to preserve the
+    // existing public surface (TotalActiveProduction) that other scripts may already depend on.
     public float CurrentActiveProduction { get; private set; }
 
     // Raw active-producer output, NOT netted against consumption or topped up by the rationing pool —
@@ -182,28 +202,39 @@ public class PowerManager : MonoBehaviour
             if (c != null) totalDemand += SafeRate(c.PowerConsumptionAmount, c.PowerConsumptionInterval);
 
         float deficit = totalDemand - activeProduction;
-        float effectiveProduction;
 
+        // Plain battery — no masking. The pool drains at the real deficit rate and refills at the real
+        // surplus rate; it never pretends production covers more than it actually does (that was the old
+        // bug: it used to fully absorb the deficit for as long as it had charge, which hid every floor
+        // until the pool emptied and then cut all of them in the same tick).
         if (deficit > 0f)
         {
-            // Try to fully absorb the deficit from the pool. If the pool has enough, nobody loses power
-            // this tick. If it has less (including already empty), drain whatever's left and convert
-            // that partial amount back to a rate as bonus effective production.
-            float amountNeededThisTick = deficit * evaluationInterval;
-            float granted = Mathf.Min(amountNeededThisTick, rationingPoolCurrent);
-            rationingPoolCurrent = Mathf.Clamp(rationingPoolCurrent - granted, 0f, rationingPoolMax);
-            effectiveProduction = activeProduction + (granted / evaluationInterval);
+            float drained = Mathf.Min(deficit * evaluationInterval, rationingPoolCurrent);
+            rationingPoolCurrent = Mathf.Clamp(rationingPoolCurrent - drained, 0f, rationingPoolMax);
         }
         else
         {
-            // Production already covers demand — the surplus refills the pool (capped at max). Nobody
-            // ever loses power in this branch.
             float surplusRate = -deficit;
             rationingPoolCurrent = Mathf.Clamp(rationingPoolCurrent + surplusRate * evaluationInterval, 0f, rationingPoolMax);
-            effectiveProduction = activeProduction;
         }
 
-        CurrentActiveProduction = effectiveProduction;
+        CurrentActiveProduction = activeProduction;
+
+        // Fallout Shelter's power bar has a "required" tick mark that scales with total consumption —
+        // stay above it and the vault runs fine through momentary dips; drop below it and rooms start
+        // failing, farthest first. reserveThreshold is that same idea: "how much banked charge counts as
+        // safe" scales with current total demand. While the pool is healthy, nobody gets cut (a Coal Room
+        // worker briefly leaving to eat doesn't flicker anything); once the pool can't clear that bar,
+        // arbitration switches to real, current production — continuous and immediate, no masking, no
+        // all-at-once cliff.
+        float reserveThreshold = totalDemand * reserveBufferSeconds;
+        bool reserveHealthy = rationingPoolCurrent >= reserveThreshold;
+        float arbitrationCeiling = reserveHealthy ? totalDemand : activeProduction;
+
+        if (debugLogFloorArbitration)
+        {
+            Debug.Log($"[Power] production={activeProduction:F2} demand={totalDemand:F2} pool={rationingPoolCurrent:F1}/{rationingPoolMax:F1} reserveThreshold={reserveThreshold:F1} healthy={reserveHealthy}");
+        }
 
         // ---- Whole-floor shutoff arbitration ----
         // Group registered consumers by floor (floors with zero consumesPower rooms never appear here
@@ -236,8 +267,13 @@ public class PowerManager : MonoBehaviour
             List<RoomBase> roomsOnFloor = consumersByFloor[floor];
             float floorDemand = roomsOnFloor.Sum(c => SafeRate(c.PowerConsumptionAmount, c.PowerConsumptionInterval));
             runningTotal += floorDemand;
-            bool powered = runningTotal <= effectiveProduction;
+            bool powered = runningTotal <= arbitrationCeiling;
             foreach (RoomBase c in roomsOnFloor) c.SetPowered(powered);
+
+            if (debugLogFloorArbitration)
+            {
+                Debug.Log($"[Power]   floor {floor}: dist={DistanceToNearestActiveProducerFloor(floor):F0} floorDemand={floorDemand:F2} runningTotal={runningTotal:F2} -> {(powered ? "ON" : "OFF")}");
+            }
         }
 
         OnAnyPowerChanged?.Invoke();

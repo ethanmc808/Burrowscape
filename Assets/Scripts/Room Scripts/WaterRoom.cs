@@ -7,7 +7,9 @@ using System.Collections;
 // disambiguated spot pools. The production side (RequestSpot/ReleaseSpot/HasAvailableSpot) is what
 // RoomClickHandler's GetComponent<IJobRoom>() picks up for manual job assignment via AssignmentUI,
 // exactly like GardenRoom; the drinking side is a separate pool with its own names so the two never
-// collide.
+// collide. This drinking side is also WHY Water is a stockpile (WaterManager) rather than a rate
+// comparison like Power: bunnies visit in bursts and pull water on their own schedule, not at one
+// continuous base-wide rate — see the header comment on WaterManager for the full reasoning.
 public class WaterRoom : RoomBase, IJobRoom
 {
     [SpotNamePrefix("PottingSpot")]
@@ -17,13 +19,20 @@ public class WaterRoom : RoomBase, IJobRoom
 
     [SerializeField] private float productionInterval = 10f;
     [SerializeField] private int waterPerProduction = 1;
-    [SerializeField] private float waterRationingPoolAmount = 0f; // this room's contribution to the global Water Rationing Pool's max capacity
+    [SerializeField] private float waterRationingPoolAmount = 0f; // this room's contribution to the global Water Rationing Pool's max capacity (emergency backup pool — only spent once WaterManager's normal stockpile is empty)
+
+    // NEW — this room's contribution to WaterManager's normal stockpile cap (a SEPARATE number from the
+    // rationing pool above — that one caps the emergency backup, this one caps the everyday stockpile
+    // bunnies actually drink from day to day). Mirrors PowerRationingPoolAmount's role for Power, just
+    // applied to Water's real accumulating currency instead of a rate.
+    [SerializeField] private int waterStorageCapacityAmount = 100;
 
     [SerializeField] private float drinkingTickInterval = 2f;
 
     public float ProductionInterval => productionInterval;
     public int WaterPerProduction => waterPerProduction;
     public float WaterRationingPoolAmount => waterRationingPoolAmount;
+    public int WaterStorageCapacityAmount => waterStorageCapacityAmount;
 
     private Dictionary<NPCBunny, Coroutine> activeProductionRoutines = new Dictionary<NPCBunny, Coroutine>();
 
@@ -44,6 +53,15 @@ public class WaterRoom : RoomBase, IJobRoom
 
         waterRationingManager = WaterRationingManager.EnsureInstance();
         waterRationingManager.RegisterProducer(this);
+
+        // NEW — registers this room's WaterStorageCapacityAmount with WaterManager's storage cap.
+        // WaterManager doesn't self-create the way PowerManager/WaterRationingManager do (it's expected
+        // to be manually placed in the scene, same as CarrotManager/GoldManager), so this is a null-check
+        // rather than an EnsureInstance() call.
+        if (WaterManager.Instance != null)
+            WaterManager.Instance.RegisterProducer(this);
+        else
+            Debug.LogWarning($"{name}: WaterManager.Instance was null during OnEnable.");
     }
 
     protected override void OnDisable()
@@ -57,6 +75,10 @@ public class WaterRoom : RoomBase, IJobRoom
             waterRationingManager.UnregisterProducer(this);
             waterRationingManager = null;
         }
+
+        // NEW — mirrors the registration added in OnEnable above.
+        if (WaterManager.Instance != null)
+            WaterManager.Instance.UnregisterProducer(this);
     }
 
     // ---------- PRODUCTION (IJobRoom) ----------
@@ -134,7 +156,7 @@ public class WaterRoom : RoomBase, IJobRoom
                 yield break;
             }
 
-            WaterManager.Instance.AddWater(Mathf.RoundToInt(waterPerProduction * GradeMultiplier)); // still feeds the simple stockpile bunnies drink from
+            WaterManager.Instance.AddWater(Mathf.RoundToInt(waterPerProduction * GradeMultiplier)); // still feeds the simple stockpile bunnies drink from — now clamped to WaterManager's storage cap
         }
     }
 

@@ -643,9 +643,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CoalRoom
   consumesPower: 0
   powerConsumptionAmount: 1
-  powerConsumptionInterval: 1
+  powerConsumptionInterval: 4
   producesPower: 1
-  powerProductionAmount: 4
+  powerProductionAmount: 1
   powerProductionInterval: 1
   powerRationingPoolAmount: 20
   consumesWater: 1

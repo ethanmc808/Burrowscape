@@ -848,6 +848,53 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 89923173}
   m_CullTransparentMesh: 1
+--- !u!1 &91956361
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 91956362}
+  - component: {fileID: 91956363}
+  m_Layer: 0
+  m_Name: Water Rationing Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &91956362
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 91956361}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1455341919}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &91956363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 91956361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9644138b0f28fd44dad251bc896eda30, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaterRationingManager
+  evaluationInterval: 1
+  baseRationingPoolAmount: 50
+  debugLogFloorArbitration: 0
 --- !u!1 &103343939
 GameObject:
   m_ObjectHideFlags: 0
@@ -1350,7 +1397,7 @@ Light:
   serializedVersion: 13
   m_Type: 1
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 0.5
+  m_Intensity: 0.1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -1413,7 +1460,7 @@ Transform:
   m_GameObject: {fileID: 203844586}
   serializedVersion: 2
   m_LocalRotation: {x: 0.92842865, y: -0.23647434, z: -0.10520151, w: 0.26651973}
-  m_LocalPosition: {x: 0, y: 1.75, z: 1.75}
+  m_LocalPosition: {x: 0, y: 9.5, z: 35.75}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2186,6 +2233,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CarrotManager
   currentCarrots: 50
+  baseCarrotStorageAmount: 50
 --- !u!4 &430627076
 Transform:
   m_ObjectHideFlags: 0
@@ -2581,8 +2629,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87a9f507d2a9c364083eaf70a323f0a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PowerManager
-  evaluationInterval: 1
-  baseRationingPoolAmount: 50
+  evaluationInterval: 15
+  baseRationingPoolAmount: 100
+  reserveBufferSeconds: 15
+  debugLogFloorArbitration: 0
 --- !u!1 &629919518
 GameObject:
   m_ObjectHideFlags: 0
@@ -7533,6 +7583,7 @@ Transform:
   m_Children:
   - {fileID: 430627076}
   - {fileID: 1471712941}
+  - {fileID: 91956362}
   - {fileID: 650785544}
   - {fileID: 580751055}
   m_Father: {fileID: 0}
@@ -7582,6 +7633,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaterManager
   currentWater: 100
+  baseWaterStorageAmount: 50
 --- !u!1 &1474868562
 GameObject:
   m_ObjectHideFlags: 0

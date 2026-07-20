@@ -20,6 +20,15 @@ public class RoomBase : MonoBehaviour
     [SerializeField] protected float waterConsumptionAmount = 1f;
     [SerializeField] protected float waterConsumptionInterval = 10f;
 
+    [Header("Carrot Storage")]
+    // Whether this room contributes to CarrotManager's storage cap at all — a separate flag rather than
+    // just checking carrotStorageCapacityAmount > 0, matching the same explicit-flag-plus-amount shape as
+    // consumesPower/producesPower above (Inspector clarity: a checkbox reads better than "leave the
+    // number at zero"). Cafeteria is the first room type to use this; Kitchen and Cold Storage can opt in
+    // later purely via the Inspector, with no script of their own required, since this lives on RoomBase.
+    [SerializeField] protected bool contributesToCarrotStorage = false;
+    [SerializeField] protected int carrotStorageCapacityAmount = 0; // this room's contribution to CarrotManager's storage cap — only meaningful when contributesToCarrotStorage is true
+
     [Header("Worker Decay Rates (while Working in this room)")]
     [SerializeField] protected float workerEnergyDecayPerSecond = 0.2f; // matches NPCBunny's prior flat default
     [SerializeField] protected float workerMoodDecayPerSecond = 0f;
@@ -34,6 +43,8 @@ public class RoomBase : MonoBehaviour
     public bool ConsumesWater => consumesWater;
     public float WaterConsumptionAmount => waterConsumptionAmount;
     public float WaterConsumptionInterval => waterConsumptionInterval;
+    public bool ContributesToCarrotStorage => contributesToCarrotStorage;
+    public int CarrotStorageCapacityAmount => carrotStorageCapacityAmount;
     public float WorkerEnergyDecayPerSecond => workerEnergyDecayPerSecond;
     public float WorkerMoodDecayPerSecond => workerMoodDecayPerSecond;
 
@@ -261,6 +272,14 @@ public class RoomBase : MonoBehaviour
             waterRationingManager = WaterRationingManager.EnsureInstance();
             waterRationingManager.RegisterConsumer(this);
         }
+
+        if (contributesToCarrotStorage)
+        {
+            if (CarrotManager.Instance != null)
+                CarrotManager.Instance.RegisterCapacityContributor(this);
+            else
+                Debug.LogWarning($"{name}: CarrotManager.Instance was null during OnEnable.");
+        }
     }
 
     protected virtual void OnDisable()
@@ -280,6 +299,9 @@ public class RoomBase : MonoBehaviour
             waterRationingManager.UnregisterConsumer(this);
             waterRationingManager = null;
         }
+
+        if (contributesToCarrotStorage && CarrotManager.Instance != null)
+            CarrotManager.Instance.UnregisterCapacityContributor(this);
     }
 
     // Query only — Unity gives no way to veto an in-progress Destroy(), so whatever future

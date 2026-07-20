@@ -1312,7 +1312,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LiftRoom
   consumesPower: 1
   powerConsumptionAmount: 1
-  powerConsumptionInterval: 20
+  powerConsumptionInterval: 40
   producesPower: 0
   powerProductionAmount: 1
   powerProductionInterval: 1

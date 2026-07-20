@@ -31,7 +31,7 @@ public class WaterRationingManager : MonoBehaviour
         // Same scene-aware bootstrap as PowerManager.EnsureInstance() — check for a manually-placed
         // instance before creating one, so a hand-tuned baseRationingPoolAmount is never silently
         // replaced or destroyed by a creation-order race.
-        WaterRationingManager existing = FindFirstObjectByType<WaterRationingManager>();
+        WaterRationingManager existing = FindAnyObjectByType<WaterRationingManager>();
         if (existing != null)
         {
             Instance = existing;
@@ -49,6 +49,12 @@ public class WaterRationingManager : MonoBehaviour
     // before you've built anything" need — raise this if you want an extra emergency cushion specifically
     // for when the normal pool runs dry.
     [SerializeField] private float baseRationingPoolAmount = 0f;
+
+    // NEW — when on, logs the full arbitration pass (per-floor distance/demand/units-needed and the
+    // watered/not-watered verdict) to the Console every evaluation tick. Purely a debugging aid for
+    // tuning/verifying the distance-ranked shutoff — leave off for normal play.
+    [Header("Debug")]
+    [SerializeField] private bool debugLogFloorArbitration = false;
 
     private readonly List<RoomBase> consumers = new List<RoomBase>();
     private readonly List<WaterRoom> producers = new List<WaterRoom>();
@@ -168,6 +174,11 @@ public class WaterRationingManager : MonoBehaviour
             .ThenBy(f => f)
             .ToList();
 
+        if (debugLogFloorArbitration)
+        {
+            Debug.Log($"[Water] pool={rationingPoolCurrent:F1}/{rationingPoolMax:F1} normalPool={(WaterManager.Instance != null ? WaterManager.Instance.CurrentWater.ToString("F1") : "n/a")}");
+        }
+
         // Once a closer floor can't be fully covered (by normal pool + rationing pool combined), every
         // floor ranked after it is also cut without even attempting a draw — preserves floor-priority
         // meaning (a farther floor shouldn't "cut the line" and drain water a closer floor needed).
@@ -214,6 +225,11 @@ public class WaterRationingManager : MonoBehaviour
 
             floorDemandAccumulators[floor] = banked;
             foreach (RoomBase c in roomsOnFloor) c.SetWatered(watered);
+
+            if (debugLogFloorArbitration)
+            {
+                Debug.Log($"[Water]   floor {floor}: dist={DistanceToNearestProducerFloor(floor):F0} unitsNeeded={unitsNeeded} -> {(watered ? "WATERED" : "DRY")}");
+            }
         }
 
         OnAnyWaterRationingChanged?.Invoke();

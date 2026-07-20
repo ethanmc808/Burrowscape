@@ -887,7 +887,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CafeteriaRoom
   consumesPower: 1
   powerConsumptionAmount: 1
-  powerConsumptionInterval: 10
+  powerConsumptionInterval: 20
   producesPower: 0
   powerProductionAmount: 1
   powerProductionInterval: 1
@@ -895,6 +895,8 @@ MonoBehaviour:
   consumesWater: 0
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 1
+  carrotStorageCapacityAmount: 30
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
   leftEntrance: {fileID: 4210332918705664644}

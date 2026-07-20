@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +7,14 @@ using System.Linq;
 public class BaseLayoutManager : MonoBehaviour
 {
     public static BaseLayoutManager Instance { get; private set; }
+
+    // Fired after a floor's room layout settles (per-floor add/remove, same batched timing as the
+    // doorway refresh below) — DirtFillManager listens to regenerate just that floor's dirt segments.
+    public static event Action<int> OnFloorLayoutChanged;
+
+    // Fired when ExpandBuildableBounds grows the buildable area — DirtFillManager listens to do a full
+    // regenerate across every floor, since new floors/width may now need dirt that didn't exist before.
+    public static event Action OnBuildableBoundsChanged;
 
     [SerializeField] private Transform baseEntrance;
     public Transform BaseEntrance => baseEntrance;
@@ -80,6 +89,7 @@ public class BaseLayoutManager : MonoBehaviour
     {
         maxGridXFromEntrance += additionalGridX;
         maxFloorDepth += additionalFloorDepth;
+        OnBuildableBoundsChanged?.Invoke();
     }
 
     public void RegisterRoom(RoomBase room)
@@ -169,6 +179,8 @@ public class BaseLayoutManager : MonoBehaviour
             room.SetLeftDoorwayOpen(hasLeftNeighbor);
             room.SetRightDoorwayOpen(hasRightNeighbor);
         }
+
+        OnFloorLayoutChanged?.Invoke(floorIndex);
     }
 
     // Every floor that currently has at least one registered room (or lift stop) on it.
