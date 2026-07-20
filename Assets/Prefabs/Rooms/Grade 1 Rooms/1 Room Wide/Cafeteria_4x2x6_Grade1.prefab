@@ -887,7 +887,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CafeteriaRoom
   consumesPower: 1
   powerConsumptionAmount: 1
-  powerConsumptionInterval: 20
+  powerConsumptionInterval: 10
   producesPower: 0
   powerProductionAmount: 1
   powerProductionInterval: 1

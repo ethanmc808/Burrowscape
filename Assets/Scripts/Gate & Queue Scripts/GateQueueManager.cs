@@ -83,6 +83,11 @@ public class GateQueueManager : MonoBehaviour
         return currentQueue.Count > 0 ? currentQueue[0] : null;
     }
 
+    // The fixed scene Transform marking the front queue slot (never moves — occupancy is what changes,
+    // via ShiftQueueForward). Lets UI (BunnyApprovalUI) anchor itself to a stable world position instead
+    // of tracking whichever bunny currently occupies it.
+    public Transform FrontQueueSpot => (queueSpots != null && queueSpots.Count > 0) ? queueSpots[0] : null;
+
     // Called by NPCBunny once it's fully walked past the gate
     public void NotifyBunnyPassedGate(NPCBunny bunny)
     {
@@ -141,20 +146,24 @@ public class GateQueueManager : MonoBehaviour
         }
     }
 
-    public void ApproveFrontBunny()
+    // Takes the bunny explicitly (rather than re-deriving GetFrontOfQueue() internally) so the caller's
+    // displayed/clicked bunny is the exact one acted on, not just whichever happens to sit at index 0 —
+    // validated against GetFrontOfQueue() as a cheap defensive check, since only the front bunny should
+    // ever be approvable.
+    public void ApproveFrontBunny(NPCBunny bunny)
     {
         NPCBunny front = GetFrontOfQueue();
-        if (front == null) return;
+        if (front == null || front != bunny) return;
 
         front.SetAwaitingApproval(false);
         frontBunnyCleared = true;
         EntranceGate.Instance.RequestPassage();
     }
 
-    public void RejectFrontBunny()
+    public void RejectFrontBunny(NPCBunny bunny)
     {
         NPCBunny front = GetFrontOfQueue();
-        if (front == null) return;
+        if (front == null || front != bunny) return;
 
         Dequeue(front);
         front.SetAwaitingApproval(false);

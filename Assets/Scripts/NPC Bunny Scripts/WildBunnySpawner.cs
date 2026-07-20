@@ -13,6 +13,10 @@ public class WildBunnySpawner : MonoBehaviour
     [SerializeField] private float minSpawnInterval = 600f; // seconds (10 min)
     [SerializeField] private float maxSpawnInterval = 1200f; // seconds (20 min)
 
+    [Header("Starting Needs Randomization")]
+    [SerializeField] private float minStartingNeed = 70f;
+    [SerializeField] private float maxStartingNeed = 100f;
+
     private Coroutine autoSpawnRoutine;
 
     private void Start()
@@ -68,6 +72,7 @@ public class WildBunnySpawner : MonoBehaviour
         BunnyGender gender = WildBunnyNames.Instance.GetRandomGender();
         string chosenName = WildBunnyNames.Instance.GetRandomName(gender);
         newBunny.SetIdentity(gender, chosenName);
+        newBunny.RandomizeStartingNeeds(minStartingNeed, maxStartingNeed);
 
         Transform queueSpot = GateQueueManager.Instance.Enqueue(newBunny);
         if (queueSpot == null)

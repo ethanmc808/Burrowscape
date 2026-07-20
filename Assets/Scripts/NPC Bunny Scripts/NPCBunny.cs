@@ -812,7 +812,14 @@ public class NPCBunny : MonoBehaviour
 
         Debug.Log($"[PathDebug] {name} RequestNewJobSpot: claimed {spot.name}, currentRoom={(currentRoom != null ? currentRoom.name : "NULL")}, currentFloorIndex={currentFloorIndex}, jobRoomBase.FloorIndex={jobRoomBase.FloorIndex}");
 
-        if (currentRoom != null && currentFloorIndex != jobRoomBase.FloorIndex)
+        // currentFloorIndex alone decides cross-floor vs. same-floor — NOT currentRoom's nullness.
+        // currentRoom can legitimately be null (BaseLayoutManager's routing treats that as "start from
+        // the base entrance," used deliberately by the room-transition system) while currentFloorIndex
+        // still correctly reflects a different floor. Requiring currentRoom != null here used to let a
+        // genuinely cross-floor request silently fall through to the same-floor path below, which has no
+        // concept of floors/lifts at all and produced a straight-line walk between waypoints on different
+        // Y-levels (wall/floor clipping) instead of a proper lift trip.
+        if (currentFloorIndex != jobRoomBase.FloorIndex)
         {
             bool started = TryBeginCrossFloorTripToSpot(jobRoomBase, spot, BunnyState.Working);
             Debug.Log($"[PathDebug] {name} RequestNewJobSpot: took cross-floor branch, TryBeginCrossFloorTripToSpot={started}.");
@@ -839,6 +846,17 @@ public class NPCBunny : MonoBehaviour
     // == Relaxing), which Update()'s Relaxing case handles directly instead.
     private bool IsHeadedToRelaxSpot()
     {
+        // pendingLift being set is the authoritative "mid a lift trip" signal on its own, true for the
+        // trip's ENTIRE duration — checked unconditionally, before the CurrentState-based transit check
+        // below, because DisembarkFromLift briefly parks the bunny in plain Idle (a reveal-delay pause)
+        // between the lift ride and its own delayed walk-out leg actually starting. Idle isn't one of
+        // the "in transit" states below, so a job assignment landing in that exact window used to sail
+        // past this guard entirely and release claimedRelaxSpot/claimedRelaxRoom out from under a trip
+        // that was still very much in flight (tracked separately via pendingFinalSpot/pendingFinalRoom,
+        // untouched by that release) — corrupting OnArrivedAtRelaxSpot's eventual currentRoom/currentSpot
+        // assignment once the trip actually completed.
+        if (pendingLift != null && pendingFinalState == BunnyState.Relaxing) return true;
+
         bool inTransit = CurrentState == BunnyState.MovingToSpot
             || CurrentState == BunnyState.WaitingForLift
             || CurrentState == BunnyState.RidingLift
@@ -846,8 +864,7 @@ public class NPCBunny : MonoBehaviour
 
         if (!inTransit) return false;
 
-        return pendingStateOnArrival == BunnyState.Relaxing
-            || (pendingLift != null && pendingFinalState == BunnyState.Relaxing);
+        return pendingStateOnArrival == BunnyState.Relaxing;
     }
 
     // Broader than IsHeadedToRelaxSpot on purpose: a job assignment must never pull a bunny out of
@@ -897,6 +914,16 @@ public class NPCBunny : MonoBehaviour
         }
         if (assignedJobRoom != null) return;
 
+        // Already have a relax spot claimed and a trip toward it in flight — e.g. DisembarkFromLift
+        // parks the bunny in Idle for a brief reveal delay before its own delayed walk-out coroutine
+        // starts moving it, and Update()'s Idle case has no way to know that pause is transient.
+        // TryClaimRelaxSpot has no way to know a claim already exists either — without this guard it
+        // happily claims ANOTHER spot on top of the existing one, overwriting claimedRelaxSpot/
+        // claimedRelaxRoom with a spot the bunny never actually walked to. That corrupts
+        // OnArrivedAtRelaxSpot's eventual currentRoom/currentSpot assignment once the real (separately
+        // tracked, via pendingFinalSpot) trip resumes and completes.
+        if (claimedRelaxSpot != null) return;
+
         // No job: always try to claim a Living Room spot this tick (cheap, and lets a bunny grab a
         // spot the moment one frees up rather than waiting out a full wanderPauseDuration first).
         if (TryClaimRelaxSpot()) return;
@@ -927,7 +954,8 @@ public class NPCBunny : MonoBehaviour
         claimedRelaxSpot = spot;
         claimedRelaxRoom = room;
 
-        if (currentRoom != null && currentFloorIndex != room.FloorIndex)
+        // See RequestNewJobSpot's identical check for why currentRoom's nullness must not gate this.
+        if (currentFloorIndex != room.FloorIndex)
         {
             if (!TryBeginCrossFloorTripToSpot(room, spot, BunnyState.Relaxing))
             {
@@ -1262,11 +1290,14 @@ public class NPCBunny : MonoBehaviour
         pendingFinalSpot = targetSpot;
         pendingFinalWanderPoint = null;
         pendingFinalState = finalState;
-        BeginTripToLift(lift, myFloor, targetRoom.FloorIndex);
-        return true;
+        return BeginTripToLift(lift, myFloor, targetRoom.FloorIndex);
     }
 
-    private void BeginTripToLift(LiftRoom lift, int originFloor, int destinationFloor)
+    // Returns false if BeginTripToLift's own route lookup fails (see the empty-path guard below) — lets
+    // TryBeginCrossFloorTripToSpot's caller (RequestNewJobSpot etc.) find out the trip never actually
+    // started, instead of wrongly believing it did and leaving a claimed spot/state permanently stranded
+    // with nothing left to ever resolve it.
+    private bool BeginTripToLift(LiftRoom lift, int originFloor, int destinationFloor)
     {
         pendingLift = lift;
         pendingLiftOriginFloor = originFloor;
@@ -1289,7 +1320,7 @@ public class NPCBunny : MonoBehaviour
             pendingFinalRoom = null;
             pendingFinalSpot = null;
             pendingFinalWanderPoint = null;
-            return;
+            return false;
         }
 
         currentTargetSpot = null;
@@ -1300,6 +1331,7 @@ public class NPCBunny : MonoBehaviour
         AdvanceToNextWaypoint();
 
         lift.RequestLift(this, originFloor, destinationFloor);
+        return true;
     }
 
     private void OnArrivedAtLiftLanding()
@@ -1938,7 +1970,8 @@ public class NPCBunny : MonoBehaviour
 
         waterRoomBeingUsed = waterRoom;
 
-        if (currentRoom != null && currentFloorIndex != waterRoom.FloorIndex)
+        // See RequestNewJobSpot's identical check for why currentRoom's nullness must not gate this.
+        if (currentFloorIndex != waterRoom.FloorIndex)
         {
             if (!TryBeginCrossFloorTripToSpot(waterRoom, drinkSpot, BunnyState.Drinking))
             {
@@ -1976,7 +2009,8 @@ public class NPCBunny : MonoBehaviour
 
         cafeteriaBeingUsed = cafeteria;
 
-        if (currentRoom != null && currentFloorIndex != cafeteria.FloorIndex)
+        // See RequestNewJobSpot's identical check for why currentRoom's nullness must not gate this.
+        if (currentFloorIndex != cafeteria.FloorIndex)
         {
             if (!TryBeginCrossFloorTripToSpot(cafeteria, eatSpot, BunnyState.Eating))
             {
@@ -2017,7 +2051,8 @@ public class NPCBunny : MonoBehaviour
         claimedSleepSpot = sleepSpot;
         claimedSleepRoom = bedroom;
 
-        if (currentRoom != null && currentFloorIndex != bedroom.FloorIndex)
+        // See RequestNewJobSpot's identical check for why currentRoom's nullness must not gate this.
+        if (currentFloorIndex != bedroom.FloorIndex)
         {
             if (!TryBeginCrossFloorTripToSpot(bedroom, sleepSpot, BunnyState.Sleeping))
             {
@@ -2062,7 +2097,8 @@ public class NPCBunny : MonoBehaviour
         {
             Bedroom sleepRoomBase = claimedSleepRoom;
 
-            if (currentRoom != null && currentFloorIndex != sleepRoomBase.FloorIndex)
+            // See RequestNewJobSpot's identical check for why currentRoom's nullness must not gate this.
+            if (currentFloorIndex != sleepRoomBase.FloorIndex)
             {
                 if (!TryBeginCrossFloorTripToSpot(sleepRoomBase, claimedSleepSpot, BunnyState.Sleeping))
                 {
@@ -2087,7 +2123,8 @@ public class NPCBunny : MonoBehaviour
             {
                 RoomBase jobRoomBase = (RoomBase)assignedJobRoom;
 
-                if (currentRoom != null && currentFloorIndex != jobRoomBase.FloorIndex)
+                // See RequestNewJobSpot's identical check for why currentRoom's nullness must not gate this.
+                if (currentFloorIndex != jobRoomBase.FloorIndex)
                 {
                     if (!TryBeginCrossFloorTripToSpot(jobRoomBase, claimedWorkSpot, BunnyState.Working))
                     {
@@ -2112,7 +2149,8 @@ public class NPCBunny : MonoBehaviour
         {
             RoomBase relaxRoomBase = claimedRelaxRoom;
 
-            if (currentRoom != null && currentFloorIndex != relaxRoomBase.FloorIndex)
+            // See RequestNewJobSpot's identical check for why currentRoom's nullness must not gate this.
+            if (currentFloorIndex != relaxRoomBase.FloorIndex)
             {
                 if (!TryBeginCrossFloorTripToSpot(relaxRoomBase, claimedRelaxSpot, BunnyState.Relaxing))
                 {

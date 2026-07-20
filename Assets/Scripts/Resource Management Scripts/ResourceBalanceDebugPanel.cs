@@ -165,7 +165,7 @@ public class ResourceBalanceDebugPanel : MonoBehaviour
         panelRect.sizeDelta = new Vector2(480f, 380f);
 
         Image background = panelRoot.AddComponent<Image>();
-        background.color = new Color(0f, 0f, 0f, 0.75f);
+        background.color = Color.white;
 
         GameObject textGO = new GameObject("Text");
         textGO.transform.SetParent(panelRoot.transform, false);
@@ -177,7 +177,7 @@ public class ResourceBalanceDebugPanel : MonoBehaviour
 
         displayText = textGO.AddComponent<TextMeshProUGUI>();
         displayText.fontSize = 20f;
-        displayText.color = Color.white;
+        displayText.color = Color.black;
         displayText.alignment = TextAlignmentOptions.TopLeft;
         displayText.enableWordWrapping = false;
     }

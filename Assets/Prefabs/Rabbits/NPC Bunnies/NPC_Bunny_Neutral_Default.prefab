@@ -201,24 +201,24 @@ MonoBehaviour:
   wanderSpeedMultiplier: 0.5
   arrivalThreshold: 0.05
   hunger: 100
-  hungerDecayPerSecond: 0.2
-  hungerThresholdLow: 35
+  hungerDecayPerSecond: 0.1
+  hungerThresholdLow: 30
   hungerThresholdFull: 90
   hungerThresholdCritical: 15
   hungerGainPerCarrot: 25
   thirst: 100
-  thirstDecayPerSecond: 0.4
-  thirstThresholdLow: 35
+  thirstDecayPerSecond: 0.2
+  thirstThresholdLow: 30
   thirstThresholdFull: 90
   thirstThresholdCritical: 15
   thirstGainPerDrink: 5
   energy: 100
   energyDecayPerSecond: 0.05
-  energyDecayPerSecondWorking: 0.2
-  energyDecayPerSecondQuesting: 0.2
-  energyDecayPerSecondForaging: 0.2
+  energyDecayPerSecondWorking: 0.1
+  energyDecayPerSecondQuesting: 0.1
+  energyDecayPerSecondForaging: 0.1
   energyThresholdLow: 35
-  energyGainPerSecondSleeping: 5
+  energyGainPerSecondSleeping: 4
   mood: 100
   moodDecayPerSecondWorking: 0.05
   moodGainPerSecondRelaxing: 0.2

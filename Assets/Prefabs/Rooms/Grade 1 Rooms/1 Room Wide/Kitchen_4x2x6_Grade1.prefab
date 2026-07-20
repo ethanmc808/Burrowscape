@@ -977,7 +977,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomBase
   consumesPower: 1
   powerConsumptionAmount: 1
-  powerConsumptionInterval: 20
+  powerConsumptionInterval: 10
   producesPower: 0
   powerProductionAmount: 1
   powerProductionInterval: 1
@@ -985,6 +985,8 @@ MonoBehaviour:
   consumesWater: 1
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
   leftEntrance: {fileID: 8240320741292344357}
