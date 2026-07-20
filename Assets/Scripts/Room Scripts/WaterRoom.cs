@@ -17,8 +17,13 @@ public class WaterRoom : RoomBase, IJobRoom
 
     [SerializeField] private float productionInterval = 10f;
     [SerializeField] private int waterPerProduction = 1;
+    [SerializeField] private float waterRationingPoolAmount = 0f; // this room's contribution to the global Water Rationing Pool's max capacity
 
     [SerializeField] private float drinkingTickInterval = 2f;
+
+    public float ProductionInterval => productionInterval;
+    public int WaterPerProduction => waterPerProduction;
+    public float WaterRationingPoolAmount => waterRationingPoolAmount;
 
     private Dictionary<NPCBunny, Coroutine> activeProductionRoutines = new Dictionary<NPCBunny, Coroutine>();
 
@@ -27,6 +32,8 @@ public class WaterRoom : RoomBase, IJobRoom
     // RoomBase.RecheckOperational / IJobRoom.OnRoomShutdown.
     private List<NPCBunny> idledByShutdown = new List<NPCBunny>();
 
+    private WaterRationingManager waterRationingManager;
+
     protected override void OnEnable()
     {
         base.OnEnable();
@@ -34,6 +41,9 @@ public class WaterRoom : RoomBase, IJobRoom
             BaseManager.Instance.RegisterWaterRoom(this);
         else
             Debug.LogWarning($"{name}: BaseManager.Instance was null during OnEnable.");
+
+        waterRationingManager = WaterRationingManager.EnsureInstance();
+        waterRationingManager.RegisterProducer(this);
     }
 
     protected override void OnDisable()
@@ -41,6 +51,12 @@ public class WaterRoom : RoomBase, IJobRoom
         base.OnDisable();
         if (BaseManager.Instance != null)
             BaseManager.Instance.UnregisterWaterRoom(this);
+
+        if (waterRationingManager != null)
+        {
+            waterRationingManager.UnregisterProducer(this);
+            waterRationingManager = null;
+        }
     }
 
     // ---------- PRODUCTION (IJobRoom) ----------
@@ -118,7 +134,7 @@ public class WaterRoom : RoomBase, IJobRoom
                 yield break;
             }
 
-            WaterManager.Instance.AddWater(waterPerProduction);
+            WaterManager.Instance.AddWater(Mathf.RoundToInt(waterPerProduction * GradeMultiplier)); // still feeds the simple stockpile bunnies drink from
         }
     }
 
@@ -180,7 +196,14 @@ public class WaterRoom : RoomBase, IJobRoom
         {
             yield return new WaitForSeconds(drinkingTickInterval);
 
+            // Try the normal WaterManager stockpile first, same as always. Only if that's empty does
+            // drinking fall back to the Water Rationing Pool — a bunny should never touch that pool
+            // while there's still water in the normal one. Instance (not EnsureInstance()) is
+            // deliberate: this WaterRoom's own OnEnable already guarantees the manager exists by the
+            // time any bunny gets here.
             if (WaterManager.Instance.TryConsumeWater())
+                bunny.ReceiveWaterHydration();
+            else if (WaterRationingManager.Instance != null && WaterRationingManager.Instance.TryDraw(1f))
                 bunny.ReceiveWaterHydration();
         }
 

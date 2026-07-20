@@ -1228,6 +1228,7 @@ GameObject:
   - component: {fileID: 4835314923114570966}
   - component: {fileID: 8467593509240001878}
   - component: {fileID: 7895280472661186210}
+  - component: {fileID: 729123694169349665}
   m_Layer: 0
   m_Name: LiftRoom_1x2x6_Grade1
   m_TagString: Untagged
@@ -1309,6 +1310,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f12b2ffe0545f6346954e8883f299ef8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LiftRoom
+  consumesPower: 1
+  powerConsumptionAmount: 1
+  powerConsumptionInterval: 20
+  producesPower: 0
+  powerProductionAmount: 1
+  powerProductionInterval: 1
+  powerRationingPoolAmount: 0
+  consumesWater: 0
+  waterConsumptionAmount: 1
+  waterConsumptionInterval: 10
+  workerEnergyDecayPerSecond: 0.2
+  workerMoodDecayPerSecond: 0
   leftEntrance: {fileID: 7353233977220136988}
   rightEntrance: {fileID: 2854808145472745687}
   middleLeft: {fileID: 1423003967682540139}
@@ -1317,6 +1330,7 @@ MonoBehaviour:
   paths: []
   footprintWidth: 1
   grade: 1
+  gradeMultiplier: 1
   roomTypeId: LiftRoom
   landingSpot: {fileID: 5547709232855880916}
   boardingSpot: {fileID: 8368183023766265124}
@@ -1328,6 +1342,20 @@ MonoBehaviour:
   boardingGracePeriod: 3
   doorHoldOpenDuration: 1
   dropoffDwellTime: 0.5
+--- !u!114 &729123694169349665
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3716477364223810790}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41203074007318e469812ef3c4ee3986, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomLightFlicker
+  flickerDuration: 0.4
+  flickerToggleCount: 5
 --- !u!1 &3727987186431524784
 GameObject:
   m_ObjectHideFlags: 0

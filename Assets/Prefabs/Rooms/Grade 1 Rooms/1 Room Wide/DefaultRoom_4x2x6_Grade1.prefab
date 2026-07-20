@@ -1006,6 +1006,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d89d1e59e0d5916448e2a8a8515c9c2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomBase
+  consumesPower: 0
+  powerConsumptionAmount: 1
+  powerConsumptionInterval: 10
+  producesPower: 0
+  powerProductionAmount: 1
+  powerProductionInterval: 1
+  powerRationingPoolAmount: 0
+  consumesWater: 0
+  waterConsumptionAmount: 1
+  waterConsumptionInterval: 10
+  workerEnergyDecayPerSecond: 0.2
+  workerMoodDecayPerSecond: 0
   leftEntrance: {fileID: 7353233977220136988}
   rightEntrance: {fileID: 2854808145472745687}
   middleLeft: {fileID: 1423003967682540139}
@@ -1014,6 +1026,7 @@ MonoBehaviour:
   paths: []
   footprintWidth: 4
   grade: 1
+  gradeMultiplier: 1
   roomTypeId: DefaultRoom
 --- !u!65 &659052443632571627
 BoxCollider:

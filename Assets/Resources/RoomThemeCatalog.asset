@@ -58,3 +58,8 @@ MonoBehaviour:
     lowerWallMaterial: {fileID: 2100000, guid: b4f6230a6abc73e4da4e85d894a31390, type: 2}
     ceilingMaterial: {fileID: 2100000, guid: ff6faca641cba7041b4e922d566afed5, type: 2}
     floorMaterial: {fileID: 2100000, guid: b4f6230a6abc73e4da4e85d894a31390, type: 2}
+  - roomTypeId: CoalRoom
+    upperWallMaterial: {fileID: 2100000, guid: ec5babf6f83c2c9459ab072d00fe79b7, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: 014b0eb97ae824442bbf7acef963a8e4, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: ec5babf6f83c2c9459ab072d00fe79b7, type: 2}
+    floorMaterial: {fileID: 2100000, guid: 014b0eb97ae824442bbf7acef963a8e4, type: 2}

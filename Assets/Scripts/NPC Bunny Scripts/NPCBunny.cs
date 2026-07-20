@@ -198,9 +198,13 @@ public class NPCBunny : MonoBehaviour
         thirst = Mathf.Max(0f, thirst - thirstDecayPerSecond * Time.deltaTime);
 
         // Energy always decays except while Sleeping, which is the only way to regen it (capped at 100).
-        // The rate depends on activity — see GetEnergyDecayRate().
+        // The rate depends on activity — see GetEnergyDecayRate(). Sleeping's gain is scaled by the
+        // Bedroom's GradeMultiplier — a nicer bed restores energy faster.
         if (CurrentState == BunnyState.Sleeping)
-            energy = Mathf.Min(100f, energy + energyGainPerSecondSleeping * Time.deltaTime);
+        {
+            float bedroomMultiplier = (claimedSleepRoom != null) ? claimedSleepRoom.GradeMultiplier : 1f;
+            energy = Mathf.Min(100f, energy + energyGainPerSecondSleeping * bedroomMultiplier * Time.deltaTime);
+        }
         else
             energy = Mathf.Max(0f, energy - GetEnergyDecayRate() * Time.deltaTime);
 
@@ -289,16 +293,37 @@ public class NPCBunny : MonoBehaviour
                 break;
 
             case BunnyState.Relaxing:
-                mood = Mathf.Min(100f, mood + moodGainPerSecondRelaxing * Time.deltaTime);
+                {
+                    // Living Room's GradeMultiplier — a nicer relax spot restores mood faster.
+                    float multiplier = (claimedRelaxRoom != null) ? claimedRelaxRoom.GradeMultiplier : 1f;
+                    mood = Mathf.Min(100f, mood + moodGainPerSecondRelaxing * multiplier * Time.deltaTime);
+                }
                 break;
 
             case BunnyState.Eating:
+                {
+                    // Cafeteria/Kitchen's GradeMultiplier — same field also scales hunger gain, see
+                    // ReceiveCarrotNutrition().
+                    float multiplier = (cafeteriaBeingUsed != null) ? cafeteriaBeingUsed.GradeMultiplier : 1f;
+                    mood = Mathf.Min(100f, mood + moodGainPerSecondEatingOrDrinking * multiplier * Time.deltaTime);
+                }
+                break;
+
             case BunnyState.Drinking:
-                mood = Mathf.Min(100f, mood + moodGainPerSecondEatingOrDrinking * Time.deltaTime);
+                {
+                    // Water Room's GradeMultiplier — same field also scales thirst gain, see
+                    // ReceiveWaterHydration().
+                    float multiplier = (waterRoomBeingUsed != null) ? waterRoomBeingUsed.GradeMultiplier : 1f;
+                    mood = Mathf.Min(100f, mood + moodGainPerSecondEatingOrDrinking * multiplier * Time.deltaTime);
+                }
                 break;
 
             case BunnyState.Sleeping:
-                mood = Mathf.Min(100f, mood + moodGainPerSecondSleeping * Time.deltaTime);
+                {
+                    // Bedroom's GradeMultiplier — same field also scales energy gain, see Update() above.
+                    float multiplier = (claimedSleepRoom != null) ? claimedSleepRoom.GradeMultiplier : 1f;
+                    mood = Mathf.Min(100f, mood + moodGainPerSecondSleeping * multiplier * Time.deltaTime);
+                }
                 break;
 
             default:
@@ -1772,7 +1797,9 @@ public class NPCBunny : MonoBehaviour
     // Called by CafeteriaRoom each time a carrot-consumption tick happens
     public void ReceiveCarrotNutrition()
     {
-        hunger = Mathf.Min(100f, hunger + hungerGainPerCarrot);
+        // Cafeteria/Kitchen's GradeMultiplier — a nicer cafeteria restores more hunger per carrot.
+        float multiplier = (cafeteriaBeingUsed != null) ? cafeteriaBeingUsed.GradeMultiplier : 1f;
+        hunger = Mathf.Min(100f, hunger + hungerGainPerCarrot * multiplier);
     }
 
     public bool IsFullyFed()
@@ -1783,7 +1810,9 @@ public class NPCBunny : MonoBehaviour
     // Called by WaterRoom each time a water-consumption tick happens
     public void ReceiveWaterHydration()
     {
-        thirst = Mathf.Min(100f, thirst + thirstGainPerDrink);
+        // Water Room's GradeMultiplier — a nicer water room restores more thirst per drink.
+        float multiplier = (waterRoomBeingUsed != null) ? waterRoomBeingUsed.GradeMultiplier : 1f;
+        thirst = Mathf.Min(100f, thirst + thirstGainPerDrink * multiplier);
     }
 
     public bool IsFullyHydrated()

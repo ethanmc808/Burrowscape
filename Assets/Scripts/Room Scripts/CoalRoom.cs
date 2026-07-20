@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Collections;
 
 // Structural copy of GardenRoom's production shape, producing Power instead of Carrots. The only real
-// difference: it reports active/inactive status to its floor's PowerManager at the same two points it
-// starts/stops its own production coroutine, since (unlike Carrots/Water) Power production is something
-// other rooms actively arbitrate against, not just a passive counter to add to.
+// difference: it reports active/inactive status to the global PowerManager once per bunny at the same
+// points it starts/stops that bunny's own production coroutine, since (unlike Carrots/Water) Power
+// production is something other rooms actively arbitrate against, not just a passive counter to add to.
+// PowerManager tracks how many bunnies are active here (not just whether any are), so 2 workers produce
+// twice what 1 does.
 public class CoalRoom : RoomBase, IJobRoom
 {
     [SpotNamePrefix("ShovelingSpot")]
@@ -56,8 +58,8 @@ public class CoalRoom : RoomBase, IJobRoom
         {
             StopCoroutine(routine);
             activeProductionRoutines.Remove(bunny);
+            NotifyPowerManagerInactive(); // one bunny stopped — decrement by exactly one
         }
-        NotifyPowerManagerIfNowInactive();
     }
 
     public void NotifyBunnyReadyToWork(NPCBunny bunny)
@@ -89,25 +91,25 @@ public class CoalRoom : RoomBase, IJobRoom
             if (bunny.CurrentState != BunnyState.Working)
             {
                 activeProductionRoutines.Remove(bunny);
-                NotifyPowerManagerIfNowInactive();
+                NotifyPowerManagerInactive(); // one bunny stopped — decrement by exactly one
                 yield break;
             }
 
             // No resource is consumed to produce Power — PowerManager reads PowerProductionAmount/
-            // PowerProductionInterval directly off this room while it's registered as active; this loop
-            // just needs to keep ticking for as long as the bunny stays Working.
+            // PowerProductionInterval directly off this room (multiplied by however many bunnies are
+            // currently active here) while it's registered as active; this loop just needs to keep
+            // ticking for as long as the bunny stays Working.
         }
     }
 
     private void NotifyPowerManagerActive()
     {
-        PowerManager.GetOrCreate(FloorIndex).NotifyProducerActive(this);
+        PowerManager.EnsureInstance().NotifyProducerActive(this);
     }
 
-    private void NotifyPowerManagerIfNowInactive()
+    private void NotifyPowerManagerInactive()
     {
-        if (activeProductionRoutines.Count == 0)
-            PowerManager.GetOrCreate(FloorIndex).NotifyProducerInactive(this);
+        PowerManager.EnsureInstance().NotifyProducerInactive(this);
     }
 
     // ---------- IJobRoom shutdown/restore ----------
@@ -123,7 +125,7 @@ public class CoalRoom : RoomBase, IJobRoom
             idledByShutdown.Add(kvp.Key);
         }
         activeProductionRoutines.Clear();
-        NotifyPowerManagerIfNowInactive();
+        PowerManager.EnsureInstance().NotifyProducerAllInactive(this); // reset this room's worker count to zero, regardless of how many were active
     }
 
     public void OnRoomRestored()

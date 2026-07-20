@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -14,6 +13,7 @@ public class RoomBase : MonoBehaviour
     [SerializeField] protected bool producesPower = false;
     [SerializeField] protected float powerProductionAmount = 1f;
     [SerializeField] protected float powerProductionInterval = 1f;
+    [SerializeField] protected float powerRationingPoolAmount = 0f; // this room's contribution to the global Power Rationing Pool's max capacity — only meaningful when producesPower is true
 
     [Header("Water")]
     [SerializeField] protected bool consumesWater = false;
@@ -30,25 +30,28 @@ public class RoomBase : MonoBehaviour
     public bool ProducesPower => producesPower;
     public float PowerProductionAmount => powerProductionAmount;
     public float PowerProductionInterval => powerProductionInterval;
+    public float PowerRationingPoolAmount => powerRationingPoolAmount;
     public bool ConsumesWater => consumesWater;
+    public float WaterConsumptionAmount => waterConsumptionAmount;
+    public float WaterConsumptionInterval => waterConsumptionInterval;
     public float WorkerEnergyDecayPerSecond => workerEnergyDecayPerSecond;
     public float WorkerMoodDecayPerSecond => workerMoodDecayPerSecond;
 
-    // Power is arbitrated per-floor by PowerManager (distance-from-producer ranked shutoff); Water is
-    // gated purely on WaterManager.TryConsumeWater() success/failure via this room's own coroutine
-    // below. Both default true so a room that doesn't opt into either (consumesPower/consumesWater both
-    // false) is always operational, matching pre-Power-system behavior exactly.
+    // Power and Water are each arbitrated by a single global manager (PowerManager / WaterRationingManager)
+    // that centrally decides, per floor, who stays on — see those classes for the rationing-pool +
+    // distance-ranked shutoff logic. Both default true so a room that doesn't opt into either
+    // (consumesPower/consumesWater both false) is always operational, matching pre-Power-system behavior.
     public bool IsPowered { get; private set; } = true;
     public bool IsWatered { get; private set; } = true; // irrelevant when consumesWater is false
     public bool IsOperational => IsPowered && (!consumesWater || IsWatered);
 
     private bool wasOperational = true;
     private PowerManager powerManager;
-    private Coroutine waterConsumptionRoutine;
+    private WaterRationingManager waterRationingManager;
     private GameObject powerWarningIcon;
     private GameObject waterWarningIcon;
 
-    // Called only by this room's floor's PowerManager.
+    // Called only by the global PowerManager.
     public void SetPowered(bool powered)
     {
         if (IsPowered == powered) return;
@@ -58,8 +61,10 @@ public class RoomBase : MonoBehaviour
         RecheckOperational();
     }
 
-    // Called internally by WaterConsumptionRoutine below, based on TryConsumeWater() success/failure.
-    private void SetWatered(bool watered)
+    // Called only by the global WaterRationingManager (previously set internally by this room's own
+    // water-consumption coroutine — that coroutine is gone; operational water consumption is now
+    // centrally arbitrated the same way Power is).
+    public void SetWatered(bool watered)
     {
         if (IsWatered == watered) return;
         IsWatered = watered;
@@ -79,32 +84,6 @@ public class RoomBase : MonoBehaviour
         {
             if (nowOperational) jobRoom.OnRoomRestored();
             else jobRoom.OnRoomShutdown();
-        }
-    }
-
-    // Structurally identical to WaterRoom.DrinkingRoutine's TryConsumeWater() tick. Skips its tick (and
-    // leaves IsWatered as-is) while IsPowered is false — a room that's already dark shouldn't keep
-    // trying to draw water — and resumes attempts the moment power returns.
-    private IEnumerator WaterConsumptionRoutine()
-    {
-        while (true)
-        {
-            yield return new WaitForSeconds(waterConsumptionInterval);
-
-            if (!IsPowered) continue;
-
-            int unitsToConsume = Mathf.Max(1, Mathf.RoundToInt(waterConsumptionAmount));
-            bool success = true;
-            for (int i = 0; i < unitsToConsume; i++)
-            {
-                if (!WaterManager.Instance.TryConsumeWater())
-                {
-                    success = false;
-                    break;
-                }
-            }
-
-            SetWatered(success);
         }
     }
 
@@ -152,6 +131,17 @@ public class RoomBase : MonoBehaviour
     // separate future system that isn't built yet.
     [SerializeField] protected int grade = 1;
     public int Grade => grade;
+
+    // Scales whatever this specific room type produces/restores — what it actually multiplies depends
+    // on the room: production amount per tick for a work room (Garden/Coal/Water), or the restoration
+    // rate for whichever stat(s) that room type grants (mood for Living Room; energy + mood for Bedroom;
+    // hunger + mood for Cafeteria/Kitchen; thirst + mood for Water Room's drinking side). Grade 1
+    // defaults to 1 (no change); Grade 2/3 prefabs are meant to be authored with a higher value (e.g.
+    // 1.5/2) so upgrading a room has a real effect even when its footprint and spot count don't change.
+    // Deliberately a plain per-instance value, not auto-derived from Grade, so it stays independently
+    // tunable per prefab for balance.
+    [SerializeField] protected float gradeMultiplier = 1f;
+    public float GradeMultiplier => gradeMultiplier;
 
     // Identifies a room's TYPE (e.g. "Garden", "Kitchen", "Storage Room") independent of which
     // MonoBehaviour subclass it uses — needed because purely decorative room types share the bare
@@ -261,13 +251,16 @@ public class RoomBase : MonoBehaviour
 
         if (consumesPower || producesPower)
         {
-            powerManager = PowerManager.GetOrCreate(FloorIndex);
+            powerManager = PowerManager.EnsureInstance();
             if (consumesPower) powerManager.RegisterConsumer(this);
             if (producesPower) powerManager.RegisterProducer(this);
         }
 
         if (consumesWater)
-            waterConsumptionRoutine = StartCoroutine(WaterConsumptionRoutine());
+        {
+            waterRationingManager = WaterRationingManager.EnsureInstance();
+            waterRationingManager.RegisterConsumer(this);
+        }
     }
 
     protected virtual void OnDisable()
@@ -282,10 +275,10 @@ public class RoomBase : MonoBehaviour
             powerManager = null;
         }
 
-        if (waterConsumptionRoutine != null)
+        if (waterRationingManager != null)
         {
-            StopCoroutine(waterConsumptionRoutine);
-            waterConsumptionRoutine = null;
+            waterRationingManager.UnregisterConsumer(this);
+            waterRationingManager = null;
         }
     }
 
