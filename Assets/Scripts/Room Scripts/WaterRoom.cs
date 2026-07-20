@@ -41,7 +41,7 @@ public class WaterRoom : RoomBase, IJobRoom
     // RoomBase.RecheckOperational / IJobRoom.OnRoomShutdown.
     private List<NPCBunny> idledByShutdown = new List<NPCBunny>();
 
-    private WaterRationingManager waterRationingManager;
+    private WaterRationingManager producerWaterRationingManager;
 
     protected override void OnEnable()
     {
@@ -51,8 +51,8 @@ public class WaterRoom : RoomBase, IJobRoom
         else
             Debug.LogWarning($"{name}: BaseManager.Instance was null during OnEnable.");
 
-        waterRationingManager = WaterRationingManager.EnsureInstance();
-        waterRationingManager.RegisterProducer(this);
+        producerWaterRationingManager = WaterRationingManager.EnsureInstance();
+        producerWaterRationingManager.RegisterProducer(this);
 
         // NEW — registers this room's WaterStorageCapacityAmount with WaterManager's storage cap.
         // WaterManager doesn't self-create the way PowerManager/WaterRationingManager do (it's expected
@@ -70,10 +70,10 @@ public class WaterRoom : RoomBase, IJobRoom
         if (BaseManager.Instance != null)
             BaseManager.Instance.UnregisterWaterRoom(this);
 
-        if (waterRationingManager != null)
+        if (producerWaterRationingManager != null)
         {
-            waterRationingManager.UnregisterProducer(this);
-            waterRationingManager = null;
+            producerWaterRationingManager.UnregisterProducer(this);
+            producerWaterRationingManager = null;
         }
 
         // NEW — mirrors the registration added in OnEnable above.

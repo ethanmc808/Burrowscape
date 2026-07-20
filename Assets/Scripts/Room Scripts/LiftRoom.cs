@@ -87,6 +87,16 @@ public class LiftRoom : RoomBase
     [SerializeField] private float dropoffDwellTime = .5f; // seconds doors stay open at a drop-off before moving on, once actually open
 
     public int DetectedFloorIndex { get; private set; }
+
+    // True only once Start() has actually set DetectedFloorIndex and registered with BaseLayoutManager —
+    // guards OnDisable() against unregistering using the bogus default value (0) if this instance is
+    // destroyed before its own Start() ever ran. This happens specifically when RoomGhostPreview measures
+    // a Lift prefab's bounds: it instantiates a temp copy and destroys it synchronously in the same call,
+    // before Unity ever gets to that temp object's Start() — without this guard, the temp object's
+    // OnDisable() would call UnregisterRoomOnFloor(this, 0), which always fires a "floor 0 changed" event
+    // regardless of whether anything was actually registered there, incorrectly signaling that a floor
+    // ABOVE the entrance just changed.
+    private bool hasRegisteredFloor;
     public LiftState CurrentState { get; private set; } = LiftState.Idle;
     public int CurrentFloor { get; private set; }
 
@@ -183,7 +193,8 @@ public class LiftRoom : RoomBase
 
     protected override void OnDisable()
     {
-        BaseLayoutManager.Instance?.UnregisterRoomOnFloor(this, DetectedFloorIndex);
+        if (hasRegisteredFloor)
+            BaseLayoutManager.Instance?.UnregisterRoomOnFloor(this, DetectedFloorIndex);
         if (coordinator == this)
             BaseLayoutManager.Instance?.UnregisterLift(this);
     }
@@ -195,6 +206,7 @@ public class LiftRoom : RoomBase
             : FloorIndex;
 
         BaseLayoutManager.Instance?.RegisterRoomOnFloor(this, DetectedFloorIndex);
+        hasRegisteredFloor = true;
 
         // Deferred by a frame via BaseLayoutManager (see RequestLiftColumnRegroup): Unity only
         // guarantees every Awake() runs before any Start(), not that Start() itself runs in any
@@ -483,20 +495,20 @@ public class LiftRoom : RoomBase
         switch (boardingPhase)
         {
             case BoardingPhase.WaitingForStragglers:
-            {
-                stateTimer -= Time.deltaTime;
-                // End early the moment nobody who called this floor is still out there mid-walk — no
-                // sense burning the full grace period waiting for a straggler who doesn't exist (e.g. a
-                // single bunny that already boarded). The stateTimer <= 0f fallback still applies
-                // regardless, so a genuine straggler who never shows up (or a call that's gone stale for
-                // some other reason) is still capped at boardingGracePeriod and re-queued as before (see
-                // CloseBoardingAndDepart) — the lift moves on instead of freezing forever either way.
-                bool stragglersRemain = activeCalls.Any(c => c.originFloor == CurrentFloor && !c.hasArrived);
-                if (stragglersRemain && stateTimer > 0f) return;
-                boardingPhase = BoardingPhase.HoldingOpen;
-                stateTimer = doorHoldOpenDuration;
-                break;
-            }
+                {
+                    stateTimer -= Time.deltaTime;
+                    // End early the moment nobody who called this floor is still out there mid-walk — no
+                    // sense burning the full grace period waiting for a straggler who doesn't exist (e.g. a
+                    // single bunny that already boarded). The stateTimer <= 0f fallback still applies
+                    // regardless, so a genuine straggler who never shows up (or a call that's gone stale for
+                    // some other reason) is still capped at boardingGracePeriod and re-queued as before (see
+                    // CloseBoardingAndDepart) — the lift moves on instead of freezing forever either way.
+                    bool stragglersRemain = activeCalls.Any(c => c.originFloor == CurrentFloor && !c.hasArrived);
+                    if (stragglersRemain && stateTimer > 0f) return;
+                    boardingPhase = BoardingPhase.HoldingOpen;
+                    stateTimer = doorHoldOpenDuration;
+                    break;
+                }
 
             case BoardingPhase.HoldingOpen:
                 // Fixed, unconditional pause — purely cosmetic (lets the door visibly stay open a beat

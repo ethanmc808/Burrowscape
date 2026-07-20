@@ -34,22 +34,36 @@ public class RoomGhostPreview : MonoBehaviour
         ghost.meshRenderer = go.GetComponent<MeshRenderer>();
         ghost.pivotOffset = new Vector3(-bounds.center.x, bounds.center.y, -bounds.center.z);
 
-        // Clone whatever material Unity already assigned to the primitive (guaranteed valid for
-        // whatever render pipeline is actually active — Shader.Find("Legacy Shaders/...") turned out to
-        // return null on this project's Unity version, which silently produces the broken-shader
-        // magenta material instead of erroring loudly) and convert that clone to transparent, rather
-        // than hunting for a shader by name.
-        Material mat = new Material(ghost.meshRenderer.sharedMaterial);
-        if (mat.HasProperty("_Mode"))
+        // Dedicated overlay shader (GhostOverlay.shader) instead of a cloned/tweaked Standard material.
+        // The old approach only disabled ZWrite (so the ghost didn't occlude things behind IT), but still
+        // respected the depth TEST against opaque geometry already in the depth buffer — so any opaque
+        // object nearer the camera (like a dirt tile) could still hide the ghost entirely. GhostOverlay's
+        // ZTest Always ignores the depth buffer altogether, which is the only fix that's robust regardless
+        // of how dirt/rooms happen to be positioned in Z. Falls back to the old cloned-primitive-material
+        // approach if the shader can't be found (e.g. not yet added to the project), so this never leaves
+        // the ghost using Unity's broken magenta error material.
+        Shader ghostShader = Shader.Find("Custom/GhostOverlay");
+        Material mat;
+        if (ghostShader != null)
         {
-            mat.SetFloat("_Mode", 3); // Transparent
-            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            mat.SetInt("_ZWrite", 0);
-            mat.DisableKeyword("_ALPHATEST_ON");
-            mat.EnableKeyword("_ALPHABLEND_ON");
-            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            mat.renderQueue = 3000;
+            mat = new Material(ghostShader);
+            mat.renderQueue = 4000; // Overlay — draws after every other queue (Background/Geometry/AlphaTest/Transparent)
+        }
+        else
+        {
+            Debug.LogWarning("RoomGhostPreview: Custom/GhostOverlay shader not found — falling back to a transparent clone of the default material. Add GhostOverlay.shader to the project to fix depth-occlusion against dirt/other opaque geometry.");
+            mat = new Material(ghost.meshRenderer.sharedMaterial);
+            if (mat.HasProperty("_Mode"))
+            {
+                mat.SetFloat("_Mode", 3); // Transparent
+                mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                mat.SetInt("_ZWrite", 0);
+                mat.DisableKeyword("_ALPHATEST_ON");
+                mat.EnableKeyword("_ALPHABLEND_ON");
+                mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                mat.renderQueue = 3000;
+            }
         }
         ghost.meshRenderer.material = mat;
         ghost.SetValid(false);
