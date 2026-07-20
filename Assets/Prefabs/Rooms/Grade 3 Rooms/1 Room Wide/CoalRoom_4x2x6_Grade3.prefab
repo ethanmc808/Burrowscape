@@ -643,13 +643,15 @@ MonoBehaviour:
   consumesPower: 0
   powerConsumptionAmount: 1
   powerConsumptionInterval: 1
-  producesPower: 0
+  producesPower: 1
   powerProductionAmount: 1
   powerProductionInterval: 1
-  powerRationingPoolAmount: 0
+  powerRationingPoolAmount: 60
   consumesWater: 1
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
   leftEntrance: {fileID: 3474706250198758161}
@@ -678,6 +680,7 @@ MonoBehaviour:
     - {fileID: 2584108053237402151}
   footprintWidth: 4
   grade: 3
+  gradeMultiplier: 2
   roomTypeId: CoalRoom
   shovelingSpots:
   - {fileID: 87078019840192008}
