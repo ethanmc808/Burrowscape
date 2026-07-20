@@ -193,20 +193,29 @@ public class NPCBunny : MonoBehaviour
 
     private void Update()
     {
-        // Hunger/Thirst decay tick regardless of state
-        hunger = Mathf.Max(0f, hunger - hungerDecayPerSecond * Time.deltaTime);
-        thirst = Mathf.Max(0f, thirst - thirstDecayPerSecond * Time.deltaTime);
-
-        // Energy always decays except while Sleeping, which is the only way to regen it (capped at 100).
-        // The rate depends on activity — see GetEnergyDecayRate(). Sleeping's gain is scaled by the
-        // Bedroom's GradeMultiplier — a nicer bed restores energy faster.
-        if (CurrentState == BunnyState.Sleeping)
+        // Needs are frozen entirely until the bunny has actually passed the gate (HasEnteredBase) — a
+        // bunny spawned-but-queued or awaiting approval shouldn't get hungry/thirsty/tired/moody before
+        // it's even been let in, and freezing here (rather than at each individual threshold check) is
+        // what lets RandomizeStartingNeeds' spawn-time stagger actually mean something: without this, a
+        // bunny stuck in a long queue would just decay its randomized head start away before ever being
+        // approved.
+        if (HasEnteredBase)
         {
-            float bedroomMultiplier = (claimedSleepRoom != null) ? claimedSleepRoom.GradeMultiplier : 1f;
-            energy = Mathf.Min(100f, energy + energyGainPerSecondSleeping * bedroomMultiplier * Time.deltaTime);
+            // Hunger/Thirst decay tick regardless of state
+            hunger = Mathf.Max(0f, hunger - hungerDecayPerSecond * Time.deltaTime);
+            thirst = Mathf.Max(0f, thirst - thirstDecayPerSecond * Time.deltaTime);
+
+            // Energy always decays except while Sleeping, which is the only way to regen it (capped at 100).
+            // The rate depends on activity — see GetEnergyDecayRate(). Sleeping's gain is scaled by the
+            // Bedroom's GradeMultiplier — a nicer bed restores energy faster.
+            if (CurrentState == BunnyState.Sleeping)
+            {
+                float bedroomMultiplier = (claimedSleepRoom != null) ? claimedSleepRoom.GradeMultiplier : 1f;
+                energy = Mathf.Min(100f, energy + energyGainPerSecondSleeping * bedroomMultiplier * Time.deltaTime);
+            }
+            else
+                energy = Mathf.Max(0f, energy - GetEnergyDecayRate() * Time.deltaTime);
         }
-        else
-            energy = Mathf.Max(0f, energy - GetEnergyDecayRate() * Time.deltaTime);
 
         switch (CurrentState)
         {
@@ -251,8 +260,10 @@ public class NPCBunny : MonoBehaviour
 
         // Ticked after the switch so a state transition that happens this same frame (e.g. Idle ->
         // MovingToSpot the instant a relax spot is claimed) is reflected immediately rather than a
-        // frame late.
-        TickMood();
+        // frame late. Gated on HasEnteredBase for the same reason as the needs block above — otherwise
+        // TickMood()'s idle-pacing-decay default case would drain a queued bunny's Mood too.
+        if (HasEnteredBase)
+            TickMood();
 
         UpdateAnimator();
     }
@@ -730,6 +741,21 @@ public class NPCBunny : MonoBehaviour
         Gender = gender;
         BunnyName = name;
         gameObject.name = name; // keeps Hierarchy/debugging readable too
+    }
+
+    // Called once by WildBunnySpawner right after spawn, before the bunny enters the gate queue —
+    // staggers when different bunnies first cross a "low" need threshold so they don't all go on break
+    // at once, especially impactful early game when resource balance is tightest. Each need is rolled
+    // independently (not one shared roll applied to all four) so a single bunny's own needs are
+    // staggered from each other too. Needs stay frozen for the whole time the bunny is queued/awaiting
+    // approval (see the HasEnteredBase gate in Update()), so this starting roll — not decay time spent
+    // waiting at the gate — is what determines the stagger.
+    public void RandomizeStartingNeeds(float min, float max)
+    {
+        hunger = Random.Range(min, max);
+        thirst = Random.Range(min, max);
+        energy = Random.Range(min, max);
+        mood = Random.Range(min, max);
     }
 
     private void RequestNewJobSpot()

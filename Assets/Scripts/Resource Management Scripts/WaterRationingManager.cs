@@ -209,12 +209,14 @@ public class WaterRationingManager : MonoBehaviour
                 // Normal pool covered this floor's whole tick demand — same as bunnies drawing first.
                 watered = true;
                 banked -= unitsNeeded;
+                WaterManager.Instance.RecordConsumption(unitsNeeded);
             }
             else if (TryDraw(unitsNeeded))
             {
                 // Normal pool couldn't cover it — fall back to the rationing pool, same as bunny drinking's fallback.
                 watered = true;
                 banked -= unitsNeeded;
+                if (WaterManager.Instance != null) WaterManager.Instance.RecordConsumption(unitsNeeded);
             }
             else
             {

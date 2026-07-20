@@ -83,4 +83,28 @@ public class CarrotManager : MonoBehaviour
         OnCarrotCountChanged?.Invoke(currentCarrots);
         return true;
     }
+
+    // ---------- Balance-tuning instrumentation (ResourceBalanceDebugPanel) ----------
+    // Purely additive logging alongside AddCarrots/TryConsumeCarrot above — doesn't replace or change any
+    // existing behavior. Production past the storage cap still gets recorded here even though AddCarrots
+    // clamps it away, since "you're overproducing and wasting X/sec" is a real balance signal.
+    private int producedThisSecond;
+    private int consumedThisSecond;
+
+    public void RecordProduction(int amount) => producedThisSecond += amount;
+    public void RecordConsumption(int amount) => consumedThisSecond += amount;
+
+    public int ReadAndResetProducedThisSecond()
+    {
+        int value = producedThisSecond;
+        producedThisSecond = 0;
+        return value;
+    }
+
+    public int ReadAndResetConsumedThisSecond()
+    {
+        int value = consumedThisSecond;
+        consumedThisSecond = 0;
+        return value;
+    }
 }

@@ -97,6 +97,11 @@ public class PowerManager : MonoBehaviour
     // "all the power rooms combined," as distinct from the effective value above.
     public float ActiveProductionRate { get; private set; }
 
+    // Total demand from every registered consumer, units/sec — same totalDemand value Evaluate() already
+    // computes for arbitration, just also stored here so balance-tuning tools (ResourceBalanceDebugPanel)
+    // can read it without duplicating the summation.
+    public float TotalDemandRate { get; private set; }
+
     public float RationingPoolCurrent => rationingPoolCurrent;
     public float RationingPoolMax => rationingPoolMax;
 
@@ -200,6 +205,7 @@ public class PowerManager : MonoBehaviour
         float totalDemand = 0f;
         foreach (RoomBase c in consumers)
             if (c != null) totalDemand += SafeRate(c.PowerConsumptionAmount, c.PowerConsumptionInterval);
+        TotalDemandRate = totalDemand;
 
         float deficit = totalDemand - activeProduction;
 

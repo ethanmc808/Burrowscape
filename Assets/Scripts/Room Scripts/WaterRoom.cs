@@ -156,7 +156,9 @@ public class WaterRoom : RoomBase, IJobRoom
                 yield break;
             }
 
-            WaterManager.Instance.AddWater(Mathf.RoundToInt(waterPerProduction * GradeMultiplier)); // still feeds the simple stockpile bunnies drink from — now clamped to WaterManager's storage cap
+            int producedAmount = Mathf.RoundToInt(waterPerProduction * GradeMultiplier);
+            WaterManager.Instance.AddWater(producedAmount); // still feeds the simple stockpile bunnies drink from — now clamped to WaterManager's storage cap
+            WaterManager.Instance.RecordProduction(producedAmount);
         }
     }
 
@@ -224,9 +226,15 @@ public class WaterRoom : RoomBase, IJobRoom
             // deliberate: this WaterRoom's own OnEnable already guarantees the manager exists by the
             // time any bunny gets here.
             if (WaterManager.Instance.TryConsumeWater())
+            {
+                WaterManager.Instance.RecordConsumption(1);
                 bunny.ReceiveWaterHydration();
+            }
             else if (WaterRationingManager.Instance != null && WaterRationingManager.Instance.TryDraw(1f))
+            {
+                WaterManager.Instance.RecordConsumption(1);
                 bunny.ReceiveWaterHydration();
+            }
         }
 
         bunny.FinishDrinkingAndReturnToPrevious();

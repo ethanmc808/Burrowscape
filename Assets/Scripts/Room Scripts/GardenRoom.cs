@@ -127,7 +127,9 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
                 yield break;
             }
 
-            CarrotManager.Instance.AddCarrots(Mathf.RoundToInt(carrotsPerProduction * GradeMultiplier));
+            int producedAmount = Mathf.RoundToInt(carrotsPerProduction * GradeMultiplier);
+            CarrotManager.Instance.AddCarrots(producedAmount);
+            CarrotManager.Instance.RecordProduction(producedAmount);
         }
     }
 

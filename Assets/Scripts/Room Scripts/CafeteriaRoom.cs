@@ -64,7 +64,10 @@ public class CafeteriaRoom : RoomBase   // CHANGED from : MonoBehaviour
             yield return new WaitForSeconds(eatingTickInterval);
 
             if (CarrotManager.Instance.TryConsumeCarrot())
+            {
+                CarrotManager.Instance.RecordConsumption(1);
                 bunny.ReceiveCarrotNutrition();
+            }
         }
 
         bunny.FinishEatingAndReturnToWork();
