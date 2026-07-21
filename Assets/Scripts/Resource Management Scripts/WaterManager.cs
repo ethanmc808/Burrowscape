@@ -78,13 +78,21 @@ public class WaterManager : MonoBehaviour
         currentWater = Mathf.Min(currentWater, storageMax);
     }
 
-    // Clamped to storageMax — production that arrives while the stockpile is already full is simply
-    // wasted (same as Fallout Shelter: a full resource bar with production still running just doesn't
-    // grow further until something consumes it).
+    // Clamped to storageMax — but unlike Carrots/Gold, production that arrives while the stockpile is
+    // already full isn't wasted: the surplus spills into WaterRationingManager's emergency pool instead,
+    // which is the whole point of a Water Room's WaterRationingPoolAmount contribution — otherwise that
+    // pool could never actually reach the max a built Water Room grants it.
     public void AddWater(int amount)
     {
-        currentWater = Mathf.Min(currentWater + amount, storageMax);
+        int newTotal = currentWater + amount;
+        int overflow = Mathf.Max(0, newTotal - storageMax);
+        currentWater = Mathf.Min(newTotal, storageMax);
         OnWaterCountChanged?.Invoke(currentWater);
+
+        if (overflow > 0 && WaterRationingManager.Instance != null)
+        {
+            WaterRationingManager.Instance.AddToPool(overflow);
+        }
     }
 
     // Returns true if successful, false if not enough water

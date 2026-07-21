@@ -4958,7 +4958,7 @@ ScriptedImporter:
     ignorePlatformSupport: 0
     maxTextureSize: 4096
     resizeAlgorithm: 0
-    textureFormat: 4
+    textureFormat: -1
     textureCompression: 0
     compressionQuality: 50
     forceMaximumCompressionQuality_BC6H_BC7: 0
@@ -5151,7 +5151,7 @@ ScriptedImporter:
   rigPSDLayers: []
   sharedRigPSDLayers: []
   importFileNodeState: 1
-  platformSettingsDirtyTick: 639201555975552865
+  platformSettingsDirtyTick: 639201559232842477
   spriteSizeExpandChanged: 0
   generateGOHierarchy: 1
   textureAssetName: 

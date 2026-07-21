@@ -136,6 +136,25 @@ public class WaterRationingManager : MonoBehaviour
         return true;
     }
 
+    // Called by WaterManager.AddWater when production overflows the everyday stockpile — that surplus
+    // tops this pool up instead of being wasted, until this pool also reaches its own max. Deliberately
+    // the only source of upward movement in this class (see TryDraw/RecomputeRationingPoolMax above,
+    // which only ever subtract or clamp down) — this is what lets a built Water Room's contribution
+    // actually become reachable rather than just raising a ceiling nothing ever climbs to.
+    public void AddToPool(float amount)
+    {
+        if (!rationingPoolInitialized)
+        {
+            rationingPoolCurrent = rationingPoolMax;
+            rationingPoolInitialized = true;
+        }
+
+        if (amount <= 0f) return;
+
+        rationingPoolCurrent = Mathf.Clamp(rationingPoolCurrent + amount, 0f, rationingPoolMax);
+        OnAnyWaterRationingChanged?.Invoke();
+    }
+
     private IEnumerator EvaluationRoutine()
     {
         while (true)
