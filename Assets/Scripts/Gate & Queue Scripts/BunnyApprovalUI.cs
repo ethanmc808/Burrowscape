@@ -39,7 +39,12 @@ public class BunnyApprovalUI : MonoBehaviour
         closeButton.onClick.AddListener(Close);
     }
 
-    private void Update()
+    // LateUpdate, not Update — TestCamera pans/zooms the camera in its own Update(), and Unity doesn't
+    // guarantee script Update() order. Computing WorldToScreenPoint in Update() could run before the
+    // camera moves for this frame, leaving the panel one frame stale and visibly trailing while the
+    // player drags/zooms. LateUpdate always runs after every Update() this frame, so the camera is
+    // guaranteed to already be in its final position/zoom before we anchor to it.
+    private void LateUpdate()
     {
         if (!panelRoot.activeSelf) return;
 
@@ -67,6 +72,7 @@ public class BunnyApprovalUI : MonoBehaviour
     private void RefreshBars()
     {
         if (currentBunny == null) return;
+        if (hungerBar == null || thirstBar == null || energyBar == null || moodBar == null) return;
 
         hungerBar.fillAmount = currentBunny.HungerValue / 100f;
         thirstBar.fillAmount = currentBunny.ThirstValue / 100f;

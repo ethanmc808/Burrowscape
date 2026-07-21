@@ -2203,6 +2203,11 @@ public class NPCBunny : MonoBehaviour
             return;
         }
 
+        // TEMP — chasing the "stutter step" visual bug at room-transition waypoints. Only fires when a
+        // flip is actually about to happen (not on the early-return no-ops above), so this shows exactly
+        // how often/rapidly facing direction is flip-flopping. Remove once root-caused.
+        Debug.Log($"[FacingDebug] {name} SetFacing({shouldFaceRight}) applied — was facingRight={facingRight}, pos={transform.position}, CurrentState={CurrentState}, pendingStateOnArrival={pendingStateOnArrival}, currentWaypointTarget={(currentWaypointTarget != null ? currentWaypointTarget.name : "NULL")}, currentTargetSpot={(currentTargetSpot != null ? currentTargetSpot.name : "NULL")}");
+
         facingRight = shouldFaceRight;
         bool flip = bunnyFacesLeftByDefault ? shouldFaceRight : !shouldFaceRight;
 
