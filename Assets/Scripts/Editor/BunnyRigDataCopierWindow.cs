@@ -63,6 +63,13 @@ public class BunnyRigDataCopierWindow : EditorWindow
     private Vector2 prefabResultsScroll;
     private readonly List<string> prefabSwapResults = new List<string>();
 
+    // --- Sprite Library batch-create fields ---
+    private const string SpriteLibraryFolder = "Assets/Art/Characters/Bunnies/Sprite Libraries";
+    private const string EyesFolder = BaseArtFolder + "/Eyes";
+    private const string MouthsFolder = BaseArtFolder + "/Mouths";
+    private Vector2 libraryResultsScroll;
+    private readonly List<string> libraryResults = new List<string>();
+
     // The 13 body-part sprite names this rig actually has. A GameObject's own name (after stripping a
     // trailing "_1"/"_2" rotation-flip duplicate suffix) must match one of these exactly to be swapped —
     // this is what correctly leaves shared/generic parts alone (Eyes_Open, Mouth_Eating, Carrot, Z_Sleep,
@@ -88,6 +95,8 @@ public class BunnyRigDataCopierWindow : EditorWindow
         DrawBatchSection();
         EditorGUILayout.Space(15);
         DrawPrefabSwapSection();
+        EditorGUILayout.Space(15);
+        DrawSpriteLibrarySection();
     }
 
     private void DrawSinglePairSection()
@@ -334,6 +343,156 @@ public class BunnyRigDataCopierWindow : EditorWindow
         {
             PrefabUtility.UnloadPrefabContents(root);
         }
+    }
+
+    private void DrawSpriteLibrarySection()
+    {
+        EditorGUILayout.LabelField("Create Sprite Library Assets", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            $"Creates/updates one Sprite Library Asset per rigged type in {SpriteLibraryFolder}, each " +
+            "with an 'Eyes' category (Default, Angry, Closed) and a 'Mouth' category (Default, Eating). " +
+            "'Default' comes from that type's own Eyes/Mouth part sprite. 'Closed' eyes and 'Eating' " +
+            "mouth are shared across every type (Base Art/Eyes/Rabbit_Neutral_Eyes_Closed.psb and " +
+            "Base Art/Mouths/Mouth_Eating.psb) since you said those don't need to differ per type. " +
+            "'Angry' eyes look for a type-specific file first (Base Art/Eyes/Rabbit_<Type>_Eyes_Angry.psb) " +
+            "and fall back to Neutral's as a placeholder if that type's Angry art hasn't been drawn yet — " +
+            "swap it in later just by adding the file and re-running. Safe to re-run any time; updates " +
+            "existing assets in place instead of duplicating them.",
+            MessageType.Info);
+
+        if (GUILayout.Button("Create / Update Sprite Libraries For All Types"))
+        {
+            RunCreateSpriteLibraries();
+        }
+
+        if (libraryResults.Count > 0)
+        {
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField($"Last run: {libraryResults.Count} line(s)", EditorStyles.miniBoldLabel);
+            libraryResultsScroll = EditorGUILayout.BeginScrollView(libraryResultsScroll, GUILayout.Height(180));
+            foreach (string line in libraryResults)
+            {
+                EditorGUILayout.LabelField(line, EditorStyles.wordWrappedMiniLabel);
+            }
+            EditorGUILayout.EndScrollView();
+        }
+    }
+
+    private void RunCreateSpriteLibraries()
+    {
+        libraryResults.Clear();
+
+        if (!AssetDatabase.IsValidFolder(SpriteLibraryFolder))
+        {
+            string parent = Path.GetDirectoryName(SpriteLibraryFolder)?.Replace('\\', '/');
+            string leaf = Path.GetFileName(SpriteLibraryFolder);
+            AssetDatabase.CreateFolder(parent, leaf);
+        }
+
+        int created = 0, updated = 0, skippedTypes = 0;
+
+        foreach (string type in TypeNames)
+        {
+            string psbPath = $"{BaseArtFolder}/{type}/Rabbit_{type}_Type.psb";
+            if (AssetDatabase.LoadAssetAtPath<Texture2D>(psbPath) == null)
+            {
+                skippedTypes++;
+                continue; // Type not rigged yet — nothing to build a library from.
+            }
+
+            Sprite defaultEyes = FindNamedSprite(psbPath, "Eyes");
+            Sprite defaultMouth = FindNamedSprite(psbPath, "Mouth");
+            Sprite angryEyes = FindTypeOrFallbackSprite(EyesFolder, "Eyes_Angry", type, "Neutral", out bool angryIsFallback);
+            Sprite closedEyes = FindFirstSpriteInFile($"{EyesFolder}/Rabbit_Neutral_Eyes_Closed.psb");
+            Sprite eatingMouth = FindFirstSpriteInFile($"{MouthsFolder}/Mouth_Eating.psb");
+
+            string assetPath = $"{SpriteLibraryFolder}/{type}_SpriteLibrary.asset";
+            SpriteLibraryAsset library = AssetDatabase.LoadAssetAtPath<SpriteLibraryAsset>(assetPath);
+            bool isNew = library == null;
+            if (isNew)
+            {
+                library = ScriptableObject.CreateInstance<SpriteLibraryAsset>();
+            }
+
+            List<string> notes = new List<string>();
+            AddOrNote(library, "Eyes", "Default", defaultEyes, notes);
+            AddOrNote(library, "Eyes", "Angry", angryEyes, notes);
+            AddOrNote(library, "Eyes", "Closed", closedEyes, notes);
+            AddOrNote(library, "Mouth", "Default", defaultMouth, notes);
+            AddOrNote(library, "Mouth", "Eating", eatingMouth, notes);
+
+            if (angryIsFallback && type != "Neutral" && angryEyes != null)
+            {
+                notes.Add("Angry eyes: no art drawn for this type yet, using Neutral as a placeholder");
+            }
+
+            if (isNew)
+            {
+                AssetDatabase.CreateAsset(library, assetPath);
+                created++;
+            }
+            else
+            {
+                EditorUtility.SetDirty(library);
+                updated++;
+            }
+
+            string noteText = notes.Count > 0 ? $" ({string.Join("; ", notes)})" : string.Empty;
+            libraryResults.Add($"{(isNew ? "CREATED" : "UPDATED")}: {assetPath}{noteText}");
+        }
+
+        AssetDatabase.SaveAssets();
+        libraryResults.Insert(0,
+            $"Done. Created: {created}, Updated: {updated}, Types skipped (not rigged yet): {skippedTypes}.");
+        Debug.Log(libraryResults[0]);
+    }
+
+    private static void AddOrNote(SpriteLibraryAsset library, string category, string label, Sprite sprite, List<string> notes)
+    {
+        if (sprite == null)
+        {
+            notes.Add($"no sprite found for {category}/{label}");
+            return;
+        }
+
+        library.AddCategoryLabel(sprite, category, label);
+    }
+
+    // Finds the Sprite named exactly `spriteName` among a PSB's sub-assets — used to pull a type's own
+    // baked-in "Eyes"/"Mouth" body-part sprite as that type's Default library entry.
+    private static Sprite FindNamedSprite(string psbPath, string spriteName)
+    {
+        foreach (UnityEngine.Object obj in AssetDatabase.LoadAllAssetsAtPath(psbPath))
+        {
+            if (obj is Sprite sprite && sprite.name == spriteName) return sprite;
+        }
+        return null;
+    }
+
+    // Looks for a type-specific single-sprite file named "Rabbit_<Type>_<suffix>.psb" in `folder` (e.g.
+    // Base Art/Eyes/Rabbit_Fire_Eyes_Angry.psb). Falls back to the same pattern using `fallbackType` if
+    // the type-specific file doesn't exist yet, so a type's library still resolves to something playable
+    // before its own expression art is drawn.
+    private static Sprite FindTypeOrFallbackSprite(string folder, string suffix, string type, string fallbackType, out bool usedFallback)
+    {
+        Sprite sprite = FindFirstSpriteInFile($"{folder}/Rabbit_{type}_{suffix}.psb");
+        if (sprite != null)
+        {
+            usedFallback = false;
+            return sprite;
+        }
+
+        usedFallback = true;
+        return FindFirstSpriteInFile($"{folder}/Rabbit_{fallbackType}_{suffix}.psb");
+    }
+
+    private static Sprite FindFirstSpriteInFile(string path)
+    {
+        foreach (UnityEngine.Object obj in AssetDatabase.LoadAllAssetsAtPath(path))
+        {
+            if (obj is Sprite sprite) return sprite;
+        }
+        return null;
     }
 
     // BFS over the whole prefab hierarchy rather than just the SpriteRenderer's own subtree — bones live
