@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
+using UnityEngine.U2D;
+using UnityEngine.U2D.Animation;
 
 // EDITOR-ONLY. Must live in a folder named "Editor" anywhere under Assets (confirmed working at
 // Assets/Scripts/Editor) so it isn't compiled into player builds.
@@ -54,6 +57,24 @@ public class BunnyRigDataCopierWindow : EditorWindow
     private Vector2 resultsScroll;
     private readonly List<string> lastBatchResults = new List<string>();
 
+    // --- Prefab sprite swap fields ---
+    private GameObject targetPrefab;
+    private int prefabTypeIndex = 1; // Fire
+    private Vector2 prefabResultsScroll;
+    private readonly List<string> prefabSwapResults = new List<string>();
+
+    // The 13 body-part sprite names this rig actually has. A GameObject's own name (after stripping a
+    // trailing "_1"/"_2" rotation-flip duplicate suffix) must match one of these exactly to be swapped —
+    // this is what correctly leaves shared/generic parts alone (Eyes_Open, Mouth_Eating, Carrot, Z_Sleep,
+    // the Rabbit_Neutral_Eyes_* expression overlays) since none of those match a bare part name.
+    private static readonly HashSet<string> KnownPartNames = new HashSet<string>
+    {
+        "Eyes", "Front Ear", "Mouth", "Head", "Front Arm", "Front Thigh", "Front Foot",
+        "Torso", "Back Arm", "Tail", "Back Ear", "Back Thigh", "Back Foot"
+    };
+
+    private static readonly Regex TrailingDuplicateSuffix = new Regex(@"_\d+$");
+
     [MenuItem("Burrowscape/Copy Rig Data Between Sprites")]
     private static void ShowWindow()
     {
@@ -65,6 +86,8 @@ public class BunnyRigDataCopierWindow : EditorWindow
         DrawSinglePairSection();
         EditorGUILayout.Space(15);
         DrawBatchSection();
+        EditorGUILayout.Space(15);
+        DrawPrefabSwapSection();
     }
 
     private void DrawSinglePairSection()
@@ -179,6 +202,156 @@ public class BunnyRigDataCopierWindow : EditorWindow
             $"Done. Files processed: {copiedCount}, Skipped (no match): {skippedCount}.");
 
         Debug.Log(lastBatchResults[0]);
+    }
+
+    private void DrawPrefabSwapSection()
+    {
+        EditorGUILayout.LabelField("Swap Prefab Sprites By Type", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "For a prefab duplicated from Rabbit_Neutral_Idle (or another type): walks every " +
+            "SpriteRenderer, matches its GameObject name (ignoring a trailing _1/_2 duplicate suffix) " +
+            "against the chosen Type's body-part sprites in Base Art/<Type>/Rabbit_<Type>_Type.psb, and " +
+            "swaps in that sprite. Also rebuilds each SpriteSkin's bone Transform list from the new " +
+            "sprite's own bone order (fixes the 'one part looks deformed' bug caused by SpriteSkin " +
+            "mapping bones by list position, not name). Parts with no exact name match (Eyes_Open, " +
+            "Mouth_Eating, Carrot, Z_Sleep, the Rabbit_Neutral_Eyes_* overlays, etc.) are left untouched.",
+            MessageType.Info);
+
+        targetPrefab = (GameObject)EditorGUILayout.ObjectField("Prefab To Update", targetPrefab, typeof(GameObject), false);
+        prefabTypeIndex = EditorGUILayout.Popup("Sprite Source Type", prefabTypeIndex, TypeNames);
+
+        EditorGUI.BeginDisabledGroup(targetPrefab == null);
+        if (GUILayout.Button("Swap Sprites From Type Folder"))
+        {
+            RunPrefabSpriteSwap(targetPrefab, TypeNames[prefabTypeIndex]);
+        }
+        EditorGUI.EndDisabledGroup();
+
+        if (prefabSwapResults.Count > 0)
+        {
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField($"Last run: {prefabSwapResults.Count} line(s)", EditorStyles.miniBoldLabel);
+            prefabResultsScroll = EditorGUILayout.BeginScrollView(prefabResultsScroll, GUILayout.Height(180));
+            foreach (string line in prefabSwapResults)
+            {
+                EditorGUILayout.LabelField(line, EditorStyles.wordWrappedMiniLabel);
+            }
+            EditorGUILayout.EndScrollView();
+        }
+    }
+
+    private void RunPrefabSpriteSwap(GameObject prefabAsset, string type)
+    {
+        prefabSwapResults.Clear();
+
+        string prefabPath = AssetDatabase.GetAssetPath(prefabAsset);
+        if (string.IsNullOrEmpty(prefabPath))
+        {
+            prefabSwapResults.Add("ERROR: Selected object is not a prefab asset.");
+            return;
+        }
+
+        string psbPath = $"{BaseArtFolder}/{type}/Rabbit_{type}_Type.psb";
+        if (AssetDatabase.LoadAssetAtPath<Texture2D>(psbPath) == null)
+        {
+            prefabSwapResults.Add($"ERROR: Could not find {psbPath}");
+            return;
+        }
+
+        // Runtime Sprite objects, for assigning SpriteRenderer.sprite.
+        Dictionary<string, Sprite> spritesByName = new Dictionary<string, Sprite>();
+        foreach (UnityEngine.Object obj in AssetDatabase.LoadAllAssetsAtPath(psbPath))
+        {
+            if (obj is Sprite sprite && !spritesByName.ContainsKey(sprite.name))
+            {
+                spritesByName[sprite.name] = sprite;
+            }
+        }
+
+        // Bone name list per part, straight from the importer's own rig data (the source of truth for
+        // bone order — see the "one part looks deformed" bug this is here to avoid).
+        AssetImporter psbImporter = AssetImporter.GetAtPath(psbPath);
+        ISpriteEditorDataProvider psbProvider = GetDataProvider(psbImporter);
+        Dictionary<string, SpriteRect> rectsByName = BuildNameLookup(psbProvider.GetSpriteRects(), out _);
+        ISpriteBoneDataProvider psbBoneProvider = psbProvider.GetDataProvider<ISpriteBoneDataProvider>();
+
+        GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
+        try
+        {
+            SpriteRenderer[] renderers = root.GetComponentsInChildren<SpriteRenderer>(true);
+            int swapped = 0, skipped = 0, bonesFixed = 0;
+
+            foreach (SpriteRenderer renderer in renderers)
+            {
+                string partName = TrailingDuplicateSuffix.Replace(renderer.gameObject.name, "");
+
+                if (!KnownPartNames.Contains(partName) || !spritesByName.TryGetValue(partName, out Sprite newSprite))
+                {
+                    prefabSwapResults.Add($"SKIPPED: '{renderer.gameObject.name}' (no {type} match for part '{partName}')");
+                    skipped++;
+                    continue;
+                }
+
+                renderer.sprite = newSprite;
+                swapped++;
+
+                SpriteSkin spriteSkin = renderer.GetComponent<SpriteSkin>();
+                if (spriteSkin != null && rectsByName.TryGetValue(partName, out SpriteRect rect))
+                {
+                    List<SpriteBone> bones = psbBoneProvider.GetBones(rect.spriteID);
+                    if (bones != null && bones.Count > 0)
+                    {
+                        Transform[] boneTransforms = new Transform[bones.Count];
+                        bool allFound = true;
+                        for (int i = 0; i < bones.Count; i++)
+                        {
+                            Transform found = FindDeepChild(root.transform, bones[i].name);
+                            boneTransforms[i] = found;
+                            if (found == null) allFound = false;
+                        }
+
+                        if (allFound)
+                        {
+                            spriteSkin.SetBoneTransforms(boneTransforms);
+                            spriteSkin.autoRebind = true;
+                            bonesFixed++;
+                        }
+                        else
+                        {
+                            prefabSwapResults.Add($"WARNING: '{renderer.gameObject.name}' swapped, but couldn't find all bone Transforms by name in the prefab — check its SpriteSkin manually.");
+                        }
+                    }
+                }
+
+                prefabSwapResults.Add($"OK: '{renderer.gameObject.name}' -> {type} '{partName}'");
+            }
+
+            PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            prefabSwapResults.Insert(0, $"Done. Swapped: {swapped}, Bone lists rebuilt: {bonesFixed}, Skipped: {skipped}.");
+            Debug.Log(prefabSwapResults[0]);
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+    }
+
+    // BFS over the whole prefab hierarchy rather than just the SpriteRenderer's own subtree — bones live
+    // in a separate branch (the shared skeleton), not under the sprite-part GameObjects themselves.
+    private static Transform FindDeepChild(Transform root, string name)
+    {
+        Queue<Transform> queue = new Queue<Transform>();
+        queue.Enqueue(root);
+        while (queue.Count > 0)
+        {
+            Transform current = queue.Dequeue();
+            if (current.name == name) return current;
+            foreach (Transform child in current)
+            {
+                queue.Enqueue(child);
+            }
+        }
+        return null;
     }
 
     private static Dictionary<string, string> BuildFilenameLookup(string folder)
