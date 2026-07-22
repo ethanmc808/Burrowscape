@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 58818628a85e59747969076e01c30e40
+guid: 827ad347910267145bcabc4c9ab4b53d
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -97,8 +97,8 @@ ScriptedImporter:
   layeredSpriteImportData:
   - name: Eyes
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.7185708, y: 0.5106325}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
@@ -480,8 +480,8 @@ ScriptedImporter:
     spritePosition: {x: 803, y: 1288}
   - name: Front Ear
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.8780137, y: 0.06138068}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
@@ -848,8 +848,8 @@ ScriptedImporter:
     spritePosition: {x: 7, y: 1746}
   - name: Head
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.4452261, y: 0.04575302}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
@@ -1209,8 +1209,8 @@ ScriptedImporter:
     spritePosition: {x: 421, y: 1041}
   - name: Front Arm
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.9289937, y: 0.9145955}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
@@ -1557,8 +1557,8 @@ ScriptedImporter:
     spritePosition: {x: 189, y: 650}
   - name: Front Thigh
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.7106987, y: 0.8407447}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
@@ -1905,8 +1905,8 @@ ScriptedImporter:
     spritePosition: {x: 334, y: 237}
   - name: Front Foot
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.2943023, y: 0.8598918}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
@@ -2242,8 +2242,8 @@ ScriptedImporter:
     spritePosition: {x: 334, y: 2}
   - name: Torso
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.6251478, y: 0.5281463}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
@@ -2612,8 +2612,8 @@ ScriptedImporter:
     spritePosition: {x: 364, y: 339}
   - name: Back Arm
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.158852, y: 0.7578753}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
@@ -2938,8 +2938,8 @@ ScriptedImporter:
     spritePosition: {x: 907, y: 638}
   - name: Tail
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.8421853, y: 0.3203821}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
@@ -3321,8 +3321,8 @@ ScriptedImporter:
     spritePosition: {x: 0, y: 451}
   - name: Back Ear
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.8176525, y: 0.05769489}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
@@ -3689,8 +3689,8 @@ ScriptedImporter:
     spritePosition: {x: 774, y: 1748}
   - name: Back Thigh
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.4495839, y: 0.5265824}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
@@ -4048,8 +4048,8 @@ ScriptedImporter:
     spritePosition: {x: 740, y: 249}
   - name: Back Foot
     originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
+    pivot: {x: 0.3311195, y: 0.762234}
+    alignment: 9
     border: {x: 0, y: 0, z: 0, w: 0}
     customData: 
     rect:
