@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 64a3854be674e78409ed29c0f751e3ab
+guid: ac40d0af11c8c6c43862083a8da8aee8
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -83,7 +83,7 @@ ScriptedImporter:
       y: 0
       width: 0
       height: 0
-    spriteID: d96108ac81fb68846a2b521e62bf02c1
+    spriteID: c28f38234fca5ea49a044d207572b5c4
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -106,8 +106,8 @@ ScriptedImporter:
       x: 4
       y: 4
       width: 198
-      height: 104
-    spriteID: bd6b936315ac1ac4fb1e16a2cb2cd76e
+      height: 103
+    spriteID: ee341d68238d01743bd01c976b9d54e2
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -116,7 +116,7 @@ ScriptedImporter:
     edges: []
     tessellationDetail: 0
     uvTransform: {x: 4, y: 4}
-    spritePosition: {x: 0, y: 0}
+    spritePosition: {x: 0, y: 1}
   spriteImportData: []
   rigSpriteImportData: []
   sharedRigSpriteImportData: []
@@ -168,8 +168,8 @@ ScriptedImporter:
     spriteName: Mouth_Eating
     isGroup: 0
     parentIndex: -1
-    spriteID: bd6b936315ac1ac4fb1e16a2cb2cd76e
-    layerID: 3
+    spriteID: ee341d68238d01743bd01c976b9d54e2
+    layerID: 6
     mosaicPosition: {x: 4, y: 4}
     flatten: 0
     isImported: 1

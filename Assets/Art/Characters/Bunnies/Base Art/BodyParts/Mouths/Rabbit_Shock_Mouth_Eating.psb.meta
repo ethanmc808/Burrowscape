@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 9ca1932a3d9e2ac4fb8b82b2e75a0978
+guid: 9da6038c2683fd94fa1cd08afbe6125f
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -83,7 +83,7 @@ ScriptedImporter:
       y: 0
       width: 0
       height: 0
-    spriteID: d0091fc9a90d4ed4da2c8095608a1830
+    spriteID: 18468f5e983462345a4e592c56276fb8
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -95,7 +95,7 @@ ScriptedImporter:
     spritePosition: {x: 0, y: 0}
   multiSpriteImportData: []
   layeredSpriteImportData:
-  - name: Rabbit_Neutral_Eyes_Angry
+  - name: Mouth_Eating
     originalName: 
     pivot: {x: 0.5, y: 0.5}
     alignment: 0
@@ -105,9 +105,9 @@ ScriptedImporter:
       serializedVersion: 2
       x: 4
       y: 4
-      width: 594
-      height: 331
-    spriteID: cdc691aaebc2f4e41be44d0a460d5df4
+      width: 198
+      height: 103
+    spriteID: 4ef660435f7a828449803f8c535b6a76
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -116,7 +116,7 @@ ScriptedImporter:
     edges: []
     tessellationDetail: 0
     uvTransform: {x: 4, y: 4}
-    spritePosition: {x: 0, y: 2}
+    spritePosition: {x: 0, y: 1}
   spriteImportData: []
   rigSpriteImportData: []
   sharedRigSpriteImportData: []
@@ -164,12 +164,12 @@ ScriptedImporter:
   resliceFromLayer: 0
   pSDLayerImportSetting: []
   psdLayers:
-  - name: Rabbit_Neutral_Eyes_Angry
-    spriteName: Rabbit_Neutral_Eyes_Angry
+  - name: Mouth_Eating
+    spriteName: Mouth_Eating
     isGroup: 0
     parentIndex: -1
-    spriteID: cdc691aaebc2f4e41be44d0a460d5df4
-    layerID: 3
+    spriteID: 4ef660435f7a828449803f8c535b6a76
+    layerID: 6
     mosaicPosition: {x: 4, y: 4}
     flatten: 0
     isImported: 1
