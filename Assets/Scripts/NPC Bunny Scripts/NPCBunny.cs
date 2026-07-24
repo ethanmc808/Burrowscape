@@ -28,6 +28,20 @@ public enum BunnyGender
     Male,
     Female
 }
+// Full 20-type roster (see BunnyTypeSystem_DesignDoc.md at the project root). Only the Group 1 types
+// (Neutral/Fire/Water/Plant/Shock) have art/prefabs today — the rest exist here so BunnyTypeDefinition
+// data (base stats, unlock thresholds) can be authored ahead of their art, per that doc's scaffolding
+// approach.
+public enum BunnyType
+{
+    Neutral, Fire, Water, Plant, Shock,
+    Insect, Melee, Stone,
+    Mind, Toxic, Ice,
+    Sound, Air, Earth,
+    Pixie, Light,
+    Metal, Ghost, Dark,
+    Draco
+}
 // What a bunny was doing in a room being merged/upgraded, returned by EvacuateForRoomTransition so
 // RoomTransitionService knows how (or whether) to resettle it into the replacement room afterward.
 // The "Away" variants (WorkingAway/SleepingAway) mean the bunny wasn't physically standing in the room
@@ -50,6 +64,15 @@ public class NPCBunny : MonoBehaviour
     [SerializeField] private float moveSpeed = 0.5f;
     [SerializeField] private float wanderSpeedMultiplier = 0.5f; // wandering bunnies move slower than working/eating bunnies
     [SerializeField] private float arrivalThreshold = 0.05f;
+
+    [Header("Type & Progression")]
+    [Tooltip("Shared growth rate for every stat before HP's x2 / Luck's x0.5 post-multiplier (see BunnyStatCalculator). Applied once at spawn; LevelUp reuses this same value later.")]
+    [SerializeField] private float statGrowthRate = 0.02f;
+
+    [Header("Experience (unwired — no XP curve exists yet)")]
+    [SerializeField] private float experience = 0f;
+    [Tooltip("Placeholder only. No system currently calls AddExperience, and no XP-required-per-level curve exists to decide when LevelUp should fire.")]
+    [SerializeField] private float experienceToNextLevel = 0f;
 
     [Header("Hunger")]
     [SerializeField] private float hunger = 100f; // 0-100
@@ -131,6 +154,23 @@ public class NPCBunny : MonoBehaviour
     public BunnyArrivalType ArrivalType { get; private set; } = BunnyArrivalType.Wild;
     public BunnyGender Gender { get; private set; } = BunnyGender.Male;
     public string BunnyName { get; private set; } = "Unnamed";
+    public BunnyType Type { get; private set; }
+    public Sprite TypeIcon { get; private set; }
+    public int Level { get; private set; } = 1;
+    public BunnyStats Stats { get; private set; }
+    public IReadOnlyList<BunnyTraitDefinition> Traits { get; private set; } = new List<BunnyTraitDefinition>();
+    public IReadOnlyList<BunnyPassiveDefinition> ActivePassives { get; private set; } = new List<BunnyPassiveDefinition>();
+    public float StatGrowthRate => statGrowthRate;
+    // Read externally by GardenRoom/WaterRoom when computing this bunny's per-tick output (see
+    // TraitEffectType.ProductionMultiplier). Defaults to 1 (no trait effect) — everything else
+    // (energy/mood/hunger/thirst decay, move speed) is applied in place to this bunny's own fields
+    // instead, since nothing outside NPCBunny needs to read those.
+    public float ProductionMultiplier { get; private set; } = 1f;
+
+    // Which BunnyTypeDefinition this bunny spawned from — needed later by LevelUp to re-resolve
+    // Stats/ActivePassives against the same base stats/passive list. Not exposed publicly; external
+    // code should read the resolved Type/Stats/ActivePassives properties above instead.
+    private BunnyTypeDefinition typeDefinition;
 
     private RoomSpot currentTargetSpot;
     private Queue<Transform> currentPath;
@@ -741,6 +781,87 @@ public class NPCBunny : MonoBehaviour
         Gender = gender;
         BunnyName = name;
         gameObject.name = name; // keeps Hierarchy/debugging readable too
+    }
+
+    // Called once by WildBunnySpawner right after Instantiate, alongside SetIdentity — stores which
+    // BunnyTypeDefinition this bunny spawned from (needed later by LevelUp to re-resolve Stats/
+    // ActivePassives against the same base stats/passive list) plus the level/stats/traits/passives
+    // already resolved for that spawn. See BunnyTypeSystem_DesignDoc.md.
+    public void SetTypeAndProgression(BunnyTypeDefinition def, int level, BunnyStats stats,
+        List<BunnyTraitDefinition> traits, List<BunnyPassiveDefinition> passives)
+    {
+        typeDefinition = def;
+        Type = def.type;
+        TypeIcon = def.icon;
+        Level = level;
+        Stats = stats;
+        Traits = traits;
+        ActivePassives = passives;
+
+        ApplyTraitEffects();
+    }
+
+    // Proof-of-concept trait effects — see TraitEffectType in BunnyTraitDefinition.cs. Runs once, right
+    // after Traits is set, well before HasEnteredBase (needs are frozen until the gate, see Update()),
+    // so mutating these instance fields here can never race a decay tick already in progress. Multiplies
+    // in place rather than storing a separate "effective rate" — these are this bunny's OWN instance
+    // fields (Instantiate gives every spawned bunny its own copy), so there's nothing else to keep in
+    // sync. Deliberately re-derives ProductionMultiplier from scratch (not additive onto whatever it was
+    // before) so calling this twice on the same bunny — which nothing does today, but LevelUp's future
+    // trait-gain hook plausibly could — can't compound the same trait's effect twice.
+    private void ApplyTraitEffects()
+    {
+        ProductionMultiplier = 1f;
+
+        foreach (BunnyTraitDefinition trait in Traits)
+        {
+            switch (trait.effectType)
+            {
+                case TraitEffectType.EnergyDecayMultiplier:
+                    energyDecayPerSecond *= trait.effectMultiplier;
+                    energyDecayPerSecondWorking *= trait.effectMultiplier;
+                    energyDecayPerSecondQuesting *= trait.effectMultiplier;
+                    energyDecayPerSecondForaging *= trait.effectMultiplier;
+                    break;
+                case TraitEffectType.MoodDecayMultiplier:
+                    moodDecayPerSecondWorking *= trait.effectMultiplier;
+                    moodDecayPerSecondIdlePacing *= trait.effectMultiplier;
+                    break;
+                case TraitEffectType.HungerDecayMultiplier:
+                    hungerDecayPerSecond *= trait.effectMultiplier;
+                    break;
+                case TraitEffectType.ThirstDecayMultiplier:
+                    thirstDecayPerSecond *= trait.effectMultiplier;
+                    break;
+                case TraitEffectType.MoveSpeedMultiplier:
+                    moveSpeed *= trait.effectMultiplier;
+                    break;
+                case TraitEffectType.ProductionMultiplier:
+                    ProductionMultiplier *= trait.effectMultiplier;
+                    break;
+            }
+        }
+    }
+
+    // Scaffold for a future XP system — see BunnyTypeSystem_DesignDoc.md's "Leveling scaffold" section.
+    // Nothing calls this yet. Recomputes Stats/ActivePassives at a new level, reusing the exact same
+    // resolver functions used at spawn. Traits are deliberately NOT touched here — trait gain is bound
+    // to breeding/kid-bunny rules that don't exist yet.
+    public void LevelUp(int newLevel)
+    {
+        if (newLevel <= Level || typeDefinition == null) return;
+
+        Level = newLevel;
+        Stats = BunnyStatCalculator.Resolve(typeDefinition, Level, statGrowthRate);
+        ActivePassives = BunnyPassiveResolver.ResolvePassives(typeDefinition, Level);
+    }
+
+    // TODO: no caller yet (working/questing/foraging don't grant XP today) and no curve to compare
+    // `experience` against `experienceToNextLevel` — this just accumulates a number until both exist.
+    // Once a real XP curve is designed, this is where it calls LevelUp(Level + 1) and resets the count.
+    public void AddExperience(float amount)
+    {
+        experience += amount;
     }
 
     // Called once by WildBunnySpawner right after spawn, before the bunny enters the gate queue —

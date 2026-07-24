@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c2392d5aaf074e4cad9c059629c678c, type: 3}
+  m_Name: Dark
+  m_EditorClassIdentifier: Assembly-CSharp::BunnyTypeDefinition
+  type: 18
+  displayName: Dark
+  icon: {fileID: 21300000, guid: e6b8eba8d86627f4a8c2f5318c85fd85, type: 3}
+  prefab: {fileID: 0}
+  baseHP: 70
+  baseAttack: 100
+  baseDefense: 60
+  baseSpeed: 80
+  baseLuck: 80
+  group: 6
+  populationThreshold: 150
+  passives: []

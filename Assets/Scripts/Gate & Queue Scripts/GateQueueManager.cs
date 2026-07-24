@@ -84,8 +84,9 @@ public class GateQueueManager : MonoBehaviour
     }
 
     // The fixed scene Transform marking the front queue slot (never moves — occupancy is what changes,
-    // via ShiftQueueForward). Lets UI (BunnyApprovalUI) anchor itself to a stable world position instead
-    // of tracking whichever bunny currently occupies it.
+    // via ShiftQueueForward). No longer consumed by any UI (BunnyInfoUI is fixed-position, unlike the
+    // old BunnyApprovalUI it replaced, which world-anchored here) — kept in case something else needs
+    // the front slot's position later.
     public Transform FrontQueueSpot => (queueSpots != null && queueSpots.Count > 0) ? queueSpots[0] : null;
 
     // Called by NPCBunny once it's fully walked past the gate

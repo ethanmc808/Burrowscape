@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c2392d5aaf074e4cad9c059629c678c, type: 3}
+  m_Name: Mind
+  m_EditorClassIdentifier: Assembly-CSharp::BunnyTypeDefinition
+  type: 8
+  displayName: Mind
+  icon: {fileID: 21300000, guid: 6183bb8e0e89cc141a90b5765050359a, type: 3}
+  prefab: {fileID: 0}
+  baseHP: 60
+  baseAttack: 110
+  baseDefense: 50
+  baseSpeed: 60
+  baseLuck: 100
+  group: 3
+  populationThreshold: 50
+  passives: []

@@ -79,8 +79,7 @@ GameObject:
   - component: {fileID: -7664088655160912761}
   - component: {fileID: 2411426728429763008}
   - component: {fileID: 3142430252561249029}
-  - component: {fileID: 9037851013046202201}
-  - component: {fileID: -990441668920863948}
+  - component: {fileID: 7986263308573839827}
   m_Layer: 0
   m_Name: NPC_Bunny_Neutral_Default
   m_TagString: Untagged
@@ -200,6 +199,9 @@ MonoBehaviour:
   moveSpeed: 2
   wanderSpeedMultiplier: 0.5
   arrivalThreshold: 0.05
+  statGrowthRate: 0.02
+  experience: 0
+  experienceToNextLevel: 0
   hunger: 100
   hungerDecayPerSecond: 0.1
   hungerThresholdLow: 30
@@ -236,7 +238,7 @@ MonoBehaviour:
   wanderPauseDuration: 3
   noSpotWarningCooldown: 5
   liftDisembarkRevealDelay: 0.5
---- !u!114 &9037851013046202201
+--- !u!114 &7986263308573839827
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -245,21 +247,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 5601990158651218953}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dd5ee84e73ab68349babe433b0689b7e, type: 3}
+  m_Script: {fileID: 11500000, guid: 7387d0e76d9d0384f9617955eeac6b40, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BunnyApprovalClickHandler
---- !u!114 &-990441668920863948
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5601990158651218953}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f3fb0b50e3090143af987f28dcc4dc2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BunnyStatsClickHandler
+  m_EditorClassIdentifier: Assembly-CSharp::BunnyInfoClickHandler
 --- !u!1001 &3917498231033039267
 PrefabInstance:
   m_ObjectHideFlags: 0

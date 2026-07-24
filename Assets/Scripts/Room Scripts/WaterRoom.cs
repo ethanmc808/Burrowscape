@@ -156,7 +156,7 @@ public class WaterRoom : RoomBase, IJobRoom
                 yield break;
             }
 
-            int producedAmount = Mathf.RoundToInt(waterPerProduction * GradeMultiplier);
+            int producedAmount = Mathf.RoundToInt(waterPerProduction * GradeMultiplier * bunny.ProductionMultiplier);
             WaterManager.Instance.AddWater(producedAmount); // still feeds the simple stockpile bunnies drink from — now clamped to WaterManager's storage cap
             WaterManager.Instance.RecordProduction(producedAmount);
         }

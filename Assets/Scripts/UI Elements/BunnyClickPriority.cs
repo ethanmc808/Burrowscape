@@ -22,15 +22,12 @@ public static class BunnyClickPriority
             NPCBunny bunny = hit.collider.GetComponentInParent<NPCBunny>();
             if (bunny == null) continue;
 
-            // Mirrors BunnyApprovalClickHandler/BunnyStatsClickHandler's own gating exactly.
-            if (bunny.IsAwaitingApproval)
+            // Mirrors BunnyInfoClickHandler's own gating exactly — a bunny is clickable once it's
+            // either awaiting approval or already admitted; BunnyInfoUI itself decides whether to show
+            // the Approve/Reject controls based on IsAwaitingApproval.
+            if (bunny.IsAwaitingApproval || bunny.HasEnteredBase)
             {
-                BunnyApprovalUI.Instance.OpenForBunny(bunny);
-                return true;
-            }
-            if (bunny.HasEnteredBase)
-            {
-                BunnyStatsUI.Instance.OpenForBunny(bunny);
+                BunnyInfoUI.Instance.OpenForBunny(bunny);
                 return true;
             }
         }
