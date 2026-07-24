@@ -27,6 +27,7 @@ public enum TraitEffectType
     MoveSpeedMultiplier,      // NPCBunny.moveSpeed
     ProductionMultiplier,     // Read by GardenRoom/WaterRoom when computing a working bunny's output. NOT wired into CoalRoom/PowerManager yet — its headcount-based production model would need restructuring first (deliberately deferred, see BunnyTypeSystem_DesignDoc.md).
     IgnoresNature,            // Suppresses NPCBunny's Nature (Zodiac) stat modifier entirely (used by the Stoic trait) — unlike every case above, this doesn't scale one of the bunny's OWN rates, it suppresses another system's output. See NPCBunny.ApplyNatureEffects.
+    RareLootChanceBonus,      // Foraging's Treasure Finder trait. ADDITIVE percentage points (not a multiplier like every case above) into NPCBunny.ForagingRareLootBonus, read by ForagingManager's loot roll — stacks alongside Luck's own separate contribution to the same roll rather than competing with it. See Foraging_DesignDoc.md.
 }
 
 [System.Serializable]

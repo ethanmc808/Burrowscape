@@ -62,6 +62,10 @@ public class BunnyInfoUI : MonoBehaviour
     [SerializeField] private Button approveButton;
     [SerializeField] private Button rejectButton;
 
+    [Header("Foraging (Dispatch entry point A — see Foraging_DesignDoc.md)")]
+    [Tooltip("Optional — hidden entirely if not wired up. Skips straight to ForagingDispatchUI's Location step, since the bunny is already chosen.")]
+    [SerializeField] private Button sendForagingButton;
+
     private NPCBunny currentBunny;
 
     private void Awake()
@@ -72,6 +76,9 @@ public class BunnyInfoUI : MonoBehaviour
         closeButton.onClick.AddListener(Close);
         approveButton.onClick.AddListener(OnApproveClicked);
         rejectButton.onClick.AddListener(OnRejectClicked);
+
+        if (sendForagingButton != null)
+            sendForagingButton.onClick.AddListener(OnSendForagingClicked);
     }
 
     private void Update()
@@ -88,6 +95,9 @@ public class BunnyInfoUI : MonoBehaviour
         // Re-checked every frame, not just on Open, so the Approve/Reject controls correctly disappear
         // live if the bunny gets approved/rejected through some other path while this panel is open.
         approvalControlsRoot.SetActive(currentBunny.IsAwaitingApproval);
+
+        if (sendForagingButton != null)
+            sendForagingButton.gameObject.SetActive(CanShowSendForagingButton());
 
         RefreshBars();
     }
@@ -122,6 +132,8 @@ public class BunnyInfoUI : MonoBehaviour
         PopulateList(passiveListContainer, bunny.ActivePassives, p => p.displayName);
 
         approvalControlsRoot.SetActive(bunny.IsAwaitingApproval);
+        if (sendForagingButton != null)
+            sendForagingButton.gameObject.SetActive(CanShowSendForagingButton());
 
         panelRoot.SetActive(true);
         RefreshBars();
@@ -180,6 +192,22 @@ public class BunnyInfoUI : MonoBehaviour
     {
         if (currentBunny == null) return;
         GateQueueManager.Instance.RejectFrontBunny(currentBunny);
+        Close();
+    }
+
+    // Visible for an already-resident bunny that's actually eligible to depart (mirrors
+    // NPCBunny.CanDepartForForaging's own gating) and not already out on a trip.
+    private bool CanShowSendForagingButton()
+    {
+        if (currentBunny == null) return false;
+        if (ForagingManager.Instance != null && ForagingManager.Instance.IsCurrentlyForaging(currentBunny)) return false;
+        return currentBunny.CanDepartForForaging();
+    }
+
+    private void OnSendForagingClicked()
+    {
+        if (currentBunny == null) return;
+        ForagingDispatchUI.Instance?.OpenForBunny(currentBunny);
         Close();
     }
 }

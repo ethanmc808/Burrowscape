@@ -370,6 +370,11 @@ public void SetTypeAndProgression(BunnyType type, int level, BunnyStats stats,
 
 ### Leveling scaffold (built now, unwired today)
 
+**Update (2026-07-23): XP curve and earning mechanism now designed** — see `Foraging_DesignDoc.md`.
+Foraging is the source that finally wires up `AddExperience`/`LevelUp` below (Pokemon "Fast" group
+curve, `0.8 * Level^3` cumulative). Nothing described here changed; this section is still accurate as
+the scaffold Foraging plugs into.
+
 Per the user: Level stays spawn-time-only for actual gameplay this pass, but the *hooks* a future XP system will need should exist in code now, not just be a note in this doc — matching how this codebase already scaffolds not-yet-built states (e.g. `energyDecayPerSecondQuesting`/`energyDecayPerSecondForaging` and their commented-out `switch` cases in `GetEnergyDecayRate()`, `NPCBunny.cs:74-75, 279-289` — fields and extension points exist ahead of the Quest/Forage states themselves).
 
 Two pieces, both real and callable, neither called by anything yet:

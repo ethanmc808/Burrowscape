@@ -17,6 +17,14 @@ public enum BunnyState
     WaitingForLift,
     RidingLift,
     DisembarkingLift,
+    // Arrival marker only (see MoveAlongPath/HandleMovingToSpot's pendingStateOnArrival dispatch) — not
+    // a persistent state anything sits in. Fires once a departing bunny reaches the gate exit point,
+    // triggering OnArrivedAtDepartingGate's own gate-wait + final walk to the offscreen staging point.
+    // Mirrors PassingGate, which is the arrival-direction equivalent.
+    DepartingThroughGate,
+    // Persistent state a bunny sits in for the whole length of a Foraging trip — parked offscreen at the
+    // staging point, alive and simulated (see ForagingManager), not despawned. See Foraging_DesignDoc.md.
+    Foraging,
 }
 public enum BunnyArrivalType
 {
@@ -65,10 +73,9 @@ public class NPCBunny : MonoBehaviour
     [SerializeField] private float wanderSpeedMultiplier = 0.5f; // wandering bunnies move slower than working/eating bunnies
     [SerializeField] private float arrivalThreshold = 0.05f;
 
-    [Header("Experience (unwired — no XP curve exists yet)")]
+    [Header("Experience (Foraging is the only source — see BunnyLevelCurve)")]
+    [Tooltip("Running cumulative total, never reset per level — see AddExperience/BunnyLevelCurve.")]
     [SerializeField] private float experience = 0f;
-    [Tooltip("Placeholder only. No system currently calls AddExperience, and no XP-required-per-level curve exists to decide when LevelUp should fire.")]
-    [SerializeField] private float experienceToNextLevel = 0f;
 
     [Header("Hunger")]
     [SerializeField] private float hunger = 100f; // 0-100
@@ -94,6 +101,13 @@ public class NPCBunny : MonoBehaviour
     [SerializeField] private float energyDecayPerSecondForaging = 0.2f; // Foraging state doesn't exist yet — tunable ahead of time
     [SerializeField] private float energyThresholdLow = 35f;
     [SerializeField] private float energyGainPerSecondSleeping = 5f; // regen only goes up to 100, never past
+
+    [Header("HP (Foraging is the first system that spends this — see Foraging_DesignDoc.md)")]
+    [Tooltip("Current HP. Initialized to Stats.HP whenever Stats changes (spawn, LevelUp) and never exceeds it. Foraging's placeholder encounter resolver is the only thing that reduces this today, and it floors at 1 — nothing in this game ever reduces a bunny to 0 HP.")]
+    [SerializeField] private int currentHP = 1;
+    [Tooltip("Passive regen while Sleeping only, mirroring energyGainPerSecondSleeping's Bedroom.GradeMultiplier scaling.")]
+    [SerializeField] private float hpGainPerSecondSleeping = 1f;
+    private float hpRegenRemainder; // fractional carry-over so a slow regen rate isn't rounded away to 0 every frame
 
     [Header("Mood")]
     [SerializeField] private float mood = 100f; // 0-100, pure passive stat, no room/travel of its own
@@ -139,6 +153,7 @@ public class NPCBunny : MonoBehaviour
     public float ThirstValue => thirst;
     public float EnergyValue => energy;
     public float MoodValue => mood;
+    public int HPValue => currentHP;
     public bool IsAssignedToJob => assignedJobRoom != null;
     public IJobRoom AssignedJobRoom => assignedJobRoom;
     // True once the bunny has actually passed through the entrance gate (set in EnterBaseAndWander,
@@ -183,6 +198,13 @@ public class NPCBunny : MonoBehaviour
     // instead, since nothing outside NPCBunny needs to read those.
     public float ProductionMultiplier { get; private set; } = 1f;
 
+    // Read externally by ForagingManager's loot roll (Treasure Finder trait, see TraitEffectType.
+    // RareLootChanceBonus) — an ADDITIVE percentage-point bonus to the Uncommon/Rare roll, not a
+    // multiplier like every other trait effect here, since the design doc calls for it to stack
+    // additively alongside Luck's own separate contribution to the same roll rather than compete with
+    // it. Defaults to 0 (no trait effect), same reasoning as ProductionMultiplier's default of 1.
+    public float ForagingRareLootBonus { get; private set; } = 0f;
+
     // Which BunnyTypeDefinition this bunny spawned from — needed later by LevelUp to re-resolve
     // Stats/ActivePassives against the same base stats/passive list. Not exposed publicly; external
     // code should read the resolved Type/Stats/ActivePassives properties above instead.
@@ -209,6 +231,10 @@ public class NPCBunny : MonoBehaviour
     private int currentFloorIndex = 0;
     private RoomBase pendingArrivalRoom; // room to attribute to the bunny once it finishes crossing the gate
     private Transform pendingArrivalPoint; // gate exit point, becomes the bunny's known position on arrival
+
+    // Foraging departure bookkeeping — the offscreen staging point a departing bunny walks to once past
+    // the gate (see DepartForForaging/OnArrivedAtDepartingGate/OnArrivedAtForagingStagingPoint below).
+    private Transform pendingForagingStagingPoint;
 
     // A picked-but-not-yet-reached wander destination. Deliberately NOT committed to currentRoom/
     // currentWanderPoint until the bunny actually arrives (see OnArrivedAtWanderPoint) — committing
@@ -257,17 +283,32 @@ public class NPCBunny : MonoBehaviour
         // approved.
         if (HasEnteredBase)
         {
-            // Hunger/Thirst decay tick regardless of state
-            hunger = Mathf.Max(0f, hunger - hungerDecayPerSecond * Time.deltaTime);
-            thirst = Mathf.Max(0f, thirst - thirstDecayPerSecond * Time.deltaTime);
+            // Hunger/Thirst/Mood are entirely frozen for the whole length of a Foraging trip (both the
+            // active phase and the return countdown) — see Foraging_DesignDoc.md's "Other needs while
+            // foraging" section. Only Energy is affected by Foraging, and even that stops decaying
+            // during the return countdown specifically (see IsForagingReturnCountdownActive below).
+            bool foragingNeedsFrozen = CurrentState == BunnyState.Foraging;
 
-            // Energy always decays except while Sleeping, which is the only way to regen it (capped at 100).
-            // The rate depends on activity — see GetEnergyDecayRate(). Sleeping's gain is scaled by the
-            // Bedroom's GradeMultiplier — a nicer bed restores energy faster.
+            if (!foragingNeedsFrozen)
+            {
+                hunger = Mathf.Max(0f, hunger - hungerDecayPerSecond * Time.deltaTime);
+                thirst = Mathf.Max(0f, thirst - thirstDecayPerSecond * Time.deltaTime);
+            }
+
+            // Energy always decays except while Sleeping (the only way to regen it, capped at 100) or
+            // mid-Foraging-return-countdown (safe timer, no further risk — see ForagingManager). The
+            // decay rate depends on activity — see GetEnergyDecayRate(). Sleeping's gain is scaled by the
+            // Bedroom's GradeMultiplier — a nicer bed restores energy (and HP, below) faster.
             if (CurrentState == BunnyState.Sleeping)
             {
                 float bedroomMultiplier = (claimedSleepRoom != null) ? claimedSleepRoom.GradeMultiplier : 1f;
                 energy = Mathf.Min(100f, energy + energyGainPerSecondSleeping * bedroomMultiplier * Time.deltaTime);
+                RegenerateHPWhileSleeping(bedroomMultiplier);
+            }
+            else if (foragingNeedsFrozen && IsForagingReturnCountdownActive)
+            {
+                // Return countdown: purely a timer counting down to the walk-in animation, no further
+                // decay of any kind.
             }
             else
                 energy = Mathf.Max(0f, energy - GetEnergyDecayRate() * Time.deltaTime);
@@ -339,7 +380,7 @@ public class NPCBunny : MonoBehaviour
             case BunnyState.Working:
                 return (assignedJobRoom is RoomBase jobRoomBase) ? jobRoomBase.WorkerEnergyDecayPerSecond : energyDecayPerSecondWorking;
             // case BunnyState.Questing: return energyDecayPerSecondQuesting;
-            // case BunnyState.Foraging: return energyDecayPerSecondForaging;
+            case BunnyState.Foraging: return energyDecayPerSecondForaging;
             default:
                 return energyDecayPerSecond;
         }
@@ -391,6 +432,13 @@ public class NPCBunny : MonoBehaviour
                     float multiplier = (claimedSleepRoom != null) ? claimedSleepRoom.GradeMultiplier : 1f;
                     mood = Mathf.Min(100f, mood + moodGainPerSecondSleeping * multiplier * Time.deltaTime);
                 }
+                break;
+
+            // Mood is entirely frozen for the whole Foraging trip (see the Update() needs-freeze block
+            // above) — an explicit no-op case rather than falling through to default, so a future change
+            // to IsIdlePacingWithoutRelaxSpot/IsIdledByRoomShutdown can never accidentally start draining
+            // a foraging bunny's Mood.
+            case BunnyState.Foraging:
                 break;
 
             default:
@@ -816,6 +864,8 @@ public class NPCBunny : MonoBehaviour
 
         ApplyTraitEffects();
         ApplyNatureEffects();
+
+        currentHP = Stats.HP; // full HP at spawn — nothing has spent it yet
     }
 
     private const int MinIV = 1;
@@ -915,17 +965,26 @@ public class NPCBunny : MonoBehaviour
                 case TraitEffectType.ProductionMultiplier:
                     ProductionMultiplier *= trait.effectMultiplier;
                     break;
+                case TraitEffectType.RareLootChanceBonus:
+                    // Additive, not multiplicative — see ForagingRareLootBonus's own doc comment for why
+                    // this case doesn't match the "*=" shape every other case above uses.
+                    ForagingRareLootBonus += trait.effectMultiplier;
+                    break;
             }
         }
     }
 
-    // Scaffold for a future XP system — see BunnyTypeSystem_DesignDoc.md's "Leveling scaffold" section.
-    // Nothing calls this yet. Recomputes Stats/ActivePassives at a new level, reusing the exact same
-    // resolver functions used at spawn. Traits are deliberately NOT touched here — trait gain is bound
-    // to breeding/kid-bunny rules that don't exist yet.
+    // Recomputes Stats/ActivePassives at a new level, reusing the exact same resolver functions used at
+    // spawn — see BunnyTypeSystem_DesignDoc.md's "Leveling scaffold" section. Traits are deliberately NOT
+    // touched here — trait gain is bound to breeding/kid-bunny rules that don't exist yet. currentHP is
+    // carried forward by the same delta as max HP (mirrors the familiar "level up mid-battle, current HP
+    // rises with the new max" convention) rather than snapping to full — a bunny that just leveled up
+    // mid-Foraging-trip shouldn't get a free full heal out of it.
     public void LevelUp(int newLevel)
     {
         if (newLevel <= Level || typeDefinition == null) return;
+
+        int previousMaxHP = Stats.HP;
 
         Level = newLevel;
         Stats = BunnyStatCalculator.Resolve(typeDefinition, Level,
@@ -933,14 +992,68 @@ public class NPCBunny : MonoBehaviour
             EVHP, EVAttack, EVDefense, EVSpeed, EVLuck);
         ApplyNatureEffects();
         ActivePassives = BunnyPassiveResolver.ResolvePassives(typeDefinition, Level);
+
+        currentHP = Mathf.Clamp(currentHP + (Stats.HP - previousMaxHP), 1, Stats.HP);
     }
 
-    // TODO: no caller yet (working/questing/foraging don't grant XP today) and no curve to compare
-    // `experience` against `experienceToNextLevel` — this just accumulates a number until both exist.
-    // Once a real XP curve is designed, this is where it calls LevelUp(Level + 1) and resets the count.
+    // Foraging is the first (and, for now, only) source of XP — see Foraging_DesignDoc.md's "XP system"
+    // section. `experience` is a running CUMULATIVE total (never reset per level), checked against
+    // BunnyLevelCurve's cumulative-XP-per-level curve; LevelUp fires as many times as the new total
+    // justifies (covers a big single grant crossing more than one level at once), capped at level 50 to
+    // match WildBunnySpawner.RollSpawnLevel's own clamp.
     public void AddExperience(float amount)
     {
         experience += amount;
+
+        while (Level < 50 && experience >= BunnyLevelCurve.CumulativeXPForLevel(Level + 1))
+            LevelUp(Level + 1);
+    }
+
+    // XP remaining to the next level, for a future UI progress bar — computed on demand from the curve
+    // rather than stored, since `experience` is the only value that actually needs to persist.
+    public float ExperienceToNextLevel => Level >= 50 ? 0f : BunnyLevelCurve.CumulativeXPForLevel(Level + 1) - experience;
+
+    // ---------- HP (spent by Foraging's placeholder encounter resolver — see ForagingManager) ----------
+
+    // Fractional remainder carried across frames (hpRegenRemainder) so a sub-1-HP/sec regen rate still
+    // eventually grants whole HP once enough has accumulated, instead of Mathf.RoundToInt silently
+    // discarding it every frame — energy/mood don't need this since they're floats themselves, but HP is
+    // deliberately an int (matches BunnyStats.HP, which nothing has ever needed as a float).
+    private void RegenerateHPWhileSleeping(float bedroomMultiplier)
+    {
+        if (currentHP >= Stats.HP) return;
+
+        hpRegenRemainder += hpGainPerSecondSleeping * bedroomMultiplier * Time.deltaTime;
+        int wholeHP = Mathf.FloorToInt(hpRegenRemainder);
+        if (wholeHP <= 0) return;
+
+        hpRegenRemainder -= wholeHP;
+        currentHP = Mathf.Min(Stats.HP, currentHP + wholeHP);
+    }
+
+    // Called by ForagingManager's placeholder encounter resolver on a loss. Floored at 1, never 0 — see
+    // Foraging_DesignDoc.md's "No death from Foraging, ever (this pass)" decision. The caller is
+    // responsible for treating HP == 1 with no potions left as an auto-return trigger; this method only
+    // guarantees the floor itself.
+    public void ApplyForagingDamage(int amount)
+    {
+        currentHP = Mathf.Max(1, currentHP - Mathf.Max(0, amount));
+    }
+
+    // Called by ForagingManager when a carried healing potion auto-uses.
+    public void HealHP(int amount)
+    {
+        currentHP = Mathf.Clamp(currentHP + Mathf.Max(0, amount), 1, Stats.HP);
+    }
+
+    // Set by ForagingManager the instant a trip's return countdown begins (any of the four return
+    // triggers fired) and cleared once the bunny arrives home. While true, Energy stops decaying
+    // entirely (see the needs-freeze block in Update()) — the countdown is purely a timer to the walk-in
+    // animation, not a continuation of the trip's danger.
+    public bool IsForagingReturnCountdownActive { get; private set; }
+    public void SetForagingReturnCountdownActive(bool value)
+    {
+        IsForagingReturnCountdownActive = value;
     }
 
     // Called once by WildBunnySpawner right after spawn, before the bunny enters the gate queue —
@@ -1321,6 +1434,10 @@ public class NPCBunny : MonoBehaviour
                 OnArrivedAtWanderPoint();
             else if (pendingStateOnArrival == BunnyState.PassingGate)
                 OnArrivedAtGateExit();
+            else if (pendingStateOnArrival == BunnyState.DepartingThroughGate)
+                OnArrivedAtDepartingGate();
+            else if (pendingStateOnArrival == BunnyState.Foraging)
+                OnArrivedAtForagingStagingPoint();
             else if (pendingStateOnArrival == BunnyState.Despawning)
                 OnArrivedAtDespawnPoint();
             else if (pendingStateOnArrival == BunnyState.WaitingForLift)
@@ -1459,6 +1576,129 @@ public class NPCBunny : MonoBehaviour
         Destroy(gameObject);
     }
 
+    // ---------- FORAGING (see Foraging_DesignDoc.md) ----------
+
+    // Gate for ForagingManager.TryDispatch — a bunny is only safe to pull for a trip while settled into
+    // one of the "at rest" states. Mid-transit (MovingToSpot/lift legs) has in-flight path/lift
+    // bookkeeping that would be corrupted by yanking the bunny elsewhere mid-leg (same reasoning as
+    // RequestNewJobSpot's own transit guards); Eating/Drinking are externally driven by Cafeteria/
+    // WaterRoom's own coroutines, which have no idea CurrentState just changed out from under them.
+    public bool CanDepartForForaging()
+    {
+        if (!HasEnteredBase || IsAwaitingApproval) return false;
+
+        switch (CurrentState)
+        {
+            case BunnyState.Idle:
+            case BunnyState.Working:
+            case BunnyState.Relaxing:
+            case BunnyState.Sleeping:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    // Releases whatever the bunny currently holds — unconditional, unlike EvacuateForRoomTransition,
+    // since a bunny departing for Foraging has no "away and resumable" nuance to preserve; it's genuinely
+    // leaving the base, not being evicted mid-errand elsewhere.
+    private void ReleaseAllClaimsForDeparture()
+    {
+        if (assignedJobRoom != null)
+            UnassignFromJob();
+
+        if (claimedRelaxSpot != null)
+        {
+            claimedRelaxRoom.ReleaseSpot(claimedRelaxSpot, this);
+            claimedRelaxSpot = null;
+            claimedRelaxRoom = null;
+        }
+
+        if (claimedSleepSpot != null)
+        {
+            claimedSleepRoom.ReleaseSpot(claimedSleepSpot, this);
+            claimedSleepSpot = null;
+            claimedSleepRoom = null;
+        }
+
+        if (CurrentState == BunnyState.Sleeping || CurrentState == BunnyState.Relaxing)
+            CurrentState = BunnyState.Idle;
+    }
+
+    // Called by ForagingManager to send an already-resident bunny (CanDepartForForaging() checked by the
+    // caller) out on a trip. Routes to the gate exit point — same-floor via the existing
+    // GetRouteToWanderPoint, cross-floor via TryBeginCrossFloorTripToWanderPoint below — then
+    // OnArrivedAtDepartingGate takes over once the bunny physically reaches the gate. Returns false if no
+    // walkable/liftable route exists (shouldn't normally happen), letting the caller back out of the
+    // dispatch cleanly instead of leaving the bunny stranded mid-release.
+    public bool DepartForForaging(RoomBase entranceRoom, Transform gateExitPoint, Transform stagingPoint)
+    {
+        ReleaseAllClaimsForDeparture();
+
+        pendingForagingStagingPoint = stagingPoint;
+        pendingFacingOverride = null;
+
+        if (currentFloorIndex != entranceRoom.FloorIndex)
+            return TryBeginCrossFloorTripToWanderPoint(entranceRoom, gateExitPoint, BunnyState.DepartingThroughGate);
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToWanderPoint(currentRoom, currentSpot, currentWanderPoint, entranceRoom, gateExitPoint, currentFloorIndex);
+        if (path.Count == 0) return false;
+
+        MoveAlongPath(path, null, BunnyState.DepartingThroughGate);
+        return true;
+    }
+
+    // Mirrors OnArrivedAtGateExit's arrival-direction counterpart: the bunny has physically reached the
+    // gate exit point from somewhere inside the base and now needs the gate itself to open before
+    // continuing the short final leg out to the offscreen staging point.
+    private void OnArrivedAtDepartingGate()
+    {
+        EntranceGate.Instance.RequestPassage();
+        StartCoroutine(WaitForGateThenWalkToStaging());
+    }
+
+    private IEnumerator WaitForGateThenWalkToStaging()
+    {
+        while (EntranceGate.Instance.CurrentState != GateState.Open)
+            yield return null;
+
+        List<Transform> path = new List<Transform> { pendingForagingStagingPoint };
+        MoveAlongPath(path, null, BunnyState.Foraging);
+    }
+
+    // The bunny is now parked offscreen for the whole length of the trip — alive and simulated (see
+    // ForagingManager), not despawned. CurrentState is already BunnyState.Foraging by the time this runs
+    // (set by HandleMovingToSpot's dispatch, same as every other OnArrivedAt* callback).
+    private void OnArrivedAtForagingStagingPoint()
+    {
+        currentRoom = null;
+        currentSpot = null;
+        currentWanderPoint = pendingForagingStagingPoint;
+        pendingForagingStagingPoint = null;
+
+        EntranceGate.Instance.NotifyPassageComplete();
+    }
+
+    // Called by ForagingManager once a trip's return countdown completes. Reuses ProceedThroughGate/
+    // OnArrivedAtGateExit entirely unchanged — from the bunny's own state machine's perspective this is
+    // indistinguishable from a normal gate entry (EnterBaseAndWander doesn't care that HasEnteredBase was
+    // already true). The only thing this wrapper adds is waiting for the gate to actually be open first,
+    // exactly like OnArrivedAtDepartingGate's outbound counterpart.
+    public void ReturnFromForaging(Transform gateExitPoint, RoomBase entranceRoom)
+    {
+        StartCoroutine(WaitForGateThenReturnThroughGate(gateExitPoint, entranceRoom));
+    }
+
+    private IEnumerator WaitForGateThenReturnThroughGate(Transform gateExitPoint, RoomBase entranceRoom)
+    {
+        EntranceGate.Instance.RequestPassage();
+
+        while (EntranceGate.Instance.CurrentState != GateState.Open)
+            yield return null;
+
+        ProceedThroughGate(gateExitPoint, entranceRoom);
+    }
+
     // ---------- CROSS-FLOOR (LIFT) ----------
 
     // Routes to the nearest floor-appropriate lift, then hands the trip off to it. Returns false
@@ -1489,6 +1729,34 @@ public class NPCBunny : MonoBehaviour
         pendingFinalRoom = targetRoom;
         pendingFinalSpot = targetSpot;
         pendingFinalWanderPoint = null;
+        pendingFinalState = finalState;
+        return BeginTripToLift(lift, myFloor, targetRoom.FloorIndex);
+    }
+
+    // Sibling of TryBeginCrossFloorTripToSpot above, for a plain wander-point destination instead of a
+    // claimed RoomSpot — used by DepartForForaging to reach the gate exit point from another floor.
+    // ResumeTripAfterLift already has a working wander-point branch (its pendingFinalSpot == null case),
+    // so this only needs to feed the right pending fields into the same BeginTripToLift/
+    // ResumeTripAfterLift machinery; neither of those needs any changes.
+    private bool TryBeginCrossFloorTripToWanderPoint(RoomBase targetRoom, Transform destination, BunnyState finalState)
+    {
+        if (pendingLift != null)
+        {
+            Debug.LogWarning($"{name}: already mid-lift-trip, ignoring new cross-floor wander-point request to floor {targetRoom.FloorIndex}.");
+            return false;
+        }
+
+        int myFloor = currentFloorIndex;
+        LiftRoom lift = BaseLayoutManager.Instance.FindLiftServicing(myFloor, targetRoom.FloorIndex, currentRoom, targetRoom);
+        if (lift == null)
+        {
+            Debug.LogWarning($"{name}: no lift services floor {myFloor} -> {targetRoom.FloorIndex}.");
+            return false;
+        }
+
+        pendingFinalRoom = targetRoom;
+        pendingFinalSpot = null;
+        pendingFinalWanderPoint = destination;
         pendingFinalState = finalState;
         return BeginTripToLift(lift, myFloor, targetRoom.FloorIndex);
     }

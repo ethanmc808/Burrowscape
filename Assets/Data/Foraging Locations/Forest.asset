@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5275647d35d8a8e4bbae403c59d0c7b2, type: 3}
+  m_Name: Forest
+  m_EditorClassIdentifier: Assembly-CSharp::ForagingLocationDefinition
+  displayName: Forest
+  icon: {fileID: 0}
+  populationThreshold: 0
+  difficultyTier: 0
+  recommendedTypes: 03000000
+  lootTable:
+  - rarity: 0
+    kind: 0
+    accessory: {fileID: 0}
+    minAmount: 1
+    maxAmount: 3
+  - rarity: 1
+    kind: 1
+    accessory: {fileID: 0}
+    minAmount: 1
+    maxAmount: 1
+  - rarity: 2
+    kind: 2
+    accessory: {fileID: 11400000, guid: 4400f5b881b6eb24a9e32a6f8663c729, type: 2}
+    minAmount: 1
+    maxAmount: 3

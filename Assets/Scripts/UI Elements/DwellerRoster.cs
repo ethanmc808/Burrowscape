@@ -29,8 +29,20 @@ public class DwellerRoster : MonoBehaviour
     {
         // Exclude bunnies still spawned-but-queued at the gate (or mid-approval) — they haven't
         // entered the base yet, so assigning them to a job would route them straight from the base
-        // entrance to the job room, skipping the gate/queue entirely.
-        return allBunnies.Where(b => !b.IsAssignedToJob && b.HasEnteredBase).ToList();
+        // entrance to the job room, skipping the gate/queue entirely. Also exclude bunnies currently out
+        // Foraging (parked offscreen — see NPCBunny.DepartForForaging) — they have no job and
+        // HasEnteredBase is still true, so without this they'd wrongly appear assignable while away.
+        return allBunnies.Where(b => !b.IsAssignedToJob && b.HasEnteredBase && b.CurrentState != BunnyState.Foraging).ToList();
+    }
+
+    // Every resident bunny eligible to be sent Foraging — HasEnteredBase (a real dweller, not still
+    // queued/awaiting approval), not already out on a trip, and not mid-transit toward/through the gate
+    // for an existing trip. Unlike GetUnassignedBunnies, a bunny with a job/relax/sleep claim IS
+    // included — NPCBunny.CanDepartForForaging/ReleaseAllClaimsForDeparture handle releasing that claim
+    // at dispatch time, same as sending a working bunny on break.
+    public List<NPCBunny> GetForageableBunnies()
+    {
+        return allBunnies.Where(b => b.HasEnteredBase && b.CanDepartForForaging()).ToList();
     }
     public List<NPCBunny> GetBunniesAssignedTo(IJobRoom room)
     {

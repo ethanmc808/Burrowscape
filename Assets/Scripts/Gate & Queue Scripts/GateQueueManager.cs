@@ -89,6 +89,12 @@ public class GateQueueManager : MonoBehaviour
     // the front slot's position later.
     public Transform FrontQueueSpot => (queueSpots != null && queueSpots.Count > 0) ? queueSpots[0] : null;
 
+    // Read by ForagingManager to drive NPCBunny.DepartForForaging/ReturnFromForaging — a foraging trip's
+    // gate crossings reuse the exact same entrance room / exit point every wild-arrival crossing already
+    // uses, just called directly instead of through this class's own queue Update() loop.
+    public RoomBase EntranceRoom => entranceRoom;
+    public Transform GateExitPoint => gateExitPoint;
+
     // Called by NPCBunny once it's fully walked past the gate
     public void NotifyBunnyPassedGate(NPCBunny bunny)
     {
