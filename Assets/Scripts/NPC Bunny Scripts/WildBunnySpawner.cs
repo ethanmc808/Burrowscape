@@ -163,7 +163,10 @@ public class WildBunnySpawner : MonoBehaviour
         newBunny.SetIdentity(gender, chosenName);
 
         int level = RollSpawnLevel();
-        BunnyStats stats = BunnyStatCalculator.Resolve(chosenType, level, newBunny.StatGrowthRate);
+        newBunny.RollIndividuality();
+        BunnyStats stats = BunnyStatCalculator.Resolve(chosenType, level,
+            newBunny.IVHP, newBunny.IVAttack, newBunny.IVDefense, newBunny.IVSpeed, newBunny.IVLuck,
+            newBunny.EVHP, newBunny.EVAttack, newBunny.EVDefense, newBunny.EVSpeed, newBunny.EVLuck);
         // Wild spawns are always adults -> 2 traits. A future egg/breeding system would roll 1 for a
         // newly-hatched kid instead — see the design doc's Open Items.
         List<BunnyTraitDefinition> traits = BunnyTraitCatalog.Instance != null

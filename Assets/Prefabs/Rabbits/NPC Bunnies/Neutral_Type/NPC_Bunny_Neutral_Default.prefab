@@ -199,7 +199,6 @@ MonoBehaviour:
   moveSpeed: 2
   wanderSpeedMultiplier: 0.5
   arrivalThreshold: 0.05
-  statGrowthRate: 0.02
   experience: 0
   experienceToNextLevel: 0
   hunger: 100

@@ -52,6 +52,12 @@ public static class BunnyTraitDataGenerator
 
         new SeedTrait("quick_footed", "Quick-Footed", "Moves 1.25x faster than normal.", TraitEffectType.MoveSpeedMultiplier, 1.25f, "sluggish"),
         new SeedTrait("sluggish", "Sluggish", "Moves 0.75x as fast as normal.", TraitEffectType.MoveSpeedMultiplier, 0.75f, "quick_footed"),
+
+        // Bunny Stat System Redesign (2026-07-23): suppresses this bunny's Zodiac (Nature) stat
+        // modifier entirely — see NPCBunny.ApplyNatureEffects. effectMultiplier is unused by
+        // IgnoresNature (kept at 1f as a neutral placeholder since every SeedTrait needs one). No
+        // incompatible traits — Stoic doesn't oppose any of the rate-based traits above.
+        new SeedTrait("stoic", "Stoic", "Ignores this bunny's Zodiac (Nature) stat modifier entirely.", TraitEffectType.IgnoresNature, 1f),
     };
 
     [MenuItem("Burrowscape/Generate Bunny Trait Seed Data")]

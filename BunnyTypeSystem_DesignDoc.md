@@ -11,6 +11,19 @@ Bunny "type" has never been tracked in code. `NPCBunny` (`Assets/Scripts/NPC Bun
 - No trait content exists yet — `BunnyTraitCatalog`'s list is empty until authored, so bunnies will spawn with 0 traits until then (expected, not a bug).
 - **Update (2026-07-23): first real trait batch implemented.** 12 base-related traits (Energetic/Lazy, Diligent/Slacker, Cheerful/Grumpy, Glutton/Light Eater, Parched/Reservoir, Quick-Footed/Sluggish) now have real numeric effects, not just names — see "Trait effects (proof of concept)" below. Run `Burrowscape > Generate Bunny Trait Seed Data` (after adding a `BunnyTraitCatalog` component per above) to seed them into the scene. The other 16 proposed combat/quest trait names are intentionally still name-only — no combat/quest system exists yet to give them real effects, and the user wants to flesh those out + playtest before implementing.
 
+**Update (2026-07-23): stat formula replaced by the Bunny Stat System Redesign.** The linear
+`growthRate` formula described in "Stat resolution" below (and `NPCBunny.statGrowthRate`/
+`BunnyStatCalculator`'s HP x2/Luck x0.5 post-multipliers) is gone, replaced by a modified
+Pokemon-style floor formula with three new individuality layers — **IV** (1-32 per stat, fixed at
+spawn), **EV** (0-256 per stat, earned through play — the earning mechanism doesn't exist yet, EVs
+just default to 0), and **Nature/Zodiac** (one of 12 signs, ±10% on two of Attack/Defense/Speed/Luck,
+never HP). See the "Stat resolution" section below (rewritten) for the actual formula, and the new
+`BunnyNature.cs` (sign enum + boosted/lowered lookup) and `NPCBunny.RollIndividuality`/
+`ApplyNatureEffects`. A new `Stoic` trait (`TraitEffectType.IgnoresNature`) suppresses a bunny's
+Nature effect entirely without erasing its underlying sign — **still needs to be authored as an
+actual entry in the `BunnyTraitCatalog` Inspector list** (this doc's code changes only add the enum
+case, not the data row; same manual step as any other trait content).
+
 **Gotcha hit and fixed (2026-07-23):** `BunnyTraitCatalog` was originally implemented in the same file as `BunnyTraitDefinition` (`BunnyTraitDefinition.cs`). It compiled fine (confirmed by grepping the compiled `Assembly-CSharp.dll` for the class name) but never showed up in Add Component — Unity's Add Component search/browse resolves entries through a `.cs` file's `MonoScript` asset, and a file only gets ONE `MonoScript`, assigned to whichever class matches the filename. `BunnyTraitCatalog` didn't, so it had no `MonoScript` for the Editor UI to find even though the type itself was real and usable from code. Fixed by moving it to its own `BunnyTraitCatalog.cs`. Lesson for any future MonoBehaviour added to this system: one file, one class, filename matching the class name — exactly what every other singleton here (`RoomUnlockTracker`, `WildBunnyNames`, `BunnyTypeUnlockTracker`) already does.
 
 This doc defines the system that gives every spawned bunny a real `BunnyType`, plus the Level/Stats/Passives/Traits that come with it. Full target roster is 20 types, gated into 7 population-based unlock groups; only Group 1 (Neutral, Fire, Water, Plant, Shock) has art today, but the data model covers all 20 from the start so adding a type later is "author one asset," not "touch code."
@@ -58,7 +71,7 @@ The xlsx's Traits/Passives columns are blank — no content designed yet for eit
 
 ## Locked-in decisions
 
-- **Stat growth**: linear. `Stat(level) = BaseStat * (1 + growthRate * (level - 1))`, one shared `growthRate` across all 5 stats and all types, tunable as a single serialized field. Not Pokémon's floor-based formula — that formula's constants are tuned for 0-255 base stats, and ours run 20-160, so it wouldn't transfer cleanly.
+- **Stat growth**: ~~linear, `Stat(level) = BaseStat * (1 + growthRate * (level - 1))`~~ — **superseded 2026-07-23**, replaced by the Pokemon-style floor formula in "Stat resolution" below (the "wouldn't transfer cleanly" concern this bullet originally raised turned out not to block it — our base stats fit fine within the 1-256 range the floor formula assumes).
 - **Leveling is spawn-time only, for now.** No XP system exists (working, questing, foraging aren't wired to any XP concept), and building one is out of scope for this pass. A wild bunny's Level is rolled once at spawn from the population ramp and never changes afterward. Everything level-dependent (Stats, which Passives are active) is a pure function of `(Type, Level)` evaluated once at spawn. This deliberately leaves room for a future XP/leveling pass to call a `LevelUp(int newLevel)`-shaped hook that just re-runs the same stat/passive resolution at the new level — no rework needed here, just a new caller.
 - **Level ramp reuses `WildBunnySpawner`'s existing population ramp** (`startPopulation`/`capPopulation`, `NPCBunny Scripts/WildBunnySpawner.cs:20-26`) rather than a second independent curve — same shape as the spawn-timer Lerp, extended with a level-range Lerp so both stay in sync off one set of population knobs.
 - **Type unlocks are sticky.** Once population has ever crossed a type's threshold, that type stays available even if population later drops (deaths, banishment). Mirrors `RoomUnlockTracker`'s permanent-flag pattern (`Room Scripts/RoomUnlockTracker.cs`) rather than `RoomUnlockCondition`'s live `PopulationAtLeast` re-check (`Room Scripts/RoomUnlockCondition.cs:32-34`), which would let a type disappear mid-playthrough.
@@ -226,45 +239,35 @@ public class BunnyTypeUnlockTracker : MonoBehaviour
 }
 ```
 
-## Stat resolution
+## Stat resolution (replaced 2026-07-23 — see Bunny Stat System Redesign)
 
-Same linear growth for every stat, but HP and Luck additionally get a fixed post-multiplier — HP ×2, Luck ×0.5 — so the two "extreme" stats scale at different rates than Attack/Defense/Speed and the stat spread between types stays interesting at high level instead of everything just scaling uniformly:
+**Superseded.** The linear `growthRate` formula this section originally described is gone. Current
+formula, a modified Pokemon-style floor formula:
 
 ```
-Stat(level)    = RoundToInt(BaseStat * (1 + growthRate * (level - 1)))          // Attack, Defense, Speed
-HP(level)      = RoundToInt(BaseStat * (1 + growthRate * (level - 1)) * 2)      // HP only
-Luck(level)    = RoundToInt(BaseStat * (1 + growthRate * (level - 1)) * 0.5)    // Luck only
+HP     = floor((2*Base + IV + floor(EV/4)) * Level / 50) + Level + 8
+Stat   = floor((floor((2*Base + IV + floor(EV/4)) * Level / 50) + 4) * NatureMultiplier)   // Attack, Defense, Speed, Luck
 ```
 
-`growthRate` is one serialized constant shared by all 5 stats, applied before the HP/Luck post-multiplier (proposed default: `0.02` — at level 50 that's `1 + 0.02*49 = 1.98x` base before the post-multiplier, roughly doubling by max level; easy to retune once playtesting starts). A small `BunnyStats` struct holds the 5 resolved values:
+`NatureMultiplier` is `1.1` on the bunny's Nature-boosted stat, `0.9` on its Nature-lowered stat, `1.0`
+on the other two (or on all four if the bunny has the `Stoic` trait). Every stat (HP included) is
+clamped to a minimum of 1 after the full formula resolves. `Base` is `BunnyTypeDefinition.baseHP`/
+etc., unchanged/un-multiplied — the old HP x2/Luck x0.5 post-multipliers are gone along with
+`growthRate`.
 
-```csharp
-public struct BunnyStats
-{
-    public int HP, Attack, Defense, Speed, Luck;
-}
+Split into two passes (see Locked-in decisions / Option B), matching how Traits already work as a
+separate post-`Resolve` step:
 
-public static class BunnyStatCalculator
-{
-    private const float HPMultiplier = 2f;
-    private const float LuckMultiplier = 0.5f;
+- `BunnyStatCalculator.Resolve` (`BunnyStats.cs`) — pure function of `(type, level, IV*5, EV*5)` →
+  `BunnyStats`, with `NatureMultiplier` implicitly `1.0` (Nature isn't known at this layer).
+- `NPCBunny.ApplyNatureEffects` — run right after `ApplyTraitEffects` (same spot, before
+  `HasEnteredBase` can ever be true), applies the real ±10%/x1 per the bunny's `Nature` (or x1 across
+  the board if a `TraitEffectType.IgnoresNature` trait is present) and re-clamps to a minimum of 1.
 
-    public static BunnyStats Resolve(BunnyTypeDefinition def, int level, float growthRate)
-    {
-        float mult = 1f + growthRate * (level - 1);
-        return new BunnyStats
-        {
-            HP = Mathf.RoundToInt(def.baseHP * mult * HPMultiplier),
-            Attack = Mathf.RoundToInt(def.baseAttack * mult),
-            Defense = Mathf.RoundToInt(def.baseDefense * mult),
-            Speed = Mathf.RoundToInt(def.baseSpeed * mult),
-            Luck = Mathf.RoundToInt(def.baseLuck * mult * LuckMultiplier),
-        };
-    }
-}
-```
-
-Note this means `BunnyTypeDefinition.baseHP`/`baseLuck` (and the `BaseTotal`/xlsx "Total Stats" column) are pre-multiplier numbers — the actual in-game HP a level-1 bunny spawns with is already 2x its authored `baseHP` (e.g. Neutral's authored `baseHP = 70` resolves to an actual 140 HP at level 1), and actual Luck is already half its authored `baseLuck`. Worth calling out in the Base Stats Editor window itself (e.g. a note in the toolbar) so the placeholder numbers being tuned there aren't mistaken for final in-game values.
+IVs (1-32 per stat) and Nature (12-sign enum, see `BunnyNature.cs`) are rolled once at spawn via
+`NPCBunny.RollIndividuality()`, called by `WildBunnySpawner` before `Resolve` (so the IVs exist in
+time to feed into it). EVs (0-256 per stat, 512-total cap across all 5 — see `NPCBunny.MaxTotalEV`)
+default to 0; no EV-granting mechanism exists yet, so nothing sets these today.
 
 Note: this `Speed` stat is unrelated to `NPCBunny.moveSpeed` (`NPCBunny.cs:50`, the literal walk-animation speed) — see Open Items.
 
@@ -377,6 +380,10 @@ Two pieces, both real and callable, neither called by anything yet:
 // is calling this once it decides a level-up happened. Traits are deliberately NOT touched here: trait
 // gain is bound to breeding/kid-bunny rules (see Open Items) that don't exist yet either, and this
 // method's job is strictly "level changed, refresh what depends on it."
+//
+// Superseded 2026-07-23: statGrowthRate is gone (see "Stat resolution" above) — LevelUp now passes
+// the bunny's own IVs/EVs into Resolve and re-runs ApplyNatureEffects afterward. Shown here in its
+// original form for history; see NPCBunny.cs for the actual current body.
 public void LevelUp(int newLevel)
 {
     if (newLevel <= Level) return;
@@ -413,7 +420,7 @@ Replace the flat `List<NPCBunny> bunnyPrefabs` (`WildBunnySpawner.cs:7`) with `[
 3. Pick one uniformly at random (equal weight among everything currently available — see Open Items).
 4. Instantiate `chosenType.prefab` (replaces `chosenPrefab` today).
 5. Roll level via `RollSpawnLevel()`.
-6. Resolve stats via `BunnyStatCalculator.Resolve(chosenType, level, growthRate)`.
+6. Resolve stats via `BunnyStatCalculator.Resolve(chosenType, level, growthRate)`. **Superseded 2026-07-23**: also call `newBunny.RollIndividuality()` before this step, and pass the rolled IVs/EVs (see "Stat resolution" above) instead of `growthRate`, which no longer exists.
 7. Roll gender/name (unchanged — existing `WildBunnyNames` calls).
 8. Roll traits via `RollTraits(2)` (adult wild spawn).
 9. Resolve passives via `ResolvePassives(chosenType, level)`.
@@ -423,7 +430,7 @@ Replace the flat `List<NPCBunny> bunnyPrefabs` (`WildBunnySpawner.cs:7`) with `[
 ## Open items / assumptions to confirm before implementation
 
 - **All population thresholds (25/50/75/100/150/200) and level ranges (1-5 → 40-50) are placeholders**, per the user's own framing — expect to retune both once Group 1 is playtested.
-- **`growthRate` default (`0.02`) is a guess** — needs a real playtest pass once Group 1 stats are visible in-game (e.g. on a stats UI, which doesn't exist yet either).
+- ~~**`growthRate` default (`0.02`) is a guess**~~ — moot, `growthRate` no longer exists (see "Stat resolution"). The new formula's own tuning knob is each type's authored Base stats plus IV/EV/Nature spread, not a single shared constant — same "needs a real playtest pass" caveat applies once a stats UI exists.
 - **Equal-weight type selection** among unlocked+available types is assumed for step 3 above (not stated by the user). If some types should be rarer/more common even within the same unlocked group, this needs a per-type weight field on `BunnyTypeDefinition` instead — cheap to add later, flagging now so it's a deliberate choice rather than an accident.
 - **`Speed` (battle stat) vs. `moveSpeed` (`NPCBunny.cs:50`, literal walk animation speed) are unrelated fields that happen to share a name.** Not wiring the new Speed stat to actual movement in this pass — open question for later whether a high-Speed type should visually move faster.
 - **XP/leveling gameplay is deferred, but the hooks are built now.** This pass only ever resolves Stats/Passives once, at spawn, from a level that's fixed for the bunny's lifetime — nothing calls `LevelUp` or `AddExperience` yet, and no XP-per-level curve exists. A future XP pass just needs to (a) design that curve, (b) call `AddExperience` from wherever XP should be earned (working? quests? foraging?), and (c) call `LevelUp` once the curve says a level was crossed. No rework of `LevelUp` itself or the stat/passive resolvers should be needed.

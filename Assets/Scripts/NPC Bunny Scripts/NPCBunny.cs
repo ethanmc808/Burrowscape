@@ -65,10 +65,6 @@ public class NPCBunny : MonoBehaviour
     [SerializeField] private float wanderSpeedMultiplier = 0.5f; // wandering bunnies move slower than working/eating bunnies
     [SerializeField] private float arrivalThreshold = 0.05f;
 
-    [Header("Type & Progression")]
-    [Tooltip("Shared growth rate for every stat before HP's x2 / Luck's x0.5 post-multiplier (see BunnyStatCalculator). Applied once at spawn; LevelUp reuses this same value later.")]
-    [SerializeField] private float statGrowthRate = 0.02f;
-
     [Header("Experience (unwired — no XP curve exists yet)")]
     [SerializeField] private float experience = 0f;
     [Tooltip("Placeholder only. No system currently calls AddExperience, and no XP-required-per-level curve exists to decide when LevelUp should fire.")]
@@ -160,7 +156,27 @@ public class NPCBunny : MonoBehaviour
     public BunnyStats Stats { get; private set; }
     public IReadOnlyList<BunnyTraitDefinition> Traits { get; private set; } = new List<BunnyTraitDefinition>();
     public IReadOnlyList<BunnyPassiveDefinition> ActivePassives { get; private set; } = new List<BunnyPassiveDefinition>();
-    public float StatGrowthRate => statGrowthRate;
+
+    // Individuality layer (Bunny Stat System Redesign design doc) — Nature/IVs are rolled once at spawn
+    // (see RollIndividuality) and never change afterward. EVs default to 0 and stay there: no EV-earning
+    // mechanism exists yet (explicitly out of scope in the design doc), so nothing sets these today.
+    // MaxTotalEV is defined here for whatever future system grants EVs to respect, unenforced until then.
+    public const int MaxTotalEV = 512;
+    public BunnyNature Nature { get; private set; }
+    // Null for both when the bunny has Stoic (see ApplyNatureEffects) -- read by BunnyInfoUI to decide
+    // which stat gets the green "+"/red "-" indicator, without having to re-derive the Stoic check itself.
+    public NatureStat? BoostedStat { get; private set; }
+    public NatureStat? LoweredStat { get; private set; }
+    public int IVHP { get; private set; }
+    public int IVAttack { get; private set; }
+    public int IVDefense { get; private set; }
+    public int IVSpeed { get; private set; }
+    public int IVLuck { get; private set; }
+    public int EVHP { get; private set; }
+    public int EVAttack { get; private set; }
+    public int EVDefense { get; private set; }
+    public int EVSpeed { get; private set; }
+    public int EVLuck { get; private set; }
     // Read externally by GardenRoom/WaterRoom when computing this bunny's per-tick output (see
     // TraitEffectType.ProductionMultiplier). Defaults to 1 (no trait effect) — everything else
     // (energy/mood/hunger/thirst decay, move speed) is applied in place to this bunny's own fields
@@ -799,6 +815,66 @@ public class NPCBunny : MonoBehaviour
         ActivePassives = passives;
 
         ApplyTraitEffects();
+        ApplyNatureEffects();
+    }
+
+    private const int MinIV = 1;
+    private const int MaxIV = 32;
+
+    // Called once by WildBunnySpawner, before BunnyStatCalculator.Resolve is called for this bunny (so
+    // the rolled IVs are ready in time to feed into it) — mirrors SetIdentity/SetArrivalType, both also
+    // called directly on the bunny ahead of SetTypeAndProgression. Nature is rolled here too since it's
+    // spawn-time-random the same way, even though its stat EFFECT isn't applied until ApplyNatureEffects
+    // (which needs Traits, set later in SetTypeAndProgression, to check for Stoic first).
+    public void RollIndividuality()
+    {
+        Nature = (BunnyNature)Random.Range(0, System.Enum.GetValues(typeof(BunnyNature)).Length);
+
+        IVHP = Random.Range(MinIV, MaxIV + 1);
+        IVAttack = Random.Range(MinIV, MaxIV + 1);
+        IVDefense = Random.Range(MinIV, MaxIV + 1);
+        IVSpeed = Random.Range(MinIV, MaxIV + 1);
+        IVLuck = Random.Range(MinIV, MaxIV + 1);
+    }
+
+    // Second pass after ApplyTraitEffects, per the design doc's Option B — Stats already holds the
+    // pre-Nature values from BunnyStatCalculator.Resolve (NatureMultiplier = 1 baked in); this applies
+    // the real +-10%/x1 per Nature's (boosted, lowered) pair, or leaves every stat at x1 if the bunny
+    // has a trait with effectType == IgnoresNature (Stoic). Nature/IVs themselves are never touched
+    // here, only the resolved Stats — so a future respec mechanic could re-run this against the same
+    // Nature later without needing a fresh roll.
+    private void ApplyNatureEffects()
+    {
+        bool ignoresNature = false;
+        foreach (BunnyTraitDefinition trait in Traits)
+        {
+            if (trait.effectType == TraitEffectType.IgnoresNature) { ignoresNature = true; break; }
+        }
+
+        if (ignoresNature)
+        {
+            BoostedStat = null;
+            LoweredStat = null;
+        }
+        else
+        {
+            BunnyNatureData.GetModifiers(Nature, out NatureStat b, out NatureStat l);
+            BoostedStat = b;
+            LoweredStat = l;
+        }
+
+        BunnyStats s = Stats;
+        s.Attack = ApplyNatureMultiplier(s.Attack, NatureStat.Attack, BoostedStat, LoweredStat);
+        s.Defense = ApplyNatureMultiplier(s.Defense, NatureStat.Defense, BoostedStat, LoweredStat);
+        s.Speed = ApplyNatureMultiplier(s.Speed, NatureStat.Speed, BoostedStat, LoweredStat);
+        s.Luck = ApplyNatureMultiplier(s.Luck, NatureStat.Luck, BoostedStat, LoweredStat);
+        Stats = s;
+    }
+
+    private static int ApplyNatureMultiplier(int preNatureValue, NatureStat stat, NatureStat? boosted, NatureStat? lowered)
+    {
+        float multiplier = stat == boosted ? 1.1f : (stat == lowered ? 0.9f : 1f);
+        return Mathf.Max(1, Mathf.FloorToInt(preNatureValue * multiplier));
     }
 
     // Proof-of-concept trait effects — see TraitEffectType in BunnyTraitDefinition.cs. Runs once, right
@@ -852,7 +928,10 @@ public class NPCBunny : MonoBehaviour
         if (newLevel <= Level || typeDefinition == null) return;
 
         Level = newLevel;
-        Stats = BunnyStatCalculator.Resolve(typeDefinition, Level, statGrowthRate);
+        Stats = BunnyStatCalculator.Resolve(typeDefinition, Level,
+            IVHP, IVAttack, IVDefense, IVSpeed, IVLuck,
+            EVHP, EVAttack, EVDefense, EVSpeed, EVLuck);
+        ApplyNatureEffects();
         ActivePassives = BunnyPassiveResolver.ResolvePassives(typeDefinition, Level);
     }
 

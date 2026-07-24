@@ -35,6 +35,8 @@ public class BunnyInfoUI : MonoBehaviour
     [Tooltip("Optional — set BunnyTypeDefinition.icon per type to populate this. Hidden automatically for types with no icon assigned yet.")]
     [SerializeField] private Image typeIconImage;
     [SerializeField] private TextMeshProUGUI levelLabel;
+    [Tooltip("Optional — set once a Nature/Zodiac label element exists in the Inspector; skipped otherwise (see the Bunny Stat System Redesign design doc).")]
+    [SerializeField] private TextMeshProUGUI natureLabel;
 
     [Header("Stats")]
     [SerializeField] private TextMeshProUGUI hpLabel;
@@ -106,12 +108,15 @@ public class BunnyInfoUI : MonoBehaviour
             typeIconImage.gameObject.SetActive(bunny.TypeIcon != null);
         }
         levelLabel.text = bunny.Level.ToString();
+        // Guarded — see typeIconImage's comment above; natureLabel is optional until wired.
+        if (natureLabel != null)
+            natureLabel.text = bunny.Nature.ToString();
 
-        hpLabel.text = bunny.Stats.HP.ToString();
-        attackLabel.text = bunny.Stats.Attack.ToString();
-        defenseLabel.text = bunny.Stats.Defense.ToString();
-        speedLabel.text = bunny.Stats.Speed.ToString();
-        luckLabel.text = bunny.Stats.Luck.ToString();
+        hpLabel.text = bunny.Stats.HP.ToString(); // Nature never affects HP — no indicator possible here
+        attackLabel.text = FormatStatWithNatureIndicator(bunny, bunny.Stats.Attack, NatureStat.Attack);
+        defenseLabel.text = FormatStatWithNatureIndicator(bunny, bunny.Stats.Defense, NatureStat.Defense);
+        speedLabel.text = FormatStatWithNatureIndicator(bunny, bunny.Stats.Speed, NatureStat.Speed);
+        luckLabel.text = FormatStatWithNatureIndicator(bunny, bunny.Stats.Luck, NatureStat.Luck);
 
         PopulateList(traitListContainer, bunny.Traits, t => t.displayName);
         PopulateList(passiveListContainer, bunny.ActivePassives, p => p.displayName);
@@ -134,6 +139,18 @@ public class BunnyInfoUI : MonoBehaviour
         thirstBar.fillAmount = currentBunny.ThirstValue / 100f;
         energyBar.fillAmount = currentBunny.EnergyValue / 100f;
         moodBar.fillAmount = currentBunny.MoodValue / 100f;
+    }
+
+    // Green "+" for the stat Nature boosts, red "-" for the one it lowers, plain number otherwise --
+    // including for a Stoic bunny, where NPCBunny.BoostedStat/LoweredStat are both null (see
+    // NPCBunny.ApplyNatureEffects) so neither branch below ever matches. TMP's inline <color> tag needs
+    // no extra Inspector wiring since hpLabel/attackLabel/etc. are already TextMeshProUGUI, which parses
+    // rich text by default.
+    private static string FormatStatWithNatureIndicator(NPCBunny bunny, int value, NatureStat stat)
+    {
+        if (bunny.BoostedStat == stat) return $"{value} <color=#2E7D32>+</color>"; // darker than TMP's named "green" -- readable against a white panel
+        if (bunny.LoweredStat == stat) return $"{value} <color=red>-</color>";
+        return value.ToString();
     }
 
     // Shared by Traits and Passives — both are just "a list of names," same clear-then-instantiate
