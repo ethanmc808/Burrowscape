@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Forest
   m_EditorClassIdentifier: Assembly-CSharp::ForagingLocationDefinition
   displayName: Forest
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: a4f49a0ec179099429aa3d5bce6fe973, type: 3}
   populationThreshold: 0
   difficultyTier: 0
   recommendedTypes: 03000000

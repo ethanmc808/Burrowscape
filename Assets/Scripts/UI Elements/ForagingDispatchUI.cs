@@ -1,13 +1,14 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// Shared Location -> Equip Items -> Confirm dispatch flow — both entry points (BunnyInfoUI's "Send
-// Foraging" button, and ForagingScreenUI's bunny-picker) converge here once a bunny is chosen, since the
-// bunny is picked BEFORE this panel opens either way. See Foraging_DesignDoc.md's "Dispatch flow".
-// Same instantiate-a-button-into-a-container pattern AssignmentUI/BuildMenuUI already use for their own
-// lists — no dedicated list-item component needed for a simple "name + click" row.
+// Single-screen Location + Equip Items + Confirm dispatch flow — both entry points (BunnyInfoUI's "Send
+// Foraging" button, and ForagingScreenUI's bunny-picker) converge here once a bunny is chosen. Opens
+// with the first unlocked location auto-selected (index 0); Previous/Next step through the same
+// population-gated unlocked-locations list ForagingLocationUnlockTracker already filters, rather than a
+// separate location-picking screen. See Foraging_DesignDoc.md's "Dispatch flow".
 public class ForagingDispatchUI : MonoBehaviour
 {
     public static ForagingDispatchUI Instance { get; private set; }
@@ -16,14 +17,16 @@ public class ForagingDispatchUI : MonoBehaviour
     [SerializeField] private GameObject panelRoot;
     [SerializeField] private Button closeButton;
 
-    [Header("Step 1: Location")]
-    [SerializeField] private GameObject locationStepRoot;
-    [SerializeField] private Transform locationListContainer;
-    [SerializeField] private GameObject locationButtonPrefab; // Button + TextMeshProUGUI child
-
-    [Header("Step 2: Equip Items")]
-    [SerializeField] private GameObject equipStepRoot;
+    [Header("Location (Previous/Next step through the unlocked-locations list)")]
     [SerializeField] private TextMeshProUGUI selectedLocationLabel;
+    [Tooltip("Shows the chosen location's own icon — hidden entirely if that location has no icon assigned yet (some later-tier locations may not have art authored).")]
+    [SerializeField] private Image selectedLocationIcon;
+    [Tooltip("No-ops at the start of the list, same as ForagingDispatchUI's potion +/- buttons clamping at their own bounds.")]
+    [SerializeField] private Button previousLocationButton;
+    [Tooltip("No-ops at the end of the list.")]
+    [SerializeField] private Button nextLocationButton;
+
+    [Header("Equip Items")]
     [SerializeField] private TextMeshProUGUI potionCountLabel;
     [SerializeField] private Button potionIncrementButton;
     [SerializeField] private Button potionDecrementButton;
@@ -34,6 +37,8 @@ public class ForagingDispatchUI : MonoBehaviour
     [SerializeField] private Button confirmButton;
 
     private NPCBunny currentBunny;
+    private List<ForagingLocationDefinition> unlockedLocations = new List<ForagingLocationDefinition>();
+    private int selectedLocationIndex;
     private ForagingLocationDefinition selectedLocation;
     private ForagingAccessoryDefinition selectedAccessory;
     private int selectedPotionCount;
@@ -48,23 +53,25 @@ public class ForagingDispatchUI : MonoBehaviour
         potionIncrementButton.onClick.AddListener(() => ChangePotionCount(1));
         potionDecrementButton.onClick.AddListener(() => ChangePotionCount(-1));
         confirmButton.onClick.AddListener(OnConfirmClicked);
+        previousLocationButton.onClick.AddListener(PreviousLocation);
+        nextLocationButton.onClick.AddListener(NextLocation);
     }
 
     // Both dispatch entry points call this — the bunny is already chosen either way (BunnyInfoUI already
-    // has it selected; ForagingScreenUI's bunny-picker chooses one before opening this), so this always
-    // starts at Step 1 (Location), never a bunny-picker of its own. No back-nav from Equip to Location —
-    // the bunny hasn't departed yet at this point, unlike ForagingScreenUI's Recall (which acts on a
-    // bunny already out on a trip), so there's nothing to "go back" from here; Close-and-reopen covers
-    // changing your mind about the location.
+    // has it selected; ForagingScreenUI's bunny-picker chooses one before opening this). Re-evaluated
+    // fresh on every open since population-gated unlocks (see ForagingLocationUnlockTracker) can change
+    // between trips, same reasoning as BuildMenuUI.RefreshList.
     public void OpenForBunny(NPCBunny bunny)
     {
         currentBunny = bunny;
-        selectedLocation = null;
-        selectedAccessory = null;
-        selectedPotionCount = 0;
-
         panelRoot.SetActive(true);
-        ShowLocationStep();
+
+        unlockedLocations = ForagingManager.Instance != null && ForagingLocationUnlockTracker.Instance != null
+            ? ForagingManager.Instance.Locations.Where(l => l != null && ForagingLocationUnlockTracker.Instance.IsUnlocked(l)).ToList()
+            : new List<ForagingLocationDefinition>();
+
+        selectedLocationIndex = 0;
+        ApplySelectedLocation();
     }
 
     public void Close()
@@ -73,38 +80,36 @@ public class ForagingDispatchUI : MonoBehaviour
         currentBunny = null;
     }
 
-    // Re-evaluated fresh every time Step 1 is shown — live-checked population unlocks need to reflect
-    // current state, same reasoning as BuildMenuUI.RefreshList.
-    private void ShowLocationStep()
+    private void PreviousLocation()
     {
-        locationStepRoot.SetActive(true);
-        equipStepRoot.SetActive(false);
-
-        foreach (Transform child in locationListContainer)
-            Destroy(child.gameObject);
-
-        if (ForagingManager.Instance == null || ForagingLocationUnlockTracker.Instance == null) return;
-
-        foreach (ForagingLocationDefinition location in ForagingManager.Instance.Locations
-            .Where(l => l != null && ForagingLocationUnlockTracker.Instance.IsUnlocked(l)))
-        {
-            GameObject buttonObj = Instantiate(locationButtonPrefab, locationListContainer);
-            buttonObj.GetComponentInChildren<TextMeshProUGUI>().text = location.displayName;
-            buttonObj.GetComponent<Button>().onClick.AddListener(() => OnLocationChosen(location));
-        }
+        if (selectedLocationIndex <= 0) return;
+        selectedLocationIndex--;
+        ApplySelectedLocation();
     }
 
-    private void OnLocationChosen(ForagingLocationDefinition location)
+    private void NextLocation()
     {
-        selectedLocation = location;
+        if (selectedLocationIndex >= unlockedLocations.Count - 1) return;
+        selectedLocationIndex++;
+        ApplySelectedLocation();
+    }
+
+    // Called on open and whenever Previous/Next changes the index. Accessory/potion selections reset on
+    // every location change, same as the old per-click reset in what used to be a separate step.
+    private void ApplySelectedLocation()
+    {
         selectedAccessory = null;
         selectedAccessoryButton = null;
         selectedPotionCount = 0;
 
-        locationStepRoot.SetActive(false);
-        equipStepRoot.SetActive(true);
+        selectedLocation = selectedLocationIndex >= 0 && selectedLocationIndex < unlockedLocations.Count
+            ? unlockedLocations[selectedLocationIndex] : null;
 
-        selectedLocationLabel.text = location.displayName;
+        selectedLocationLabel.text = selectedLocation != null ? selectedLocation.displayName : "";
+
+        selectedLocationIcon.gameObject.SetActive(selectedLocation != null && selectedLocation.icon != null);
+        selectedLocationIcon.sprite = selectedLocation != null ? selectedLocation.icon : null;
+
         RefreshEquipStep();
     }
 

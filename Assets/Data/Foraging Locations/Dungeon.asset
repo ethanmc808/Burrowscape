@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Dungeon
   m_EditorClassIdentifier: Assembly-CSharp::ForagingLocationDefinition
   displayName: Dungeon
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: da3c4e1c579d23f47a23780a0f74a0e6, type: 3}
   populationThreshold: 90
   difficultyTier: 2
   recommendedTypes: 12000000
