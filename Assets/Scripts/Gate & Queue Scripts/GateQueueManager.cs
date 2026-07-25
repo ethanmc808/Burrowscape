@@ -83,15 +83,24 @@ public class GateQueueManager : MonoBehaviour
         return currentQueue.Count > 0 ? currentQueue[0] : null;
     }
 
+    // Read by ForagingManager to tell "waiting in the gate queue" apart from "actually finished walking
+    // home" — both look like BunnyState.Idle from NPCBunny's side (see MoveToQueueSpot's own arrival
+    // state), so a trip's completion check needs this on top of the state check.
+    public bool IsInQueue(NPCBunny bunny)
+    {
+        return currentQueue.Contains(bunny) || waitingBunnies.Contains(bunny);
+    }
+
     // The fixed scene Transform marking the front queue slot (never moves — occupancy is what changes,
     // via ShiftQueueForward). No longer consumed by any UI (BunnyInfoUI is fixed-position, unlike the
     // old BunnyApprovalUI it replaced, which world-anchored here) — kept in case something else needs
     // the front slot's position later.
     public Transform FrontQueueSpot => (queueSpots != null && queueSpots.Count > 0) ? queueSpots[0] : null;
 
-    // Read by ForagingManager to drive NPCBunny.DepartForForaging/ReturnFromForaging — a foraging trip's
-    // gate crossings reuse the exact same entrance room / exit point every wild-arrival crossing already
-    // uses, just called directly instead of through this class's own queue Update() loop.
+    // Read by ForagingManager to drive NPCBunny.DepartForForaging — a foraging trip's outbound gate
+    // crossing reuses the exact same entrance room / exit point every wild-arrival crossing already uses.
+    // The return crossing no longer needs these directly (see NPCBunny.ReturnFromForaging) — it goes
+    // through this class's own queue/Update() loop instead, which already has both.
     public RoomBase EntranceRoom => entranceRoom;
     public Transform GateExitPoint => gateExitPoint;
 
@@ -112,7 +121,12 @@ public class GateQueueManager : MonoBehaviour
 
             if (front != null)
             {
-                if (autoRequestGatePassage)
+                // Only a brand-new Wild arrival is subject to the manual-approval toggle — a bunny
+                // returning from Foraging/a quest was already vetted the first time it ever arrived, so
+                // it always auto-passes regardless of autoRequestGatePassage (which exists purely to test
+                // the Wild-arrival approve/reject flow).
+                bool alreadyVetted = front.ArrivalType != BunnyArrivalType.Wild;
+                if (autoRequestGatePassage || alreadyVetted)
                 {
                     EntranceGate.Instance.RequestPassage();
                     frontBunnyCleared = true;
@@ -144,10 +158,11 @@ public class GateQueueManager : MonoBehaviour
                 // Already counted (as Questing) when it left — just shift the bucket, don't re-add it.
                 PopulationManager.Instance.MoveResident(ResidentCategory.Questing, ResidentCategory.InBase);
             }
-            // NOTE: there's no foraging-return case yet since the foraging system doesn't exist. When
-            // it's built, either add a BunnyArrivalType.ReturningFromForaging case here, or call
-            // PopulationManager.Instance.MoveResident(ResidentCategory.Foraging, ResidentCategory.InBase)
-            // directly from wherever that system reintroduces the bunny.
+            else if (front.ArrivalType == BunnyArrivalType.ReturningFromForaging)
+            {
+                // Already counted (as Foraging) when it left — just shift the bucket, don't re-add it.
+                PopulationManager.Instance.MoveResident(ResidentCategory.Foraging, ResidentCategory.InBase);
+            }
 
             front.ProceedThroughGate(gateExitPoint, entranceRoom);
         }

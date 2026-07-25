@@ -19,18 +19,21 @@ public class ForagingScreenUI : MonoBehaviour
     [Header("Bunny Picker (click to dispatch)")]
     [SerializeField] private Transform pickerListContainer;
     [SerializeField] private GameObject bunnyButtonPrefab; // simple prefab: Button + TextMeshProUGUI child
+    [Tooltip("Highlight for whichever bunny was most recently picked — same color/shape as ForagingActiveTripRowUI's own selected/normal pair, just applied directly to the plain button's Image since the picker uses the shared SimpleListButton prefab rather than a dedicated row script.")]
+    [SerializeField] private Color selectedPickerColor = new Color(0.65f, 0.93f, 0.65f, 1f);
+    [SerializeField] private Color normalPickerColor = Color.white;
 
     [Header("Active Trips (click a row to select, then Return)")]
     [SerializeField] private Transform activeTripListContainer;
     [SerializeField] private GameObject activeTripRowPrefab; // prefab with a ForagingActiveTripRowUI component
-    [Tooltip("Optional — shows \"Selected: <name>\" once a row is picked, blank otherwise.")]
-    [SerializeField] private TextMeshProUGUI selectedBunnyLabel;
+    [Tooltip("Hidden entirely until a row is selected — see UpdateReturnControls.")]
     [SerializeField] private Button returnButton;
     [Tooltip("How often the picker/active-trip lists rebuild while this screen is open — throttled rather than every frame, since HP/Energy don't need tighter-than-this granularity and rebuilding the list is a Destroy+Instantiate churn.")]
     [SerializeField] private float listRefreshInterval = 0.5f;
     private float listRefreshTimer;
 
     private NPCBunny selectedForagingBunny;
+    private NPCBunny selectedPickerBunny;
 
     private void Awake()
     {
@@ -54,6 +57,7 @@ public class ForagingScreenUI : MonoBehaviour
         panelRoot.SetActive(true);
         listRefreshTimer = 0f;
         selectedForagingBunny = null;
+        selectedPickerBunny = null;
         RefreshPicker();
         RefreshActiveTrips();
     }
@@ -90,11 +94,21 @@ public class ForagingScreenUI : MonoBehaviour
             GameObject buttonObj = Instantiate(bunnyButtonPrefab, pickerListContainer);
             buttonObj.GetComponentInChildren<TextMeshProUGUI>().text = bunny.BunnyName;
             buttonObj.GetComponent<Button>().onClick.AddListener(() => OnBunnyChosen(bunny));
+
+            Image image = buttonObj.GetComponent<Image>();
+            if (image != null)
+                image.color = bunny == selectedPickerBunny ? selectedPickerColor : normalPickerColor;
         }
     }
 
     private void OnBunnyChosen(NPCBunny bunny)
     {
+        // Highlight immediately rather than waiting for the next throttled poll — the bunny naturally
+        // drops out of this list on its own once actually dispatched (DwellerRoster.GetForageableBunnies
+        // excludes anything mid-trip), so there's no separate "clear selection" case to handle there.
+        selectedPickerBunny = bunny;
+        RefreshPicker();
+
         // Deliberately doesn't close this screen — ForagingDispatchUI layers on top for
         // Location -> Equip -> Confirm, and this screen's own lists just refresh (via Update) once
         // dispatch completes or is cancelled.
@@ -135,16 +149,20 @@ public class ForagingScreenUI : MonoBehaviour
         RefreshActiveTrips();
     }
 
+    // The row's own highlight (see ForagingActiveTripRowUI) already shows which bunny is selected — the
+    // Return button itself only needs to exist once there's something to act on.
     private void UpdateReturnControls()
     {
-        returnButton.interactable = selectedForagingBunny != null;
-        if (selectedBunnyLabel != null)
-            selectedBunnyLabel.text = selectedForagingBunny != null ? $"Selected: {selectedForagingBunny.BunnyName}" : "";
+        returnButton.gameObject.SetActive(selectedForagingBunny != null);
     }
 
     private void OnReturnClicked()
     {
         if (selectedForagingBunny == null || ForagingManager.Instance == null) return;
+
+        // Recall itself has no other feedback — the bunny keeps walking/ticking exactly as before until
+        // its return countdown starts, so without this the player has no sign the click did anything.
+        NotificationToast.Instance?.Show($"{selectedForagingBunny.BunnyName} is heading back from foraging.");
 
         ForagingManager.Instance.RecallBunny(selectedForagingBunny);
         selectedForagingBunny = null;

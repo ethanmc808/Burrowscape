@@ -29,7 +29,8 @@ public enum BunnyState
 public enum BunnyArrivalType
 {
     Wild,
-    ReturningFromQuest
+    ReturningFromQuest,
+    ReturningFromForaging
 }
 public enum BunnyGender
 {
@@ -1623,6 +1624,16 @@ public class NPCBunny : MonoBehaviour
 
         if (CurrentState == BunnyState.Sleeping || CurrentState == BunnyState.Relaxing)
             CurrentState = BunnyState.Idle;
+
+        // A bunny who was already a resident before this trip otherwise keeps HasEnteredBase == true for
+        // the whole trip, since nothing else ever resets it — which means HandleIdle's own "still queued,
+        // don't wander off" guard (its "if (!HasEnteredBase) return;") wouldn't apply once she reaches
+        // BunnyState.Idle at her return queue spot, and she'd immediately claim a Living Room relax spot
+        // instead of actually waiting in line. Clearing it here makes the whole round trip look exactly
+        // like a first-time wild arrival to every HasEnteredBase-gated system (needs/mood freeze,
+        // HandleIdle, AssignToJob) — EnterBaseAndWander (called from OnArrivedAtGateExit once she's
+        // actually let through the gate on return) flips it back to true, same as any other arrival.
+        HasEnteredBase = false;
     }
 
     // Called by ForagingManager to send an already-resident bunny (CanDepartForForaging() checked by the
@@ -1679,24 +1690,25 @@ public class NPCBunny : MonoBehaviour
         EntranceGate.Instance.NotifyPassageComplete();
     }
 
-    // Called by ForagingManager once a trip's return countdown completes. Reuses ProceedThroughGate/
-    // OnArrivedAtGateExit entirely unchanged — from the bunny's own state machine's perspective this is
-    // indistinguishable from a normal gate entry (EnterBaseAndWander doesn't care that HasEnteredBase was
-    // already true). The only thing this wrapper adds is waiting for the gate to actually be open first,
-    // exactly like OnArrivedAtDepartingGate's outbound counterpart.
-    public void ReturnFromForaging(Transform gateExitPoint, RoomBase entranceRoom)
+    // Called by ForagingManager once a trip's return countdown completes. Routes into the exact same
+    // gate queue every wild arrival uses (GateQueueManager.Enqueue + MoveToQueueSpot — see
+    // WildBunnySpawner.SpawnWildBunny for the mirrored pattern) rather than requesting gate passage
+    // directly. That earlier direct-request approach opened the gate the instant the return countdown
+    // ended, regardless of whether this bunny — or anyone else — was actually at the front of the queue,
+    // which could leave the gate open for the entire walk back from the offscreen staging point. Going
+    // through the queue means the gate only opens once this bunny is genuinely next in line, same as
+    // every other arrival; GateQueueManager.Update()'s own ProceedThroughGate call (once cleared) handles
+    // the rest identically to a wild/quest arrival.
+    public void ReturnFromForaging()
     {
-        StartCoroutine(WaitForGateThenReturnThroughGate(gateExitPoint, entranceRoom));
-    }
+        SetArrivalType(BunnyArrivalType.ReturningFromForaging);
 
-    private IEnumerator WaitForGateThenReturnThroughGate(Transform gateExitPoint, RoomBase entranceRoom)
-    {
-        EntranceGate.Instance.RequestPassage();
-
-        while (EntranceGate.Instance.CurrentState != GateState.Open)
-            yield return null;
-
-        ProceedThroughGate(gateExitPoint, entranceRoom);
+        Transform queueSpot = GateQueueManager.Instance.Enqueue(this);
+        if (queueSpot != null)
+            MoveToQueueSpot(queueSpot);
+        // If the queue is full, Enqueue already added this bunny to the waiting backlog — it just stays
+        // parked at the staging point until TryAdmitFromWaitingBacklog calls MoveToQueueSpot on it later,
+        // same as an over-capacity wild arrival.
     }
 
     // ---------- CROSS-FLOOR (LIFT) ----------

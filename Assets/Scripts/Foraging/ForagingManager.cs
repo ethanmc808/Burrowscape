@@ -200,7 +200,11 @@ public class ForagingManager : MonoBehaviour
         yield return RunActiveTripPhase(bunny, trip);
         yield return RunReturnCountdownPhase(bunny, trip);
 
-        yield return new WaitUntil(() => bunny == null || bunny.CurrentState == BunnyState.Idle);
+        // CurrentState alone can't tell "waiting in the gate queue" apart from "actually walked all the
+        // way home" — both are BunnyState.Idle (see NPCBunny.MoveToQueueSpot) — so also require the
+        // bunny to no longer be sitting in GateQueueManager's queue before depositing this trip's results.
+        yield return new WaitUntil(() => bunny == null || (bunny.CurrentState == BunnyState.Idle
+            && (GateQueueManager.Instance == null || !GateQueueManager.Instance.IsInQueue(bunny))));
 
         if (bunny != null)
             DepositTripResults(bunny, trip);
@@ -242,8 +246,12 @@ public class ForagingManager : MonoBehaviour
         }
         bunny.SetForagingReturnCountdownActive(false);
 
-        bunny.ReturnFromForaging(GateQueueManager.Instance.GateExitPoint, GateQueueManager.Instance.EntranceRoom);
-        PopulationManager.Instance.MoveResident(ResidentCategory.Foraging, ResidentCategory.InBase);
+        // Routes into the same gate queue every wild arrival uses (see NPCBunny.ReturnFromForaging /
+        // GateQueueManager.Enqueue) instead of requesting gate passage directly — the gate now only opens
+        // once this bunny is actually at the front of the queue, not the instant this countdown ends.
+        // Population accounting for the ReturningFromForaging arrival type happens in
+        // GateQueueManager.Update() at the moment clearance is actually granted, not here.
+        bunny.ReturnFromForaging();
     }
 
     // ---------- RETURN TRIGGERS ----------

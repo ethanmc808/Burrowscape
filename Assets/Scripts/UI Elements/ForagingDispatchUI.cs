@@ -21,6 +21,12 @@ public class ForagingDispatchUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI selectedLocationLabel;
     [Tooltip("Shows the chosen location's own icon — hidden entirely if that location has no icon assigned yet (some later-tier locations may not have art authored).")]
     [SerializeField] private Image selectedLocationIcon;
+    [Tooltip("Lookup table from BunnyType to its icon sprite (BunnyTypeDefinition.icon) — same art WildBunnySpawner's own roster uses, just referenced here too so recommendedTypesIconContainer can resolve an icon per enum value without needing a live NPCBunny instance.")]
+    [SerializeField] private List<BunnyTypeDefinition> bunnyTypeIconCatalog;
+    [Tooltip("Cleared and rebuilt with one icon per selectedLocation.recommendedTypes entry every location change — same instantiate-per-item pattern as the accessory list. A type with no icon authored yet is silently skipped rather than showing a blank image.")]
+    [SerializeField] private Transform recommendedTypesIconContainer;
+    [Tooltip("Simple prefab: a single Image, sized however each recommended-type icon should look.")]
+    [SerializeField] private GameObject recommendedTypeIconPrefab;
     [Tooltip("No-ops at the start of the list, same as ForagingDispatchUI's potion +/- buttons clamping at their own bounds.")]
     [SerializeField] private Button previousLocationButton;
     [Tooltip("No-ops at the end of the list.")]
@@ -110,7 +116,36 @@ public class ForagingDispatchUI : MonoBehaviour
         selectedLocationIcon.gameObject.SetActive(selectedLocation != null && selectedLocation.icon != null);
         selectedLocationIcon.sprite = selectedLocation != null ? selectedLocation.icon : null;
 
+        RefreshRecommendedTypeIcons();
         RefreshEquipStep();
+    }
+
+    private void RefreshRecommendedTypeIcons()
+    {
+        foreach (Transform child in recommendedTypesIconContainer)
+            Destroy(child.gameObject);
+
+        if (selectedLocation?.recommendedTypes == null) return;
+
+        foreach (BunnyType type in selectedLocation.recommendedTypes)
+        {
+            Sprite icon = GetTypeIcon(type);
+            if (icon == null) continue; // no icon authored for this type yet — skip rather than show a blank image
+
+            GameObject iconObj = Instantiate(recommendedTypeIconPrefab, recommendedTypesIconContainer);
+            Image image = iconObj.GetComponent<Image>();
+            if (image != null) image.sprite = icon;
+        }
+    }
+
+    private Sprite GetTypeIcon(BunnyType type)
+    {
+        if (bunnyTypeIconCatalog == null) return null;
+
+        foreach (BunnyTypeDefinition def in bunnyTypeIconCatalog)
+            if (def != null && def.type == type) return def.icon;
+
+        return null;
     }
 
     private int CarryCapacity => ForagingManager.Instance != null ? ForagingManager.Instance.GetCarryCapacity(selectedAccessory) : 0;
