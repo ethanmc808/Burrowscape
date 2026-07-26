@@ -15,6 +15,8 @@ public class ForagingActiveTripRowUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI hpText;
     [SerializeField] private TextMeshProUGUI energyText;
     [SerializeField] private TextMeshProUGUI carryText;
+    [Tooltip("Small type-symbol icon prefab (TypeIconSmall) plugged in at the start of the bunny's name via BunnyTypeIconHelper. Skipped for types with no icon assigned yet.")]
+    [SerializeField] private GameObject typeIconPrefab;
     [Tooltip("Button spanning the whole row — clicking anywhere on the row selects this bunny.")]
     [SerializeField] private Button selectButton;
     [SerializeField] private Image backgroundImage;
@@ -23,7 +25,11 @@ public class ForagingActiveTripRowUI : MonoBehaviour
 
     public void Setup(NPCBunny bunny, ForagingTripState trip, bool isSelected, Action onSelect)
     {
-        if (nameText != null) nameText.text = bunny.BunnyName;
+        if (nameText != null)
+        {
+            nameText.text = bunny.BunnyName;
+            BunnyTypeIconHelper.AddIcon(typeIconPrefab, transform, nameText, bunny.TypeIcon);
+        }
         if (locationText != null) locationText.text = trip.location != null ? trip.location.displayName : "";
         if (hpText != null) hpText.text = $"{bunny.HPValue}/{bunny.Stats.HP}";
         if (energyText != null) energyText.text = Mathf.RoundToInt(bunny.EnergyValue).ToString();

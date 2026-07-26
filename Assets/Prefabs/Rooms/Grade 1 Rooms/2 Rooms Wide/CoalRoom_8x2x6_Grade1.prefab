@@ -743,6 +743,8 @@ MonoBehaviour:
   consumesWater: 1
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
   leftEntrance: {fileID: 1371684402106939699}
@@ -792,6 +794,9 @@ MonoBehaviour:
   - {fileID: 3469639314531047084}
   - {fileID: 6169256658108094660}
   - {fileID: 468752106746250703}
+  diminishingReturnsRate: 0.7
+  recommendedTypes: 04000000
+  typeMatchProductionBonus: 0.25
 --- !u!114 &3115212270289717087
 MonoBehaviour:
   m_ObjectHideFlags: 0

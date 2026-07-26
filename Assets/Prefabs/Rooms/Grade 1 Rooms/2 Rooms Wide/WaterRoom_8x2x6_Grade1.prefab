@@ -383,6 +383,8 @@ MonoBehaviour:
   consumesWater: 0
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
   leftEntrance: {fileID: 6466722940724485167}
@@ -446,7 +448,12 @@ MonoBehaviour:
   productionInterval: 4
   waterPerProduction: 2
   waterRationingPoolAmount: 0
+  waterStorageCapacityAmount: 100
   drinkingTickInterval: 2
+  maxConsecutiveFailedAttempts: 5
+  diminishingReturnsRate: 0.7
+  recommendedTypes: 02000000
+  typeMatchProductionBonus: 0.25
 --- !u!65 &3641928843851173251
 BoxCollider:
   m_ObjectHideFlags: 0

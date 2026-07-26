@@ -230,7 +230,7 @@ Transform:
   m_GameObject: {fileID: 835328629268278608}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0.02409998, y: 0.32200003, z: 3.865}
+  m_LocalPosition: {x: 0.02409998, y: 0.30499995, z: 3.865}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -330,6 +330,51 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &2230838531967932447
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8902985937237151606}
+  - component: {fileID: 551793281152618202}
+  m_Layer: 0
+  m_Name: FarmingSpot_03
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8902985937237151606
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2230838531967932447}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: -0.805, y: -0.8999999, z: 2.936}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2253537072212775696}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &551793281152618202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2230838531967932447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 1
 --- !u!1 &2686788013870508033
 GameObject:
   m_ObjectHideFlags: 0
@@ -402,7 +447,7 @@ Transform:
   m_GameObject: {fileID: 2746498715322960249}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0.02409998, y: 0.28400004, z: 3.578}
+  m_LocalPosition: {x: 0.02409998, y: 0.205, z: 3.578}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1059,6 +1104,8 @@ Transform:
   - {fileID: 4974729106468816072}
   - {fileID: 777349306075907495}
   - {fileID: 4729901694684429700}
+  - {fileID: 8902985937237151606}
+  - {fileID: 4149504542839972819}
   - {fileID: 4924082843956903607}
   - {fileID: 7020160883281837471}
   - {fileID: 1524803785015465947}
@@ -1101,18 +1148,36 @@ MonoBehaviour:
   paths:
   - entrance: {fileID: 3474706250198758161}
     targetSpot: {fileID: 87078019840192008}
-    waypoints: []
+    waypoints:
+    - {fileID: 5011603870109352294}
   - entrance: {fileID: 3474706250198758161}
     targetSpot: {fileID: 4191936910316496395}
     waypoints:
-    - {fileID: 7020160883281837471}
+    - {fileID: 2708161163516172779}
   - entrance: {fileID: 8191235567018329050}
     targetSpot: {fileID: 87078019840192008}
     waypoints:
-    - {fileID: 4924082843956903607}
+    - {fileID: 5011603870109352294}
   - entrance: {fileID: 8191235567018329050}
     targetSpot: {fileID: 4191936910316496395}
-    waypoints: []
+    waypoints:
+    - {fileID: 2708161163516172779}
+  - entrance: {fileID: 3474706250198758161}
+    targetSpot: {fileID: 551793281152618202}
+    waypoints:
+    - {fileID: 5011603870109352294}
+  - entrance: {fileID: 3474706250198758161}
+    targetSpot: {fileID: 5541481140214628952}
+    waypoints:
+    - {fileID: 2708161163516172779}
+  - entrance: {fileID: 8191235567018329050}
+    targetSpot: {fileID: 551793281152618202}
+    waypoints:
+    - {fileID: 5011603870109352294}
+  - entrance: {fileID: 8191235567018329050}
+    targetSpot: {fileID: 5541481140214628952}
+    waypoints:
+    - {fileID: 2708161163516172779}
   footprintWidth: 4
   grade: 1
   gradeMultiplier: 1
@@ -1120,8 +1185,13 @@ MonoBehaviour:
   farmingSpots:
   - {fileID: 87078019840192008}
   - {fileID: 4191936910316496395}
-  productionInterval: 10
-  carrotsPerProduction: 1
+  - {fileID: 551793281152618202}
+  - {fileID: 5541481140214628952}
+  productionInterval: 40
+  carrotsPerProduction: 2
+  diminishingReturnsRate: 0.7
+  recommendedTypes: 03000000
+  typeMatchProductionBonus: 0.25
 --- !u!65 &4991280497254301588
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1293,6 +1363,51 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &4972149719293989434
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4149504542839972819}
+  - component: {fileID: 5541481140214628952}
+  m_Layer: 0
+  m_Name: FarmingSpot_04
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4149504542839972819
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4972149719293989434}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -1, w: 0}
+  m_LocalPosition: {x: 0.741, y: -0.8999999, z: 3.072}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2253537072212775696}
+  m_LocalEulerAnglesHint: {x: 180, y: 180, z: 0}
+--- !u!114 &5541481140214628952
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4972149719293989434}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 0
 --- !u!1 &5280799690682807676
 GameObject:
   m_ObjectHideFlags: 0
@@ -1746,7 +1861,7 @@ Transform:
   m_GameObject: {fileID: 7215906028434254014}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -1, w: 0}
-  m_LocalPosition: {x: 0.741, y: -0.8999999, z: 4.074}
+  m_LocalPosition: {x: 0.741, y: -0.8999999, z: 4.256}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1791,7 +1906,7 @@ Transform:
   m_GameObject: {fileID: 7282736289677133858}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: -0.805, y: -0.8999999, z: 4.796}
+  m_LocalPosition: {x: -0.805, y: -0.8999999, z: 4.523}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2187,7 +2302,7 @@ Transform:
   m_GameObject: {fileID: 9140292908809464175}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0.02409998, y: 0.32200003, z: 3.336}
+  m_LocalPosition: {x: 0.02409998, y: 0.305, z: 3.336}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6022,6 +6137,10 @@ PrefabInstance:
       propertyPath: m_Lightmapping
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 1423003967682540139, guid: d0d69547b4f4abb46845874fedef77a1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.082
+      objectReference: {fileID: 0}
     - target: {fileID: 3716477364223810790, guid: d0d69547b4f4abb46845874fedef77a1, type: 3}
       propertyPath: m_Name
       value: DefaultRoom_3x4x6
@@ -6065,6 +6184,10 @@ PrefabInstance:
     - target: {fileID: 4835314923114570966, guid: d0d69547b4f4abb46845874fedef77a1, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8333382802469087974, guid: d0d69547b4f4abb46845874fedef77a1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.921
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:

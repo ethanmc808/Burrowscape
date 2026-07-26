@@ -3,17 +3,34 @@ using System.Collections.Generic;
 using System.Collections;
 
 // Structural copy of GardenRoom's production shape, producing Power instead of Carrots. The only real
-// difference: it reports active/inactive status to the global PowerManager once per bunny at the same
-// points it starts/stops that bunny's own production coroutine, since (unlike Carrots/Water) Power
-// production is something other rooms actively arbitrate against, not just a passive counter to add to.
-// PowerManager tracks how many bunnies are active here (not just whether any are), so 2 workers produce
-// twice what 1 does.
+// difference: instead of adding to a passive stockpile, it reports a WEIGHTED total to the global
+// PowerManager every time a bunny starts/stops actively Working here, since Power production is something
+// other rooms actively arbitrate against in real time, not just a counter to add to. The weight (not a
+// plain headcount) folds in per-worker slot rank (diminishing returns), type-match bonus, and
+// bunny.ProductionMultiplier — see Docs/DiminishingReturnsProduction_Design.md and
+// WorkerProductionScaling. PowerManager just multiplies this weight by PowerProductionAmount/Interval and
+// GradeMultiplier; it has no idea how the weight was computed.
 public class CoalRoom : RoomBase, IJobRoom
 {
     [SpotNamePrefix("ShovelingSpot")]
     [SerializeField] private List<RoomSpot> shovelingSpots;
 
+    [Header("Worker Production Scaling")]
+    // See Docs/DiminishingReturnsProduction_Design.md. All three fields below are edited EXCLUSIVELY via
+    // Burrowscape > Work Room Production Tuner, never through this component's own Inspector — rate/bonus
+    // are broadcast identically to every work room from there, and recommendedTypes is a per-room grid
+    // edited in the same window (kept out of the default Inspector via HideInInspector specifically so a
+    // stray edit on the wrong prefab can't happen).
+    [SerializeField] private float diminishingReturnsRate = 0.7f;
+    [HideInInspector] [SerializeField] private List<BunnyType> recommendedTypes = new List<BunnyType>();
+    [SerializeField] private float typeMatchProductionBonus = 0.25f;
+
     private Dictionary<NPCBunny, Coroutine> activeProductionRoutines = new Dictionary<NPCBunny, Coroutine>();
+
+    // Order bunnies became active producers in THIS room — a bunny's live index here is its slot rank
+    // (0 = first/best). Recomputed fresh every time the weight is reported, so removing a bunny
+    // automatically shifts everyone behind it down a rank with no extra bookkeeping.
+    private List<NPCBunny> activeWorkerOrder = new List<NPCBunny>();
 
     // Bunnies idled because THIS room shut down (lost Power/Water) while they were actively working —
     // resumed automatically by OnRoomRestored. Mirrors GardenRoom/WaterRoom.
@@ -58,7 +75,8 @@ public class CoalRoom : RoomBase, IJobRoom
         {
             StopCoroutine(routine);
             activeProductionRoutines.Remove(bunny);
-            NotifyPowerManagerInactive(); // one bunny stopped — decrement by exactly one
+            activeWorkerOrder.Remove(bunny);
+            ReportWeightToPowerManager();
         }
     }
 
@@ -76,9 +94,15 @@ public class CoalRoom : RoomBase, IJobRoom
 
         if (!activeProductionRoutines.ContainsKey(bunny))
         {
+            // Always appended at the back (lowest current rank) — including a bunny returning from an
+            // eating trip. Total room output only depends on active COUNT, never on which bunny holds
+            // which rank, so this is simplest-possible and can't be gamed by timing eating trips.
+            if (!activeWorkerOrder.Contains(bunny))
+                activeWorkerOrder.Add(bunny);
+
             Coroutine routine = StartCoroutine(ProducePowerRoutine(bunny));
             activeProductionRoutines[bunny] = routine;
-            NotifyPowerManagerActive();
+            ReportWeightToPowerManager();
         }
     }
 
@@ -91,25 +115,36 @@ public class CoalRoom : RoomBase, IJobRoom
             if (bunny.CurrentState != BunnyState.Working)
             {
                 activeProductionRoutines.Remove(bunny);
-                NotifyPowerManagerInactive(); // one bunny stopped — decrement by exactly one
+                activeWorkerOrder.Remove(bunny);
+                ReportWeightToPowerManager();
                 yield break;
             }
 
             // No resource is consumed to produce Power — PowerManager reads PowerProductionAmount/
-            // PowerProductionInterval directly off this room (multiplied by however many bunnies are
-            // currently active here) while it's registered as active; this loop just needs to keep
-            // ticking for as long as the bunny stays Working.
+            // PowerProductionInterval directly off this room, multiplied by the weighted total this room
+            // last reported via ReportWeightToPowerManager, while it's registered as active; this loop
+            // just needs to keep ticking for as long as the bunny stays Working.
         }
     }
 
-    private void NotifyPowerManagerActive()
+    // Recomputes this room's full weighted total from scratch (every active worker's slot-rank multiplier
+    // × type-match bonus × their own ProductionMultiplier) and pushes it to PowerManager. Called on every
+    // start/stop rather than incrementally, same reasoning as CarrotManager/PopulationManager's "recompute
+    // from scratch" pattern elsewhere in this codebase — avoids drift and stays correct regardless of
+    // which specific bunny started/stopped.
+    private void ReportWeightToPowerManager()
     {
-        PowerManager.EnsureInstance().NotifyProducerActive(this);
-    }
+        float totalWeight = 0f;
+        for (int i = 0; i < activeWorkerOrder.Count; i++)
+        {
+            NPCBunny worker = activeWorkerOrder[i];
+            float slotMultiplier = WorkerProductionScaling.SlotMultiplier(diminishingReturnsRate, i);
+            bool typeMatch = recommendedTypes != null && recommendedTypes.Contains(worker.Type);
+            float typeBonusMultiplier = typeMatch ? 1f + typeMatchProductionBonus : 1f;
+            totalWeight += slotMultiplier * typeBonusMultiplier * worker.ProductionMultiplier;
+        }
 
-    private void NotifyPowerManagerInactive()
-    {
-        PowerManager.EnsureInstance().NotifyProducerInactive(this);
+        PowerManager.EnsureInstance().SetProducerWeight(this, totalWeight);
     }
 
     // ---------- IJobRoom shutdown/restore ----------
@@ -125,7 +160,8 @@ public class CoalRoom : RoomBase, IJobRoom
             idledByShutdown.Add(kvp.Key);
         }
         activeProductionRoutines.Clear();
-        PowerManager.EnsureInstance().NotifyProducerAllInactive(this); // reset this room's worker count to zero, regardless of how many were active
+        activeWorkerOrder.Clear();
+        PowerManager.EnsureInstance().SetProducerWeight(this, 0f); // reset this room's weight to zero, regardless of how many were active
     }
 
     public void OnRoomRestored()

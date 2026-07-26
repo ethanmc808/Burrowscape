@@ -1131,6 +1131,8 @@ MonoBehaviour:
   consumesWater: 1
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
   leftEntrance: {fileID: 811547279420599026}
@@ -1198,6 +1200,9 @@ MonoBehaviour:
   - {fileID: 1525977479660760245}
   productionInterval: 10
   carrotsPerProduction: 1
+  diminishingReturnsRate: 0.7
+  recommendedTypes: 03000000
+  typeMatchProductionBonus: 0.25
 --- !u!65 &4991280497254301588
 BoxCollider:
   m_ObjectHideFlags: 0

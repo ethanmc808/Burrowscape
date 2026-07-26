@@ -14,6 +14,8 @@ public class AssignmentUI : MonoBehaviour
     [Header("Unassigned Bunnies (click to assign)")]
     [SerializeField] private Transform buttonContainer;
     [SerializeField] private GameObject bunnyButtonPrefab; // simple prefab: Button + TextMeshProUGUI child
+    [Tooltip("Small type-symbol icon prefab (TypeIconSmall) plugged in at the start of each bunny's name via BunnyTypeIconHelper. Skipped for types with no icon assigned yet.")]
+    [SerializeField] private GameObject typeIconPrefab;
 
     [Header("Currently Assigned Bunnies (click to select, then Unassign)")]
     [SerializeField] private Transform assignedButtonContainer;
@@ -80,7 +82,9 @@ public class AssignmentUI : MonoBehaviour
         foreach (NPCBunny bunny in unassigned)
         {
             GameObject buttonObj = Instantiate(bunnyButtonPrefab, buttonContainer);
-            buttonObj.GetComponentInChildren<TextMeshProUGUI>().text = bunny.name;
+            TextMeshProUGUI nameLabel = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
+            nameLabel.text = bunny.name;
+            BunnyTypeIconHelper.AddIcon(typeIconPrefab, buttonObj.transform, nameLabel, bunny.TypeIcon);
 
             Button btn = buttonObj.GetComponent<Button>();
             btn.onClick.AddListener(() => AssignAndClose(bunny));
@@ -97,7 +101,9 @@ public class AssignmentUI : MonoBehaviour
         foreach (NPCBunny bunny in assigned)
         {
             GameObject buttonObj = Instantiate(bunnyButtonPrefab, assignedButtonContainer);
-            buttonObj.GetComponentInChildren<TextMeshProUGUI>().text = bunny.name;
+            TextMeshProUGUI nameLabel = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
+            nameLabel.text = bunny.name;
+            BunnyTypeIconHelper.AddIcon(typeIconPrefab, buttonObj.transform, nameLabel, bunny.TypeIcon);
 
             Button btn = buttonObj.GetComponent<Button>();
             btn.onClick.AddListener(() => SelectAssignedBunny(bunny, btn));

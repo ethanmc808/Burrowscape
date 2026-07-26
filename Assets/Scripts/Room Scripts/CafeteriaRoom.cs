@@ -11,6 +11,13 @@ public class CafeteriaRoom : RoomBase   // CHANGED from : MonoBehaviour
 
     [SerializeField] private float eatingTickInterval = 2f;
 
+    // If the carrot stockpile is completely empty, TryConsumeCarrot() keeps failing forever — without a
+    // give-up point, EatingRoutine's while(!IsFullyFed()) loop never exits, permanently freezing the
+    // bunny in Eating and never releasing its spot. Worse if the stuck bunny is a Garden worker: it could
+    // never return to producing, guaranteeing the shortage never recovers. This many CONSECUTIVE failed
+    // ticks (reset on any success) gives a brief production hiccup room to resolve itself before bailing.
+    [SerializeField] private int maxConsecutiveFailedAttempts = 5;
+
     protected override void OnEnable()
     {
         base.OnEnable();
@@ -59,6 +66,8 @@ public class CafeteriaRoom : RoomBase   // CHANGED from : MonoBehaviour
 
     private IEnumerator EatingRoutine(NPCBunny bunny)
     {
+        int consecutiveFailedAttempts = 0;
+
         while (!bunny.IsFullyFed())
         {
             yield return new WaitForSeconds(eatingTickInterval);
@@ -67,6 +76,11 @@ public class CafeteriaRoom : RoomBase   // CHANGED from : MonoBehaviour
             {
                 CarrotManager.Instance.RecordConsumption(1);
                 bunny.ReceiveCarrotNutrition();
+                consecutiveFailedAttempts = 0;
+            }
+            else if (++consecutiveFailedAttempts >= maxConsecutiveFailedAttempts)
+            {
+                break; // stockpile's empty and staying empty — stop occupying the spot
             }
         }
 

@@ -884,6 +884,9 @@ MonoBehaviour:
   - {fileID: 3469639314531047084}
   - {fileID: 6169256658108094660}
   - {fileID: 468752106746250703}
+  diminishingReturnsRate: 0.7
+  recommendedTypes: 04000000
+  typeMatchProductionBonus: 0.25
 --- !u!1 &5269368504905911588
 GameObject:
   m_ObjectHideFlags: 0

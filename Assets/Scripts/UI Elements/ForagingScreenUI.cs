@@ -19,6 +19,8 @@ public class ForagingScreenUI : MonoBehaviour
     [Header("Bunny Picker (click to dispatch)")]
     [SerializeField] private Transform pickerListContainer;
     [SerializeField] private GameObject bunnyButtonPrefab; // simple prefab: Button + TextMeshProUGUI child
+    [Tooltip("Small type-symbol icon prefab (TypeIconSmall) plugged in at the start of each bunny's name via BunnyTypeIconHelper. Skipped for types with no icon assigned yet.")]
+    [SerializeField] private GameObject typeIconPrefab;
     [Tooltip("Highlight for whichever bunny was most recently picked — same color/shape as ForagingActiveTripRowUI's own selected/normal pair, just applied directly to the plain button's Image since the picker uses the shared SimpleListButton prefab rather than a dedicated row script.")]
     [SerializeField] private Color selectedPickerColor = new Color(0.65f, 0.93f, 0.65f, 1f);
     [SerializeField] private Color normalPickerColor = Color.white;
@@ -92,7 +94,9 @@ public class ForagingScreenUI : MonoBehaviour
         foreach (NPCBunny bunny in DwellerRoster.Instance.GetForageableBunnies())
         {
             GameObject buttonObj = Instantiate(bunnyButtonPrefab, pickerListContainer);
-            buttonObj.GetComponentInChildren<TextMeshProUGUI>().text = bunny.BunnyName;
+            TextMeshProUGUI nameLabel = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
+            nameLabel.text = bunny.BunnyName;
+            BunnyTypeIconHelper.AddIcon(typeIconPrefab, buttonObj.transform, nameLabel, bunny.TypeIcon);
             buttonObj.GetComponent<Button>().onClick.AddListener(() => OnBunnyChosen(bunny));
 
             Image image = buttonObj.GetComponent<Image>();

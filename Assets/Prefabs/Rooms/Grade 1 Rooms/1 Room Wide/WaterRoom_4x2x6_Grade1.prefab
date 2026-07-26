@@ -381,6 +381,51 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &947228875753018671
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9115307621330988968}
+  - component: {fileID: 3964538129061973134}
+  m_Layer: 0
+  m_Name: PottingSpot_03
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9115307621330988968
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 947228875753018671}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: -1.032, y: -0.894, z: 2.2530003}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 399445776876835591}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3964538129061973134
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 947228875753018671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 0
 --- !u!1 &1610095975428311500
 GameObject:
   m_ObjectHideFlags: 0
@@ -503,6 +548,7 @@ Transform:
   - {fileID: 8381219974960744594}
   - {fileID: 8157886256545598411}
   - {fileID: 5203776407986404162}
+  - {fileID: 9115307621330988968}
   - {fileID: 7040867077731455970}
   - {fileID: 2628318084663273398}
   - {fileID: 4487309797328035790}
@@ -532,7 +578,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 938888440d3a9ed42a0f1c4f8c1b4e36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaterRoom
-  consumesPower: 0
+  consumesPower: 1
   powerConsumptionAmount: 1
   powerConsumptionInterval: 10
   producesPower: 0
@@ -564,6 +610,13 @@ MonoBehaviour:
   - entrance: {fileID: 4489546531400349566}
     targetSpot: {fileID: 2360962898732569390}
     waypoints: []
+  - entrance: {fileID: 9213148216188798901}
+    targetSpot: {fileID: 3964538129061973134}
+    waypoints: []
+  - entrance: {fileID: 4489546531400349566}
+    targetSpot: {fileID: 3964538129061973134}
+    waypoints:
+    - {fileID: 7671422005047717199}
   - entrance: {fileID: 9213148216188798901}
     targetSpot: {fileID: 3127534184920157001}
     waypoints: []
@@ -599,16 +652,21 @@ MonoBehaviour:
   productionSpots:
   - {fileID: 7612317831466647811}
   - {fileID: 2360962898732569390}
+  - {fileID: 3964538129061973134}
   drinkingSpots:
   - {fileID: 3127534184920157001}
   - {fileID: 9133867876962229638}
   - {fileID: 4841619156250362801}
   - {fileID: 8137362496756005382}
-  productionInterval: 2
-  waterPerProduction: 2
-  waterRationingPoolAmount: 25
+  productionInterval: 15
+  waterPerProduction: 3
+  waterRationingPoolAmount: 35
   waterStorageCapacityAmount: 50
   drinkingTickInterval: 0.5
+  maxConsecutiveFailedAttempts: 5
+  diminishingReturnsRate: 0.7
+  recommendedTypes: 02000000
+  typeMatchProductionBonus: 0.25
 --- !u!65 &731587572180687953
 BoxCollider:
   m_ObjectHideFlags: 0

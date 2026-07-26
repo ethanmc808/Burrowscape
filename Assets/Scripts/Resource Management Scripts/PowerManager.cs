@@ -6,7 +6,7 @@ using System.Linq;
 
 // Single GLOBAL singleton (not per-floor) — Power is one pool across the whole base: every
 // consumesPower room draws continuously regardless of staffing, producesPower rooms (e.g. CoalRoom)
-// only contribute while genuinely staffed (NotifyProducerActive/Inactive). A "Power Rationing Pool" is a
+// only contribute while genuinely staffed (SetProducerWeight). A "Power Rationing Pool" is a
 // plain battery — it drains at the real deficit rate and refills at the real surplus rate, never masking
 // how much is actually being produced. Modeled on Fallout Shelter's power bar: a "required" threshold
 // scales with current total demand (reserveBufferSeconds), and as long as the banked pool clears that
@@ -78,11 +78,14 @@ public class PowerManager : MonoBehaviour
     private readonly List<RoomBase> consumers = new List<RoomBase>();
     private readonly List<RoomBase> producers = new List<RoomBase>();
 
-    // How many bunnies are currently actively Working each producer room — NOT just whether it has at
-    // least one, so 2 workers in a Coal Room genuinely produce twice what 1 does. A room only appears
-    // here at all while its count is >= 1 (removed entirely once it hits 0), so "is this room active"
-    // is just "does it have an entry."
-    private readonly Dictionary<RoomBase, int> activeProducerWorkerCounts = new Dictionary<RoomBase, int>();
+    // Each producer room's current WEIGHTED output — not a plain headcount. The room itself (CoalRoom)
+    // computes this from its own active workers' slot-rank diminishing-returns multiplier, type-match
+    // bonus, and per-bunny ProductionMultiplier, and pushes the total here via SetProducerWeight whenever
+    // a worker starts/stops. PowerManager just multiplies it by PowerProductionAmount/Interval and
+    // GradeMultiplier below — it has no idea how the weight was computed. A room only appears here at all
+    // while its weight is > 0 (removed entirely once it hits 0), so "is this room active" is just "does
+    // it have an entry."
+    private readonly Dictionary<RoomBase, float> activeProducerWeights = new Dictionary<RoomBase, float>();
 
     private float rationingPoolCurrent;
     private float rationingPoolMax;
@@ -136,7 +139,7 @@ public class PowerManager : MonoBehaviour
     public void UnregisterProducer(RoomBase room)
     {
         producers.Remove(room);
-        activeProducerWorkerCounts.Remove(room);
+        activeProducerWeights.Remove(room);
         RecomputeRationingPoolMax();
     }
 
@@ -151,29 +154,14 @@ public class PowerManager : MonoBehaviour
         rationingPoolCurrent = Mathf.Min(rationingPoolCurrent, rationingPoolMax);
     }
 
-    // Called by a producer room (e.g. CoalRoom) once per bunny that starts/stops actively Working there
-    // — an exact 1:1 increment/decrement, not a simple "is anyone here" flag, so N workers contribute N
-    // times the room's configured rate.
-    public void NotifyProducerActive(RoomBase room)
+    // Called by a producer room (e.g. CoalRoom) every time its active-worker roster changes — the room
+    // recomputes its own full weighted total (see CoalRoom.ReportWeightToPowerManager) and pushes it here
+    // wholesale, rather than PowerManager tracking increments/decrements itself. A weight of 0 (or below)
+    // removes the room's entry entirely, same as it having no active workers at all.
+    public void SetProducerWeight(RoomBase room, float weight)
     {
-        activeProducerWorkerCounts.TryGetValue(room, out int count);
-        activeProducerWorkerCounts[room] = count + 1;
-    }
-
-    public void NotifyProducerInactive(RoomBase room)
-    {
-        if (!activeProducerWorkerCounts.TryGetValue(room, out int count)) return;
-
-        if (count <= 1) activeProducerWorkerCounts.Remove(room);
-        else activeProducerWorkerCounts[room] = count - 1;
-    }
-
-    // Used when a room mass-idles every active worker at once (OnRoomShutdown) — resets this room's
-    // count to zero directly in one call, rather than requiring the caller to call NotifyProducerInactive
-    // once per bunny that was active.
-    public void NotifyProducerAllInactive(RoomBase room)
-    {
-        activeProducerWorkerCounts.Remove(room);
+        if (weight <= 0f) activeProducerWeights.Remove(room);
+        else activeProducerWeights[room] = weight;
     }
 
     private IEnumerator EvaluationRoutine()
@@ -198,7 +186,7 @@ public class PowerManager : MonoBehaviour
         }
 
         float activeProduction = 0f;
-        foreach (KeyValuePair<RoomBase, int> kvp in activeProducerWorkerCounts)
+        foreach (KeyValuePair<RoomBase, float> kvp in activeProducerWeights)
             if (kvp.Key != null) activeProduction += SafeRate(kvp.Key.PowerProductionAmount, kvp.Key.PowerProductionInterval) * kvp.Value * kvp.Key.GradeMultiplier;
         ActiveProductionRate = activeProduction;
 
@@ -289,10 +277,10 @@ public class PowerManager : MonoBehaviour
     // and fall back to the ThenBy(f) ascending-floor-index tie-break above.
     private float DistanceToNearestActiveProducerFloor(int floorIndex)
     {
-        if (activeProducerWorkerCounts.Count == 0) return float.MaxValue;
+        if (activeProducerWeights.Count == 0) return float.MaxValue;
 
         float best = float.MaxValue;
-        foreach (RoomBase p in activeProducerWorkerCounts.Keys)
+        foreach (RoomBase p in activeProducerWeights.Keys)
             best = Mathf.Min(best, Mathf.Abs(floorIndex - p.FloorIndex));
         return best;
     }

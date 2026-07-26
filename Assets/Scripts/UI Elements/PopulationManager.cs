@@ -36,10 +36,58 @@ public class PopulationManager : MonoBehaviour
     public int TotalResidents => counts.Values.Sum();
     public int GetCount(ResidentCategory category) => counts[category];
 
+    [Header("Population Cap")]
+    // Flat baseline the colony can house before any Bedroom is built — same "base + sum of registered
+    // contributors" shape CarrotManager/WaterManager/PowerManager already use for their own storage caps.
+    [SerializeField] private int basePopulationCap = 16;
+
+    // Hard ceiling regardless of how many Bedrooms get built. Deliberately a SEPARATE field from
+    // WildBunnySpawner.capPopulation (which only paces that spawner's arrival-interval/level ramp) rather
+    // than sharing one number, so the two can be tuned independently if the design calls for it later.
+    [SerializeField] private int maxPopulationCap = 300;
+
+    // Any Bedroom currently enabled in the scene — registered/unregistered by Bedroom.OnEnable/OnDisable,
+    // same pattern as CarrotManager.capacityContributors. A SEPARATE registration from BaseManager's own
+    // bedrooms list (which exists for nearest-with-a-spot lookups) — same rooms, two independent lists
+    // for two independent purposes.
+    private readonly List<Bedroom> capacityContributors = new List<Bedroom>();
+
+    private int populationCap;
+    public int PopulationCap => populationCap;
+
+    // What WildBunnySpawner checks before creating a new Wild bunny at all — the cap is enforced at the
+    // spawn source rather than by turning bunnies away at the gate, so the colony never accumulates a
+    // backlog of already-spawned bunnies waiting outside for a slot that isn't coming soon.
+    public bool HasRoomForNewResident => TotalResidents < populationCap;
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+        RecomputePopulationCap();
+    }
+
+    // Called by Bedroom.OnEnable/OnDisable.
+    public void RegisterBedroomCapacity(Bedroom room)
+    {
+        if (!capacityContributors.Contains(room)) capacityContributors.Add(room);
+        RecomputePopulationCap();
+    }
+
+    public void UnregisterBedroomCapacity(Bedroom room)
+    {
+        capacityContributors.Remove(room);
+        RecomputePopulationCap();
+    }
+
+    // Recomputes from scratch rather than incrementally adding/subtracting — same reasoning as
+    // CarrotManager/WaterManager/PowerManager's equivalent methods: avoids float/int drift and naturally
+    // handles a Bedroom's SleepingSpotCount changing (e.g. a future upgrade) without special-casing.
+    private void RecomputePopulationCap()
+    {
+        int uncapped = basePopulationCap + capacityContributors.Where(r => r != null).Sum(r => r.PopulationCapContribution);
+        populationCap = Mathf.Min(maxPopulationCap, uncapped);
+        OnPopulationChanged?.Invoke(); // cap changed — piggyback on the same event UI already listens on
     }
 
     // Call this the moment a resident joins the colony for the FIRST time — a wild bunny approved

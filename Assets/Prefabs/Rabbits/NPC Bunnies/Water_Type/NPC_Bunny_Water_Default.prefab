@@ -200,7 +200,6 @@ MonoBehaviour:
   wanderSpeedMultiplier: 0.5
   arrivalThreshold: 0.05
   experience: 0
-  experienceToNextLevel: 0
   hunger: 100
   hungerDecayPerSecond: 0.1
   hungerThresholdLow: 30
@@ -212,7 +211,7 @@ MonoBehaviour:
   thirstThresholdLow: 30
   thirstThresholdFull: 90
   thirstThresholdCritical: 15
-  thirstGainPerDrink: 5
+  thirstGainPerDrink: 15
   energy: 100
   energyDecayPerSecond: 0.05
   energyDecayPerSecondWorking: 0.1
@@ -220,6 +219,8 @@ MonoBehaviour:
   energyDecayPerSecondForaging: 0.1
   energyThresholdLow: 35
   energyGainPerSecondSleeping: 4
+  currentHP: 1
+  hpGainPerSecondSleeping: 1
   mood: 100
   moodDecayPerSecondWorking: 0.05
   moodGainPerSecondRelaxing: 0.2

@@ -405,6 +405,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 938888440d3a9ed42a0f1c4f8c1b4e36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaterRoom
+  consumesPower: 0
+  powerConsumptionAmount: 1
+  powerConsumptionInterval: 1
+  producesPower: 0
+  powerProductionAmount: 1
+  powerProductionInterval: 1
+  powerRationingPoolAmount: 0
+  consumesWater: 0
+  waterConsumptionAmount: 1
+  waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
+  workerEnergyDecayPerSecond: 0.2
+  workerMoodDecayPerSecond: 0
   leftEntrance: {fileID: 6466722940724485167}
   rightEntrance: {fileID: 1741720930234789092}
   middleLeft: {fileID: 3173352765589745240}
@@ -453,6 +467,7 @@ MonoBehaviour:
     - {fileID: 5481895144549414613}
   footprintWidth: 8
   grade: 2
+  gradeMultiplier: 1
   roomTypeId: WaterRoom
   productionSpots:
   - {fileID: 7612317831466647811}
@@ -464,7 +479,13 @@ MonoBehaviour:
   - {fileID: 8137362496756005382}
   productionInterval: 10
   waterPerProduction: 1
+  waterRationingPoolAmount: 0
+  waterStorageCapacityAmount: 100
   drinkingTickInterval: 2
+  maxConsecutiveFailedAttempts: 5
+  diminishingReturnsRate: 0.7
+  recommendedTypes: 02000000
+  typeMatchProductionBonus: 0.25
 --- !u!65 &4668836384455127439
 BoxCollider:
   m_ObjectHideFlags: 0

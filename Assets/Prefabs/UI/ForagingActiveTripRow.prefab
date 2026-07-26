@@ -727,7 +727,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 122.24036, y: 123.30029}
-  m_SizeDelta: {x: 222.4807, y: 176.8532}
+  m_SizeDelta: {x: 250, y: 176.8532}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2840835089821923562
 CanvasRenderer:
@@ -828,6 +828,7 @@ MonoBehaviour:
   hpText: {fileID: 7095415659718508627}
   energyText: {fileID: 1783996477563370965}
   carryText: {fileID: 8548893371859249896}
+  typeIconPrefab: {fileID: 1100000000000000001, guid: a1b2c3d4e5f647a8b9c0d1e2f3a4b5c6, type: 3}
   selectButton: {fileID: 2703128958208398981}
   backgroundImage: {fileID: 2578290488239881972}
   selectedColor: {r: 0.65, g: 0.93, b: 0.65, a: 1}

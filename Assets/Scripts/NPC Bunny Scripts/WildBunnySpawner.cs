@@ -16,6 +16,11 @@ public class WildBunnySpawner : MonoBehaviour
     [Header("Timed Auto-Spawning")]
     [SerializeField] private bool autoSpawnEnabled = true;
 
+    // How often AutoSpawnLoop rechecks PopulationManager.HasRoomForNewResident while held at the
+    // population cap — short on purpose, so a newly-built Bedroom (or a departure) is picked up quickly
+    // instead of the spawner waiting out another full randomized interval before trying again.
+    [SerializeField] private float capCheckPollSeconds = 5f;
+
     // Wait-time range ramps linearly from [startMinWaitMinutes, startMaxWaitMinutes] at startPopulation
     // up to [capMinWaitMinutes, capMaxWaitMinutes] at capPopulation, based on PopulationManager.Instance.TotalResidents.
     [Header("Population-Based Arrival Ramp")]
@@ -74,6 +79,13 @@ public class WildBunnySpawner : MonoBehaviour
             GetSpawnIntervalRangeSeconds(out float minSeconds, out float maxSeconds);
             float wait = Random.Range(minSeconds, maxSeconds);
             yield return new WaitForSeconds(wait);
+
+            // Held at the population cap — poll rather than spawning into a backlog outside the gate
+            // (see PopulationManager.HasRoomForNewResident). Resumes on its own shortly after a Bedroom
+            // is built or a slot frees up, instead of waiting out another full randomized interval.
+            while (PopulationManager.Instance != null && !PopulationManager.Instance.HasRoomForNewResident)
+                yield return new WaitForSeconds(capCheckPollSeconds);
+
             SpawnWildBunny();
         }
     }
@@ -130,6 +142,14 @@ public class WildBunnySpawner : MonoBehaviour
     [ContextMenu("Spawn Wild Bunny")]
     public void SpawnWildBunny()
     {
+        // Covers every call path uniformly (AutoSpawnLoop, SpawnStartingBunnies, and this context-menu
+        // trigger) with a single guard, rather than checking capacity at each call site separately.
+        if (PopulationManager.Instance != null && !PopulationManager.Instance.HasRoomForNewResident)
+        {
+            DebugLog.Log("WildBunnySpawner: population cap reached — skipping spawn.");
+            return;
+        }
+
         List<BunnyTypeDefinition> availableTypes = GetAvailableTypes();
         if (availableTypes.Count == 0)
         {

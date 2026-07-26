@@ -776,6 +776,9 @@ MonoBehaviour:
   shovelingSpots:
   - {fileID: 87078019840192008}
   - {fileID: 4191936910316496395}
+  diminishingReturnsRate: 0.7
+  recommendedTypes: 04000000
+  typeMatchProductionBonus: 0.25
 --- !u!114 &7037124140991272582
 MonoBehaviour:
   m_ObjectHideFlags: 0

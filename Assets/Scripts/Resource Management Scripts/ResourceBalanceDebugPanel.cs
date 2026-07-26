@@ -69,14 +69,18 @@ public class ResourceBalanceDebugPanel : MonoBehaviour
         if (Input.GetKeyDown(toggleKey))
             panelRoot.SetActive(!panelRoot.activeSelf);
 
-        if (!panelRoot.activeSelf) return;
-
+        // Sampling runs regardless of visibility — a rolling-average tool is only useful if the window
+        // already reflects real recent history the moment you open it, not just however long it's
+        // happened to be open this particular time. Only the (comparatively expensive) text rebuild below
+        // is skipped while hidden.
         secondTimer += Time.deltaTime;
         while (secondTimer >= 1f)
         {
             secondTimer -= 1f;
             SampleOneSecond();
         }
+
+        if (!panelRoot.activeSelf) return;
 
         RefreshDisplayText();
     }
@@ -103,7 +107,6 @@ public class ResourceBalanceDebugPanel : MonoBehaviour
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.AppendLine("<b>RESOURCE BALANCE DEBUG</b>");
         sb.AppendLine($"(window = {windowSizeMinutes} min, toggle = {toggleKey})");
         sb.AppendLine();
 
@@ -155,6 +158,8 @@ public class ResourceBalanceDebugPanel : MonoBehaviour
         scaler.referenceResolution = new Vector2(1920f, 1080f);
         canvasGO.AddComponent<GraphicRaycaster>();
 
+        const float headerHeight = 26f;
+
         panelRoot = new GameObject("Panel");
         panelRoot.transform.SetParent(canvasGO.transform, false);
         RectTransform panelRect = panelRoot.AddComponent<RectTransform>();
@@ -162,10 +167,42 @@ public class ResourceBalanceDebugPanel : MonoBehaviour
         panelRect.anchorMax = new Vector2(0f, 0f);
         panelRect.pivot = new Vector2(0f, 0f);
         panelRect.anchoredPosition = new Vector2(20f, 20f);
-        panelRect.sizeDelta = new Vector2(480f, 380f);
+        panelRect.sizeDelta = new Vector2(480f, 380f + headerHeight);
 
         Image background = panelRoot.AddComponent<Image>();
         background.color = Color.white;
+
+        // Drag handle — a distinct strip along the top so click-dragging the panel doesn't compete with
+        // selecting/scrolling the body text below it. Moves panelRect (see
+        // ResourceBalanceDebugPanelDragHandler), not itself.
+        GameObject headerGO = new GameObject("Header");
+        headerGO.transform.SetParent(panelRoot.transform, false);
+        RectTransform headerRect = headerGO.AddComponent<RectTransform>();
+        headerRect.anchorMin = new Vector2(0f, 1f);
+        headerRect.anchorMax = new Vector2(1f, 1f);
+        headerRect.pivot = new Vector2(0.5f, 1f);
+        headerRect.anchoredPosition = Vector2.zero;
+        headerRect.sizeDelta = new Vector2(0f, headerHeight);
+
+        Image headerBackground = headerGO.AddComponent<Image>();
+        headerBackground.color = new Color(0.75f, 0.75f, 0.75f, 1f);
+
+        GameObject headerLabelGO = new GameObject("HeaderLabel");
+        headerLabelGO.transform.SetParent(headerGO.transform, false);
+        RectTransform headerLabelRect = headerLabelGO.AddComponent<RectTransform>();
+        headerLabelRect.anchorMin = Vector2.zero;
+        headerLabelRect.anchorMax = Vector2.one;
+        headerLabelRect.offsetMin = new Vector2(8f, 0f);
+        headerLabelRect.offsetMax = new Vector2(-8f, 0f);
+        TextMeshProUGUI headerLabel = headerLabelGO.AddComponent<TextMeshProUGUI>();
+        headerLabel.text = "<b>RESOURCE BALANCE DEBUG</b>  (drag to move)";
+        headerLabel.fontSize = 14f;
+        headerLabel.color = Color.black;
+        headerLabel.alignment = TextAlignmentOptions.MidlineLeft;
+        headerLabel.raycastTarget = false; // let drags fall through to the header's Image, not get eaten by the label
+
+        ResourceBalanceDebugPanelDragHandler dragHandler = headerGO.AddComponent<ResourceBalanceDebugPanelDragHandler>();
+        dragHandler.Initialize(panelRect, canvas);
 
         GameObject textGO = new GameObject("Text");
         textGO.transform.SetParent(panelRoot.transform, false);
@@ -173,7 +210,7 @@ public class ResourceBalanceDebugPanel : MonoBehaviour
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
         textRect.offsetMin = new Vector2(12f, 12f);
-        textRect.offsetMax = new Vector2(-12f, -12f);
+        textRect.offsetMax = new Vector2(-12f, -12f - headerHeight);
 
         displayText = textGO.AddComponent<TextMeshProUGUI>();
         displayText.fontSize = 20f;

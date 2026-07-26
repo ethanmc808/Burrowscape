@@ -581,9 +581,12 @@ MonoBehaviour:
   producesPower: 0
   powerProductionAmount: 1
   powerProductionInterval: 1
+  powerRationingPoolAmount: 0
   consumesWater: 0
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
   leftEntrance: {fileID: 6466722940724485167}
@@ -634,6 +637,7 @@ MonoBehaviour:
     - {fileID: 5481895144549414613}
   footprintWidth: 8
   grade: 3
+  gradeMultiplier: 1
   roomTypeId: WaterRoom
   productionSpots:
   - {fileID: 7612317831466647811}
@@ -645,7 +649,13 @@ MonoBehaviour:
   - {fileID: 8137362496756005382}
   productionInterval: 10
   waterPerProduction: 1
+  waterRationingPoolAmount: 0
+  waterStorageCapacityAmount: 100
   drinkingTickInterval: 2
+  maxConsecutiveFailedAttempts: 5
+  diminishingReturnsRate: 0.7
+  recommendedTypes: 02000000
+  typeMatchProductionBonus: 0.25
 --- !u!65 &5538231150619298028
 BoxCollider:
   m_ObjectHideFlags: 0

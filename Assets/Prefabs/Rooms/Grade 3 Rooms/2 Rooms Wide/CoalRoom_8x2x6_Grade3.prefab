@@ -829,9 +829,12 @@ MonoBehaviour:
   producesPower: 0
   powerProductionAmount: 1
   powerProductionInterval: 1
+  powerRationingPoolAmount: 0
   consumesWater: 1
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
   leftEntrance: {fileID: 1371684402106939699}
@@ -874,12 +877,16 @@ MonoBehaviour:
     - {fileID: 7020160883281837471}
   footprintWidth: 8
   grade: 3
+  gradeMultiplier: 1
   roomTypeId: CoalRoom
   shovelingSpots:
   - {fileID: 9184088085778036738}
   - {fileID: 3469639314531047084}
   - {fileID: 6169256658108094660}
   - {fileID: 468752106746250703}
+  diminishingReturnsRate: 0.7
+  recommendedTypes: 04000000
+  typeMatchProductionBonus: 0.25
 --- !u!1 &5269368504905911588
 GameObject:
   m_ObjectHideFlags: 0
