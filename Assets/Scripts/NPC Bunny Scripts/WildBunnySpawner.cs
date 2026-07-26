@@ -10,8 +10,20 @@ public class WildBunnySpawner : MonoBehaviour
     [SerializeField] private float offscreenSpawnOffsetX = 15f; // positive X = further left (visually) in this project
 
     [Header("Starting Population")]
-    [SerializeField] private int startingWildBunnyCount = 8; // spawned immediately in Start(), same path as a normal wild arrival
+    [Tooltip("Exact ordered list of the opening bunnies, spawned in Start() via the same path as a normal wild arrival. Any entry whose type is NOT one of the base 4 (Neutral/Water/Plant/Shock) is treated as a 'new type reveal' (e.g. Fire) — it's held back with a real wait (see startMinWaitMinutes/startMaxWaitMinutes below) instead of the tight starting spacing, and triggers NewBunnyTypeNotification the first time it spawns.")]
+    [SerializeField] private List<BunnyTypeDefinition> startingBunnyOrder;
     [SerializeField] private float startingSpawnDelaySeconds = 0.3f; // gap between each starting bunny so they spawn in a visible line instead of a cluster
+
+    // The 4 types every playthrough starts with (BunnyTypeSystem_DesignDoc.md Group 1 minus Fire) —
+    // spawns of these never trigger NewBunnyTypeNotification, since they're not a "new type" reveal.
+    private static readonly HashSet<BunnyType> baseStartingTypes = new HashSet<BunnyType>
+    {
+        BunnyType.Neutral, BunnyType.Water, BunnyType.Plant, BunnyType.Shock
+    };
+
+    // Every type that has ever spawned this session — first-time entries outside baseStartingTypes
+    // fire NewBunnyTypeNotification (see SpawnBunnyOfType).
+    private readonly HashSet<BunnyType> typesEverSpawned = new HashSet<BunnyType>();
 
     [Header("Timed Auto-Spawning")]
     [SerializeField] private bool autoSpawnEnabled = true;
@@ -52,10 +64,23 @@ public class WildBunnySpawner : MonoBehaviour
             SpawnWildBunny();
         }
 
-        if (startingWildBunnyCount > 0)
+        if (startingBunnyOrder != null && startingBunnyOrder.Count > 0)
         {
-            StartCoroutine(SpawnStartingBunnies());
+            // AutoSpawnLoop is deliberately NOT started here — it waits until the starting sequence
+            // (including the held-back Fire reveal) fully finishes. Both use the same
+            // startMinWaitMinutes/startMaxWaitMinutes range, so running them concurrently let
+            // AutoSpawnLoop's random wait occasionally finish first and steal Fire's intended slot.
+            StartCoroutine(SpawnStartingBunniesThenAutoSpawn());
         }
+        else if (autoSpawnEnabled)
+        {
+            autoSpawnRoutine = StartCoroutine(AutoSpawnLoop());
+        }
+    }
+
+    private IEnumerator SpawnStartingBunniesThenAutoSpawn()
+    {
+        yield return StartCoroutine(SpawnStartingBunnies());
 
         if (autoSpawnEnabled)
         {
@@ -65,9 +90,17 @@ public class WildBunnySpawner : MonoBehaviour
 
     private IEnumerator SpawnStartingBunnies()
     {
-        for (int i = 0; i < startingWildBunnyCount; i++)
+        foreach (BunnyTypeDefinition entry in startingBunnyOrder)
         {
-            SpawnWildBunny();
+            if (entry != null && !baseStartingTypes.Contains(entry.type))
+            {
+                // New-type reveal (e.g. Fire) — held back with a real wait instead of the tight
+                // starting-cluster spacing, so it reads as its own arrival rather than part of the opening rush.
+                float waitMinutes = Random.Range(startMinWaitMinutes, startMaxWaitMinutes);
+                yield return new WaitForSeconds(waitMinutes * 60f);
+            }
+
+            SpawnBunnyOfType(entry);
             yield return new WaitForSeconds(startingSpawnDelaySeconds);
         }
     }
@@ -142,7 +175,23 @@ public class WildBunnySpawner : MonoBehaviour
     [ContextMenu("Spawn Wild Bunny")]
     public void SpawnWildBunny()
     {
-        // Covers every call path uniformly (AutoSpawnLoop, SpawnStartingBunnies, and this context-menu
+        List<BunnyTypeDefinition> availableTypes = GetAvailableTypes();
+        if (availableTypes.Count == 0)
+        {
+            Debug.LogWarning("WildBunnySpawner: no bunny types are both unlocked and have a prefab assigned (or BunnyTypeUnlockTracker isn't in the scene).");
+            return;
+        }
+
+        BunnyTypeDefinition chosenType = availableTypes[Random.Range(0, availableTypes.Count)];
+        SpawnBunnyOfType(chosenType);
+    }
+
+    // Shared by the random pick above (AutoSpawnLoop, context-menu) and the explicit
+    // startingBunnyOrder entries (SpawnStartingBunnies) — the latter bypass GetAvailableTypes'
+    // unlock/prefab filtering since they're an explicit designer-authored sequence, not a random draw.
+    private void SpawnBunnyOfType(BunnyTypeDefinition chosenType)
+    {
+        // Covers every call path uniformly (AutoSpawnLoop, SpawnStartingBunnies, and the context-menu
         // trigger) with a single guard, rather than checking capacity at each call site separately.
         if (PopulationManager.Instance != null && !PopulationManager.Instance.HasRoomForNewResident)
         {
@@ -150,10 +199,9 @@ public class WildBunnySpawner : MonoBehaviour
             return;
         }
 
-        List<BunnyTypeDefinition> availableTypes = GetAvailableTypes();
-        if (availableTypes.Count == 0)
+        if (chosenType == null || chosenType.prefab == null)
         {
-            Debug.LogWarning("WildBunnySpawner: no bunny types are both unlocked and have a prefab assigned (or BunnyTypeUnlockTracker isn't in the scene).");
+            Debug.LogWarning("WildBunnySpawner: tried to spawn a null bunny type, or one with no prefab assigned.");
             return;
         }
 
@@ -163,8 +211,6 @@ public class WildBunnySpawner : MonoBehaviour
             Debug.LogWarning("WildBunnySpawner: BaseLayoutManager has no BaseEntrance assigned.");
             return;
         }
-
-        BunnyTypeDefinition chosenType = availableTypes[Random.Range(0, availableTypes.Count)];
 
         Vector3 spawnPosition = baseEntrance.position + new Vector3(offscreenSpawnOffsetX, 0f, 0f);
         GameObject spawnedObject = Instantiate(chosenType.prefab, spawnPosition, baseEntrance.rotation);
@@ -206,5 +252,11 @@ public class WildBunnySpawner : MonoBehaviour
 
         newBunny.MoveToQueueSpot(queueSpot);
         DebugLog.Log($"Spawned wild {chosenType.type} bunny {newBunny.name} (Level {level}) and sent it to the queue.");
+
+        // First-ever spawn of a type outside the base 4 (e.g. Fire) — a "new type" reveal moment.
+        if (typesEverSpawned.Add(chosenType.type) && !baseStartingTypes.Contains(chosenType.type))
+        {
+            NewBunnyTypeNotification.Instance?.Show(chosenType);
+        }
     }
 }
