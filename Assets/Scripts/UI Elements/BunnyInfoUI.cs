@@ -30,7 +30,10 @@ public class BunnyInfoUI : MonoBehaviour
 
     [Header("Identity")]
     [SerializeField] private TextMeshProUGUI bunnyNameLabel;
-    [SerializeField] private TextMeshProUGUI genderLabel;
+    [Tooltip("Swapped between maleGenderIcon/femaleGenderIcon based on bunny.Gender.")]
+    [SerializeField] private Image genderIconImage;
+    [SerializeField] private Sprite maleGenderIcon;
+    [SerializeField] private Sprite femaleGenderIcon;
     [SerializeField] private TextMeshProUGUI typeLabel;
     [Tooltip("Optional — set BunnyTypeDefinition.icon per type to populate this. Hidden automatically for types with no icon assigned yet.")]
     [SerializeField] private Image typeIconImage;
@@ -107,7 +110,8 @@ public class BunnyInfoUI : MonoBehaviour
         currentBunny = bunny;
 
         bunnyNameLabel.text = bunny.BunnyName;
-        genderLabel.text = bunny.Gender.ToString();
+        if (genderIconImage != null)
+            genderIconImage.sprite = bunny.Gender == BunnyGender.Male ? maleGenderIcon : femaleGenderIcon;
         typeLabel.text = bunny.Type.ToString();
         // Guarded — typeIconImage is optional until an Image element exists for it in the Inspector.
         // Without this check, an unwired field here would NullReferenceException before panelRoot ever
@@ -165,20 +169,25 @@ public class BunnyInfoUI : MonoBehaviour
         return value.ToString();
     }
 
-    // Shared by Traits and Passives — both are just "a list of names," same clear-then-instantiate
-    // pattern AssignmentUI already uses for its bunny-button lists (UI Elements/AssignmentUI.cs).
-    // Empty list = no rows, which is the expected/normal state today (no trait or passive content has
-    // been authored for most types yet) rather than an error case needing special handling.
+    // Shared by Traits and Passives — both are just "a list of names." Joined into a single
+    // ", "-separated entry rather than one instantiated prefab per item — the container's
+    // HorizontalLayoutGroup uses a fixed spacing between children, which clipped longer names when
+    // there were multiple separate entries. One entry sidesteps that entirely. Empty list = no entry,
+    // which is the expected/normal state today (no trait or passive content has been authored for most
+    // types yet) rather than an error case needing special handling.
     private void PopulateList<T>(Transform container, IReadOnlyList<T> items, System.Func<T, string> getLabel)
     {
         foreach (Transform child in container)
             Destroy(child.gameObject);
 
+        if (items.Count == 0) return;
+
+        List<string> labels = new List<string>();
         foreach (T item in items)
-        {
-            GameObject entry = Instantiate(listEntryPrefab, container);
-            entry.GetComponentInChildren<TextMeshProUGUI>().text = getLabel(item);
-        }
+            labels.Add(getLabel(item));
+
+        GameObject entry = Instantiate(listEntryPrefab, container);
+        entry.GetComponentInChildren<TextMeshProUGUI>().text = string.Join(", ", labels);
     }
 
     private void OnApproveClicked()

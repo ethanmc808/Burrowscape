@@ -13,13 +13,15 @@ public class RoomUpgradeUI : MonoBehaviour
 
     [Header("Panel")]
     [SerializeField] private GameObject panelRoot;
-    [SerializeField] private TextMeshProUGUI roomNameLabel;
     [SerializeField] private TextMeshProUGUI gradeLabel;
 
     [Header("Upgrade Button")]
     [SerializeField] private Button upgradeButton;
-    [SerializeField] private TextMeshProUGUI upgradeButtonLabel; // e.g. "Upgrade to Grade 2 (150 Gold)"
-    [Tooltip("Shown instead of the button when there's nothing to upgrade to (already at cap Grade, or no variant authored yet).")]
+    [Tooltip("Just reads \"Upgrade\" — grayed out (non-interactable) rather than hidden once there's nothing left to upgrade to.")]
+    [SerializeField] private TextMeshProUGUI upgradeButtonLabel;
+    [Tooltip("Gold cost, kept separate from upgradeButtonLabel so it can be placed/styled independently. Hidden once there's nothing to upgrade to.")]
+    [SerializeField] private TextMeshProUGUI goldCostLabel;
+    [Tooltip("Shown alongside the grayed-out button once there's nothing left to upgrade to (already at cap Grade, or no variant authored yet).")]
     [SerializeField] private GameObject noUpgradeAvailableLabel;
 
     private RoomBase currentRoom;
@@ -29,6 +31,7 @@ public class RoomUpgradeUI : MonoBehaviour
     {
         Instance = this;
         panelRoot.SetActive(false);
+        if (upgradeButtonLabel != null) upgradeButtonLabel.text = "Upgrade";
 
         // Defensive against duplicated/re-wired buttons carrying over stale Inspector OnClick() entries
         // — same pattern AssignmentUI/BuildModeController/DeleteModeController already use.
@@ -41,7 +44,6 @@ public class RoomUpgradeUI : MonoBehaviour
         if (room == null) return;
 
         currentRoom = room;
-        if (roomNameLabel != null) roomNameLabel.text = room.name;
         if (gradeLabel != null) gradeLabel.text = $"Grade {room.Grade}";
         panelRoot.SetActive(true);
         RefreshUpgradeOption();
@@ -66,12 +68,18 @@ public class RoomUpgradeUI : MonoBehaviour
 
         bool hasUpgrade = targetDefinition != null;
 
-        upgradeButton.gameObject.SetActive(hasUpgrade);
+        // Grayed out rather than hidden once there's nothing left to upgrade to (e.g. already Grade 3) —
+        // Button.interactable handles the grayed-out look via its own disabledColor. noUpgradeAvailableLabel
+        // shows alongside it (not instead of it, like before) to call out why it's grayed out.
+        upgradeButton.interactable = hasUpgrade;
         if (noUpgradeAvailableLabel != null)
             noUpgradeAvailableLabel.SetActive(!hasUpgrade);
 
-        if (hasUpgrade && upgradeButtonLabel != null)
-            upgradeButtonLabel.text = $"Upgrade to Grade {targetDefinition.grade} ({targetDefinition.goldCost} Gold)";
+        if (goldCostLabel != null)
+        {
+            goldCostLabel.gameObject.SetActive(hasUpgrade);
+            if (hasUpgrade) goldCostLabel.text = $"{targetDefinition.goldCost} Gold";
+        }
     }
 
     private void OnUpgradeClicked()
