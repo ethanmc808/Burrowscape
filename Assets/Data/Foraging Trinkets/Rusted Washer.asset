@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Rusted Washer
   m_EditorClassIdentifier: Assembly-CSharp::ForagingTrinketDefinition
   displayName: Rusted Washer
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 671c13bd8538f8449809dc171b7f73e2, type: 3}
   description: 
   sellValue: 5
   craftsInto: 2

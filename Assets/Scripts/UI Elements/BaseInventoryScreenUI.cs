@@ -8,9 +8,9 @@ using TMPro;
 // visibility once it's in the base stockpile. See the Foraging Trip Detail Panel + Item Expansion design
 // doc. No sell/use actions here — selling Trinkets, feeding Fruits, crafting Materials are each separate
 // future UI work.
-public class ForagingInventoryScreenUI : MonoBehaviour
+public class BaseInventoryScreenUI : MonoBehaviour
 {
-    public static ForagingInventoryScreenUI Instance { get; private set; }
+    public static BaseInventoryScreenUI Instance { get; private set; }
 
     [Header("Panel")]
     [SerializeField] private GameObject panelRoot;
@@ -22,6 +22,10 @@ public class ForagingInventoryScreenUI : MonoBehaviour
     [SerializeField] private Transform listContainer;
     [Tooltip("Simple prefab: an Image (icon) + a TextMeshProUGUI child (name + count).")]
     [SerializeField] private GameObject rowPrefab;
+
+    [Header("Fixed Icons (Potion/Crystal Carrot are plain int counters on ForagingInventoryManager, not ScriptableObject assets, so they have no icon field of their own — assign their art here instead)")]
+    [SerializeField] private Sprite potionIcon;
+    [SerializeField] private Sprite crystalCarrotIcon;
 
     private void Awake()
     {
@@ -71,8 +75,8 @@ public class ForagingInventoryScreenUI : MonoBehaviour
 
         ForagingInventoryManager inv = ForagingInventoryManager.Instance;
 
-        if (inv.PotionStock > 0) AddRow(null, "Potion", inv.PotionStock);
-        if (inv.CrystalCarrotStock > 0) AddRow(null, "Crystal Carrot", inv.CrystalCarrotStock);
+        if (inv.PotionStock > 0) AddRow(potionIcon, "Potion", inv.PotionStock);
+        if (inv.CrystalCarrotStock > 0) AddRow(crystalCarrotIcon, "Crystal Carrot", inv.CrystalCarrotStock);
 
         // Only unequipped copies show up here — an equipped accessory was withdrawn from stock at equip
         // time (see NPCBunny.EquippedAccessory / ForagingInventoryManager.TryEquipAccessory).

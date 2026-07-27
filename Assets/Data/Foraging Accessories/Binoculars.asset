@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Binoculars
   m_EditorClassIdentifier: Assembly-CSharp::ForagingAccessoryDefinition
   displayName: Binoculars
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4ec7f4d4e2fbbda4fb0360f7bb44c490, type: 3}
   description: +rare loot chance
   effectType: 1
   magnitude: 10

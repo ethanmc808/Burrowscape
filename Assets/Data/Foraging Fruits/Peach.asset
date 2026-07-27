@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Peach
   m_EditorClassIdentifier: Assembly-CSharp::ForagingFruitDefinition
   displayName: Peach
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b8cca8b1a4d2f4441ba9054f0fcba0fa, type: 3}
   description: 
   boostedStat: 0
   evAmount: 4

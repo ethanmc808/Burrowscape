@@ -180,7 +180,12 @@ public class LiftRoom : RoomBase
         // a removal doesn't need anything about this segment — the regroup just needs to see that it's
         // gone from allSegments (already true by the time the deferred pass runs next frame) to correctly
         // split/shrink whatever shaft it used to belong to.
-        BaseLayoutManager.Instance?.RequestLiftColumnRegroup(GridX);
+        //
+        // Deliberately NOT using ?. here: Unity's overloaded == treats a destroyed manager as null,
+        // but ?. bypasses that overload with a raw reference check, so it would still call through
+        // to a dead manager and throw MissingReferenceException during scene teardown.
+        if (BaseLayoutManager.Instance != null)
+            BaseLayoutManager.Instance.RequestLiftColumnRegroup(GridX);
     }
 
     protected override void OnEnable()

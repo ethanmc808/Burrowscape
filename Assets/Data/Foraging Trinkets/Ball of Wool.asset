@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Ball of Wool
   m_EditorClassIdentifier: Assembly-CSharp::ForagingTrinketDefinition
   displayName: Ball of Wool
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 671c13bd8538f8449809dc171b7f73e2, type: 3}
   description: 
   sellValue: 5
   craftsInto: 1

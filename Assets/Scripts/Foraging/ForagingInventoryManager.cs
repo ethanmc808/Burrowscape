@@ -175,7 +175,7 @@ public class ForagingInventoryManager : MonoBehaviour
         OnInventoryChanged?.Invoke();
     }
 
-    // Every trinket currently held with at least 1 in stock — used by ForagingInventoryScreenUI and,
+    // Every trinket currently held with at least 1 in stock — used by BaseInventoryScreenUI and,
     // later, the Workshop room's crafting-menu UI (filtered there to craftsInto != None).
     public IEnumerable<(ForagingTrinketDefinition trinket, ForagingLootRarity rarity)> GetTrinketsInStock()
         => trinketStock.Where(kvp => kvp.Value > 0).Select(kvp => kvp.Key);
