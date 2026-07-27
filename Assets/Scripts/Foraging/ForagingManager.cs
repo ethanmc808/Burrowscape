@@ -20,14 +20,39 @@ public class ForagingTripState
     public int foundPotionCount;
     public List<ForagingAccessoryDefinition> foundAccessories = new List<ForagingAccessoryDefinition>();
 
+    // Item Expansion additions (Foraging Trip Detail Panel + Item Expansion design doc). No
+    // foundMaterials — Materials never appear mid-trip, only ever produced by crafting a Trinket
+    // afterward at a future Workshop room.
+    public Dictionary<ForagingFruitDefinition, int> foundFruits = new Dictionary<ForagingFruitDefinition, int>();
+    public Dictionary<(ForagingTrinketDefinition, ForagingLootRarity), int> foundTrinkets = new Dictionary<(ForagingTrinketDefinition, ForagingLootRarity), int>();
+    // Keyed by rarity alone, not an asset — Herb has a single generic ForagingMaterialDefinition (see
+    // ForagingMaterialType.Herb), so rarity is the only thing distinguishing one find from another.
+    public Dictionary<ForagingLootRarity, int> foundHerbs = new Dictionary<ForagingLootRarity, int>();
+    public int carriedCrystalCarrots;
+
+    public int enemiesSlain;
+
     public float elapsedTripTime;
     public float xpAccumulator;
     public bool manualRecallRequested;
 
-    // Carrots + found Potions + found Accessories all count toward the carry limit like a physical item
-    // would — Gold is deliberately excluded (see the design doc's "Loot economy" section: weightless
-    // coinage vs. bulky cargo).
-    public int CarriedItemCount => carriedCarrots + foundPotionCount + foundAccessories.Count;
+    // Trip detail panel's event log — last MaxLogEntries meaningful events, newest first. A tick where
+    // nothing triggered adds nothing here (see Foraging Trip Detail Panel design doc's "log only records
+    // meaningful events" decision).
+    public const int MaxLogEntries = 10;
+    public readonly List<string> recentLog = new List<string>();
+
+    public void AddLogEntry(string entry)
+    {
+        recentLog.Insert(0, entry);
+        if (recentLog.Count > MaxLogEntries) recentLog.RemoveAt(recentLog.Count - 1);
+    }
+
+    // Carrots + found Potions + found Accessories + new Item Expansion kinds all count toward the carry
+    // limit like a physical item would — Gold is deliberately excluded (see the design doc's "Loot
+    // economy" section: weightless coinage vs. bulky cargo).
+    public int CarriedItemCount => carriedCarrots + foundPotionCount + foundAccessories.Count
+        + foundFruits.Values.Sum() + foundTrinkets.Values.Sum() + foundHerbs.Values.Sum() + carriedCrystalCarrots;
 }
 
 // Orchestrates Foraging dispatch, the per-bunny trip simulation (tick timer -> loot/encounter/gate-check
@@ -112,7 +137,11 @@ public class ForagingManager : MonoBehaviour
 
     // ---------- DISPATCH ----------
 
-    public bool TryDispatch(NPCBunny bunny, ForagingLocationDefinition location, int potionCount, ForagingAccessoryDefinition accessory)
+    // No longer takes an accessory parameter — accessories are a persistent equip slot on the bunny now
+    // (BunnyInfoUI, via ForagingInventoryManager.TryEquipAccessory), not a fresh per-trip choice. This
+    // reads bunny.EquippedAccessory directly instead. Potions are unaffected — still a fresh per-trip
+    // withdrawal.
+    public bool TryDispatch(NPCBunny bunny, ForagingLocationDefinition location, int potionCount)
     {
         if (bunny == null || location == null) return false;
 
@@ -137,6 +166,7 @@ public class ForagingManager : MonoBehaviour
             return false;
         }
 
+        ForagingAccessoryDefinition accessory = bunny.EquippedAccessory;
         int carryCapacity = GetCarryCapacity(accessory);
         potionCount = Mathf.Clamp(potionCount, 0, carryCapacity);
 
@@ -148,18 +178,10 @@ public class ForagingManager : MonoBehaviour
             return false;
         }
 
-        if (accessory != null && !ForagingInventoryManager.Instance.TryWithdrawAccessory(accessory))
-        {
-            ForagingInventoryManager.Instance.ReturnPotions(potionCount);
-            NotificationToast.Instance?.Show($"No {accessory.displayName} available.");
-            return false;
-        }
-
         bool departed = bunny.DepartForForaging(GateQueueManager.Instance.EntranceRoom, GateQueueManager.Instance.GateExitPoint, foragingStagingPoint);
         if (!departed)
         {
             ForagingInventoryManager.Instance.ReturnPotions(potionCount);
-            if (accessory != null) ForagingInventoryManager.Instance.ReturnAccessory(accessory);
             NotificationToast.Instance?.Show($"{bunny.BunnyName} has no route to the gate right now.");
             return false;
         }
@@ -276,7 +298,11 @@ public class ForagingManager : MonoBehaviour
             ResolveLootFind(bunny, trip);
 
         if (Random.value < tier.goldFindChance)
-            trip.carriedGold += Random.Range(tier.minGoldPerFind, tier.maxGoldPerFind + 1);
+        {
+            int goldAmount = Random.Range(tier.minGoldPerFind, tier.maxGoldPerFind + 1);
+            trip.carriedGold += goldAmount;
+            trip.AddLogEntry($"Found {goldAmount} Gold");
+        }
 
         if (Random.value < encounterChancePerTick)
             ResolveEncounter(bunny, trip, tier);
@@ -303,12 +329,41 @@ public class ForagingManager : MonoBehaviour
         {
             case ForagingLootKind.Carrot:
                 trip.carriedCarrots += amount;
+                trip.AddLogEntry($"Found {amount} Carrot{(amount == 1 ? "" : "s")}");
                 break;
             case ForagingLootKind.Potion:
                 trip.foundPotionCount += amount;
+                trip.AddLogEntry($"Found {amount} Potion{(amount == 1 ? "" : "s")}");
                 break;
             case ForagingLootKind.Accessory:
-                if (entry.accessory != null) trip.foundAccessories.Add(entry.accessory);
+                if (entry.accessory != null)
+                {
+                    trip.foundAccessories.Add(entry.accessory);
+                    trip.AddLogEntry($"Found {entry.accessory.displayName}");
+                }
+                break;
+            case ForagingLootKind.Fruit:
+                if (entry.fruit != null)
+                {
+                    trip.foundFruits[entry.fruit] = trip.foundFruits.GetValueOrDefault(entry.fruit) + amount;
+                    trip.AddLogEntry($"Found {entry.fruit.displayName}");
+                }
+                break;
+            case ForagingLootKind.Trinket:
+                if (entry.trinket != null)
+                {
+                    var trinketKey = (entry.trinket, rarity);
+                    trip.foundTrinkets[trinketKey] = trip.foundTrinkets.GetValueOrDefault(trinketKey) + amount;
+                    trip.AddLogEntry($"Found {entry.trinket.displayName}");
+                }
+                break;
+            case ForagingLootKind.Herb:
+                trip.foundHerbs[rarity] = trip.foundHerbs.GetValueOrDefault(rarity) + amount;
+                trip.AddLogEntry($"Found {amount} {ForagingRarityDisplay.GetTierLabel(rarity)} Herb{(amount == 1 ? "" : "s")}");
+                break;
+            case ForagingLootKind.CrystalCarrot:
+                trip.carriedCrystalCarrots += amount;
+                trip.AddLogEntry($"Found {amount} Crystal Carrot{(amount == 1 ? "" : "s")}");
                 break;
         }
 
@@ -352,22 +407,36 @@ public class ForagingManager : MonoBehaviour
     {
         float effectivePower = bunny.Stats.Attack + bunny.Stats.Defense * defenseWeightInEffectivePower + bunny.Stats.Luck * luckWeightInEffectivePower;
         float winChance = effectivePower / Mathf.Max(1f, effectivePower + tier.enemyEffectivePower);
+        string enemyName = GetRandomEnemyName(trip.location);
 
         if (Random.value < winChance)
         {
             trip.xpAccumulator += tier.xpPerEnemyDefeated;
+            trip.enemiesSlain++;
+            trip.AddLogEntry($"Fought off {enemyName}");
             return;
         }
 
         int damage = Random.Range(tier.minDamageOnLoss, tier.maxDamageOnLoss + 1);
         bunny.ApplyForagingDamage(damage);
+        trip.AddLogEntry($"Was hurt by {enemyName} (-{damage} HP)");
 
         int lowHPThreshold = Mathf.Max(1, Mathf.RoundToInt(bunny.Stats.HP * lowHPPotionThreshold));
         if (bunny.HPValue <= lowHPThreshold && trip.potionsRemaining > 0)
         {
             trip.potionsRemaining--;
             bunny.HealHP(potionHealAmount);
+            trip.AddLogEntry("Used a Potion to heal");
         }
+    }
+
+    // Per-location flavor text only (Foraging Trip Detail Panel + Item Expansion design doc) — no new
+    // stats, no per-enemy difficulty. Falls back to a generic name for locations with no list authored yet.
+    private static string GetRandomEnemyName(ForagingLocationDefinition location)
+    {
+        if (location?.enemyNames != null && location.enemyNames.Count > 0)
+            return location.enemyNames[Random.Range(0, location.enemyNames.Count)];
+        return "a wild creature";
     }
 
     // Failing has no downside at all — a pure miss, no XP, nothing else (see 'Gate-checks'). Compares
@@ -385,7 +454,10 @@ public class ForagingManager : MonoBehaviour
             : (actual >= range.ceiling ? 1f : 0f);
 
         if (Random.value < passChance)
+        {
             trip.xpAccumulator += tier.xpPerGateCheckPassed;
+            trip.AddLogEntry($"Passed a {stat} test");
+        }
     }
 
     private static int GetStatValue(NPCBunny bunny, NatureStat stat)
@@ -429,11 +501,24 @@ public class ForagingManager : MonoBehaviour
         int potionsToReturn = trip.potionsRemaining + trip.foundPotionCount;
         if (potionsToReturn > 0) ForagingInventoryManager.Instance?.ReturnPotions(potionsToReturn);
 
-        if (trip.equippedAccessory != null)
-            ForagingInventoryManager.Instance?.ReturnAccessory(trip.equippedAccessory);
+        // No accessory return here anymore — it's a persistent equip slot on the bunny now (see
+        // NPCBunny.EquippedAccessory / ForagingInventoryManager.TryEquipAccessory), never withdrawn at
+        // dispatch time in the first place, so there's nothing to return at trip end.
 
         foreach (ForagingAccessoryDefinition found in trip.foundAccessories)
             ForagingInventoryManager.Instance?.AddAccessory(found, 1);
+
+        foreach (var kvp in trip.foundFruits)
+            ForagingInventoryManager.Instance?.AddFruit(kvp.Key, kvp.Value);
+
+        foreach (var kvp in trip.foundTrinkets)
+            ForagingInventoryManager.Instance?.AddTrinket(kvp.Key.Item1, kvp.Key.Item2, kvp.Value);
+
+        foreach (var kvp in trip.foundHerbs)
+            ForagingInventoryManager.Instance?.AddHerbLoot(kvp.Key, kvp.Value);
+
+        if (trip.carriedCrystalCarrots > 0)
+            ForagingInventoryManager.Instance?.AddCrystalCarrots(trip.carriedCrystalCarrots);
 
         bool typeMatch = trip.location.recommendedTypes != null && trip.location.recommendedTypes.Contains(bunny.Type);
         float finalXP = trip.xpAccumulator * (typeMatch ? typeMatchXPMultiplier : 1f);

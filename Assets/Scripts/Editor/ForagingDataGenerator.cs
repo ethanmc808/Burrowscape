@@ -19,6 +19,9 @@ public static class ForagingDataGenerator
     private const string LocationsFolder = "Assets/Data/Foraging Locations";
     private const string AccessoriesFolder = "Assets/Data/Foraging Accessories";
     private const string TierConfigPath = "Assets/Data/Foraging Difficulty Tiers.asset";
+    private const string FruitsFolder = "Assets/Data/Foraging Fruits";
+    private const string TrinketsFolder = "Assets/Data/Foraging Trinkets";
+    private const string MaterialsFolder = "Assets/Data/Foraging Materials";
 
     [MenuItem("Burrowscape/Generate Foraging Data")]
     public static void Generate()
@@ -26,10 +29,51 @@ public static class ForagingDataGenerator
         EnsureFolder("Assets/Data");
         EnsureFolder(LocationsFolder);
         EnsureFolder(AccessoriesFolder);
+        EnsureFolder(FruitsFolder);
+        EnsureFolder(TrinketsFolder);
+        EnsureFolder(MaterialsFolder);
 
         int created = 0;
 
         if (GenerateTierConfig()) created++;
+
+        // Item Expansion content (Foraging Trip Detail Panel + Item Expansion design doc) — assets only,
+        // not yet wired into any location's lootTable (which specific items appear where is Ethan's call,
+        // deliberately left for a separate authoring pass rather than guessed here).
+        GenerateFruit("Peach", BunnyStatType.HP, ref created);
+        GenerateFruit("Orange", BunnyStatType.Attack, ref created);
+        GenerateFruit("Apple", BunnyStatType.Defense, ref created);
+        GenerateFruit("Banana", BunnyStatType.Speed, ref created);
+        GenerateFruit("Strawberry", BunnyStatType.Luck, ref created);
+
+        ForagingMaterialDefinition cloth = GenerateMaterial("Cloth", ForagingMaterialType.Cloth, ref created);
+        ForagingMaterialDefinition metal = GenerateMaterial("Metal", ForagingMaterialType.Metal, ref created);
+        ForagingMaterialDefinition herb = GenerateMaterial("Herb", ForagingMaterialType.Herb, ref created);
+
+        // Draft 8/8/4 Common/Fine/Rare split, craftsInto assignments per the design doc's draft roster.
+        (string name, TrinketCraftFamily craftsInto)[] commonTrinkets =
+        {
+            ("Ball of Wool", TrinketCraftFamily.Cloth), ("Frayed Ribbon", TrinketCraftFamily.Cloth),
+            ("Bent Nail", TrinketCraftFamily.Metal), ("Rusted Washer", TrinketCraftFamily.Metal),
+            ("Acorn Cap", TrinketCraftFamily.None), ("Smooth River Stone", TrinketCraftFamily.None),
+            ("Dandelion Puff", TrinketCraftFamily.None), ("Dried Berry Cluster", TrinketCraftFamily.None),
+        };
+        (string name, TrinketCraftFamily craftsInto)[] fineTrinkets =
+        {
+            ("Woven Burlap Scrap", TrinketCraftFamily.Cloth), ("Patchwork Quilt Square", TrinketCraftFamily.Cloth),
+            ("Tarnished Silver Spoon", TrinketCraftFamily.Metal), ("Bent Brass Key", TrinketCraftFamily.Metal),
+            ("Polished Amber Chunk", TrinketCraftFamily.None), ("Mossy Pocket Watch", TrinketCraftFamily.None),
+            ("Iridescent Beetle Shell", TrinketCraftFamily.None), ("Cracked Marble", TrinketCraftFamily.None),
+        };
+        (string name, TrinketCraftFamily craftsInto)[] rareTrinkets =
+        {
+            ("Golden Chalice", TrinketCraftFamily.Metal), ("Silken Tapestry Fragment", TrinketCraftFamily.Cloth),
+            ("Starlight Dew Vial", TrinketCraftFamily.None), ("Fossilized Four-Leaf Clover", TrinketCraftFamily.None),
+        };
+
+        foreach (var (name, craftsInto) in commonTrinkets) GenerateTrinket(name, craftsInto, ref created);
+        foreach (var (name, craftsInto) in fineTrinkets) GenerateTrinket(name, craftsInto, ref created);
+        foreach (var (name, craftsInto) in rareTrinkets) GenerateTrinket(name, craftsInto, ref created);
 
         ForagingAccessoryDefinition backpack = GenerateAccessory("Backpack", "+carry capacity", ForagingAccessoryEffectType.CarryCapacityBonus, 10f, ref created);
         ForagingAccessoryDefinition binoculars = GenerateAccessory("Binoculars", "+rare loot chance", ForagingAccessoryEffectType.RareLootChanceBonus, 10f, ref created);
@@ -45,7 +89,8 @@ public static class ForagingDataGenerator
                 new ForagingLootEntry { rarity = ForagingLootRarity.Common, kind = ForagingLootKind.Carrot, minAmount = 1, maxAmount = 3 },
                 new ForagingLootEntry { rarity = ForagingLootRarity.Uncommon, kind = ForagingLootKind.Potion, minAmount = 1, maxAmount = 1 },
                 new ForagingLootEntry { rarity = ForagingLootRarity.Rare, kind = ForagingLootKind.Accessory, accessory = binoculars },
-            })) created++;
+            },
+            new List<string> { "a Crab", "a Seagull", "a Sand Worm" })) created++;
 
         if (GenerateLocation("Forest", 0, ForagingDifficultyTier.Weak,
             new List<BunnyType> { BunnyType.Plant },
@@ -54,7 +99,8 @@ public static class ForagingDataGenerator
                 new ForagingLootEntry { rarity = ForagingLootRarity.Common, kind = ForagingLootKind.Carrot, minAmount = 1, maxAmount = 3 },
                 new ForagingLootEntry { rarity = ForagingLootRarity.Uncommon, kind = ForagingLootKind.Potion, minAmount = 1, maxAmount = 1 },
                 new ForagingLootEntry { rarity = ForagingLootRarity.Rare, kind = ForagingLootKind.Accessory, accessory = backpack },
-            })) created++;
+            },
+            new List<string> { "a Fox", "a Wasp", "a Wild Boar" })) created++;
 
         if (GenerateLocation("Dungeon", 90, ForagingDifficultyTier.Tough,
             new List<BunnyType> { BunnyType.Dark },
@@ -62,7 +108,8 @@ public static class ForagingDataGenerator
             {
                 new ForagingLootEntry { rarity = ForagingLootRarity.Common, kind = ForagingLootKind.Potion, minAmount = 1, maxAmount = 2 },
                 new ForagingLootEntry { rarity = ForagingLootRarity.Rare, kind = ForagingLootKind.Accessory, accessory = lightningShoes },
-            })) created++;
+            },
+            new List<string> { "a Skeleton", "a Giant Spider", "a Shadow Wisp" })) created++;
 
         if (GenerateLocation("Volcano", 150, ForagingDifficultyTier.Brutal,
             new List<BunnyType> { BunnyType.Fire },
@@ -70,12 +117,16 @@ public static class ForagingDataGenerator
             {
                 new ForagingLootEntry { rarity = ForagingLootRarity.Common, kind = ForagingLootKind.Potion, minAmount = 1, maxAmount = 2 },
                 new ForagingLootEntry { rarity = ForagingLootRarity.Rare, kind = ForagingLootKind.Accessory, accessory = backpack },
-            })) created++;
+            },
+            new List<string> { "an Ember Hound", "a Magma Slug", "an Ash Wraith" })) created++;
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log($"ForagingDataGenerator: created {created} new asset(s) (existing assets at the same paths were left untouched).");
+        Debug.Log($"ForagingDataGenerator: created {created} new asset(s) (existing assets at the same paths were left untouched). " +
+            $"Remember to assign {cloth?.name}/{metal?.name}/{herb?.name} as ForagingInventoryManager's clothMaterial/metalMaterial/herbMaterial " +
+            "in the Inspector — that's a scene reference this generator can't wire. None of the new Fruit/Trinket/Herb-kind loot entries are " +
+            "placed in any location's lootTable yet either — which items appear where is a separate authoring pass.");
     }
 
     private static void EnsureFolder(string path)
@@ -162,8 +213,53 @@ public static class ForagingDataGenerator
         return accessory;
     }
 
+    private static ForagingFruitDefinition GenerateFruit(string displayName, BunnyStatType boostedStat, ref int createdCounter)
+    {
+        string path = $"{FruitsFolder}/{displayName}.asset";
+        ForagingFruitDefinition existing = AssetDatabase.LoadAssetAtPath<ForagingFruitDefinition>(path);
+        if (existing != null) return existing;
+
+        ForagingFruitDefinition fruit = ScriptableObject.CreateInstance<ForagingFruitDefinition>();
+        fruit.displayName = displayName;
+        fruit.boostedStat = boostedStat;
+
+        AssetDatabase.CreateAsset(fruit, path);
+        createdCounter++;
+        return fruit;
+    }
+
+    private static ForagingMaterialDefinition GenerateMaterial(string displayName, ForagingMaterialType materialType, ref int createdCounter)
+    {
+        string path = $"{MaterialsFolder}/{displayName}.asset";
+        ForagingMaterialDefinition existing = AssetDatabase.LoadAssetAtPath<ForagingMaterialDefinition>(path);
+        if (existing != null) return existing;
+
+        ForagingMaterialDefinition material = ScriptableObject.CreateInstance<ForagingMaterialDefinition>();
+        material.displayName = displayName;
+        material.materialType = materialType;
+
+        AssetDatabase.CreateAsset(material, path);
+        createdCounter++;
+        return material;
+    }
+
+    private static ForagingTrinketDefinition GenerateTrinket(string displayName, TrinketCraftFamily craftsInto, ref int createdCounter)
+    {
+        string path = $"{TrinketsFolder}/{displayName}.asset";
+        ForagingTrinketDefinition existing = AssetDatabase.LoadAssetAtPath<ForagingTrinketDefinition>(path);
+        if (existing != null) return existing;
+
+        ForagingTrinketDefinition trinket = ScriptableObject.CreateInstance<ForagingTrinketDefinition>();
+        trinket.displayName = displayName;
+        trinket.craftsInto = craftsInto;
+
+        AssetDatabase.CreateAsset(trinket, path);
+        createdCounter++;
+        return trinket;
+    }
+
     private static bool GenerateLocation(string displayName, int populationThreshold, ForagingDifficultyTier tier,
-        List<BunnyType> recommendedTypes, List<ForagingLootEntry> lootTable)
+        List<BunnyType> recommendedTypes, List<ForagingLootEntry> lootTable, List<string> enemyNames = null)
     {
         string path = $"{LocationsFolder}/{displayName}.asset";
         if (AssetDatabase.LoadAssetAtPath<ForagingLocationDefinition>(path) != null) return false;
@@ -174,6 +270,7 @@ public static class ForagingDataGenerator
         location.difficultyTier = tier;
         location.recommendedTypes = recommendedTypes;
         location.lootTable = lootTable;
+        location.enemyNames = enemyNames ?? new List<string>();
 
         AssetDatabase.CreateAsset(location, path);
         return true;

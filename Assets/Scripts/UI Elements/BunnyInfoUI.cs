@@ -69,6 +69,15 @@ public class BunnyInfoUI : MonoBehaviour
     [Tooltip("Optional — hidden entirely if not wired up. Skips straight to ForagingDispatchUI's Location step, since the bunny is already chosen.")]
     [SerializeField] private Button sendForagingButton;
 
+    [Header("Foraging Accessory Slot (persistent equip — see Foraging Trip Detail Panel + Item Expansion design doc)")]
+    [Tooltip("Shows bunny.EquippedAccessory's icon; empty/hidden when nothing's equipped. Clicking toggles accessoryPickerRoot.")]
+    [SerializeField] private Button accessorySlotButton;
+    [SerializeField] private Image accessorySlotIcon;
+    [Tooltip("Simple popup list, toggled open/closed by accessorySlotButton — rebuilt from ForagingInventoryManager.GetAccessoriesInStock() every time it opens.")]
+    [SerializeField] private GameObject accessoryPickerRoot;
+    [SerializeField] private Transform accessoryPickerListContainer;
+    [SerializeField] private GameObject accessoryButtonPrefab; // Button + TextMeshProUGUI child
+
     private NPCBunny currentBunny;
 
     private void Awake()
@@ -82,6 +91,11 @@ public class BunnyInfoUI : MonoBehaviour
 
         if (sendForagingButton != null)
             sendForagingButton.onClick.AddListener(OnSendForagingClicked);
+
+        if (accessorySlotButton != null)
+            accessorySlotButton.onClick.AddListener(ToggleAccessoryPicker);
+        if (accessoryPickerRoot != null)
+            accessoryPickerRoot.SetActive(false);
     }
 
     private void Update()
@@ -103,6 +117,7 @@ public class BunnyInfoUI : MonoBehaviour
             sendForagingButton.gameObject.SetActive(CanShowSendForagingButton());
 
         RefreshBars();
+        RefreshAccessorySlot();
     }
 
     public void OpenForBunny(NPCBunny bunny)
@@ -141,12 +156,15 @@ public class BunnyInfoUI : MonoBehaviour
 
         panelRoot.SetActive(true);
         RefreshBars();
+        if (accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
+        RefreshAccessorySlot();
     }
 
     public void Close()
     {
         panelRoot.SetActive(false);
         currentBunny = null;
+        if (accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
     }
 
     private void RefreshBars()
@@ -155,6 +173,59 @@ public class BunnyInfoUI : MonoBehaviour
         thirstBar.fillAmount = currentBunny.ThirstValue / 100f;
         energyBar.fillAmount = currentBunny.EnergyValue / 100f;
         moodBar.fillAmount = currentBunny.MoodValue / 100f;
+    }
+
+    // ---------- Foraging accessory slot (persistent equip — see BunnyInfoUI's Header comment above) ----------
+
+    private void RefreshAccessorySlot()
+    {
+        if (accessorySlotIcon == null || currentBunny == null) return;
+
+        ForagingAccessoryDefinition equipped = currentBunny.EquippedAccessory;
+        accessorySlotIcon.sprite = equipped != null ? equipped.icon : null;
+        accessorySlotIcon.enabled = equipped != null && equipped.icon != null;
+    }
+
+    private void ToggleAccessoryPicker()
+    {
+        if (accessoryPickerRoot == null) return;
+
+        bool opening = !accessoryPickerRoot.activeSelf;
+        accessoryPickerRoot.SetActive(opening);
+        if (opening) RefreshAccessoryPicker();
+    }
+
+    private void RefreshAccessoryPicker()
+    {
+        if (accessoryPickerListContainer == null || accessoryButtonPrefab == null) return;
+
+        foreach (Transform child in accessoryPickerListContainer)
+            Destroy(child.gameObject);
+
+        // "None" option first, so an equipped accessory can be unequipped back to stock.
+        GameObject noneObj = Instantiate(accessoryButtonPrefab, accessoryPickerListContainer);
+        noneObj.GetComponentInChildren<TextMeshProUGUI>().text = "None";
+        noneObj.GetComponent<Button>().onClick.AddListener(() => OnAccessoryPicked(null));
+
+        if (ForagingInventoryManager.Instance == null) return;
+
+        // Only accessories actually held in the base stockpile are offered — same "stock is the catalog"
+        // approach ForagingDispatchUI's old picker used.
+        foreach (ForagingAccessoryDefinition accessory in ForagingInventoryManager.Instance.GetAccessoriesInStock())
+        {
+            GameObject buttonObj = Instantiate(accessoryButtonPrefab, accessoryPickerListContainer);
+            buttonObj.GetComponentInChildren<TextMeshProUGUI>().text = accessory.displayName;
+            buttonObj.GetComponent<Button>().onClick.AddListener(() => OnAccessoryPicked(accessory));
+        }
+    }
+
+    private void OnAccessoryPicked(ForagingAccessoryDefinition accessory)
+    {
+        if (currentBunny == null || ForagingInventoryManager.Instance == null) return;
+
+        ForagingInventoryManager.Instance.TryEquipAccessory(currentBunny, accessory);
+        RefreshAccessorySlot();
+        if (accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
     }
 
     // Green "+" for the stat Nature boosts, red "-" for the one it lowers, plain number otherwise --

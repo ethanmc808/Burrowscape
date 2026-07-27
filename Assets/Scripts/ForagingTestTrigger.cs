@@ -9,6 +9,7 @@ public class ForagingTestTrigger : MonoBehaviour
     [SerializeField] private NPCBunny bunnyToTest;
     [SerializeField] private ForagingLocationDefinition locationToTest;
     [SerializeField] private int potionCount = 0;
+    [Tooltip("Accessories are a persistent equip slot now (see NPCBunny.EquippedAccessory) — assigning this here equips it via ForagingInventoryManager.TryEquipAccessory right before dispatch, same as BunnyInfoUI would, rather than being passed to TryDispatch directly.")]
     [SerializeField] private ForagingAccessoryDefinition accessoryToTest;
 
     [ContextMenu("Dispatch Foraging")]
@@ -25,7 +26,10 @@ public class ForagingTestTrigger : MonoBehaviour
             return;
         }
 
-        bool dispatched = ForagingManager.Instance.TryDispatch(bunnyToTest, locationToTest, potionCount, accessoryToTest);
+        if (accessoryToTest != null && ForagingInventoryManager.Instance != null)
+            ForagingInventoryManager.Instance.TryEquipAccessory(bunnyToTest, accessoryToTest);
+
+        bool dispatched = ForagingManager.Instance.TryDispatch(bunnyToTest, locationToTest, potionCount);
         Debug.Log($"ForagingTestTrigger: TryDispatch({bunnyToTest.name}, {locationToTest.displayName}) -> {dispatched}");
     }
 
@@ -44,7 +48,7 @@ public class ForagingTestTrigger : MonoBehaviour
 
         ForagingTripState trip = ForagingManager.Instance != null ? ForagingManager.Instance.GetTripState(bunnyToTest) : null;
         string tripInfo = trip != null
-            ? $"location={trip.location?.displayName}, elapsed={trip.elapsedTripTime:F1}s, carried={trip.CarriedItemCount}/{trip.carryCapacity}, gold={trip.carriedGold}, xp={trip.xpAccumulator:F1}, potionsRemaining={trip.potionsRemaining}, recallRequested={trip.manualRecallRequested}"
+            ? $"location={trip.location?.displayName}, elapsed={trip.elapsedTripTime:F1}s, carried={trip.CarriedItemCount}/{trip.carryCapacity}, gold={trip.carriedGold}, xp={trip.xpAccumulator:F1}, potionsRemaining={trip.potionsRemaining}, enemiesSlain={trip.enemiesSlain}, recallRequested={trip.manualRecallRequested}, log=[{string.Join(" | ", trip.recentLog)}]"
             : "no active trip";
 
         Debug.Log($"ForagingTestTrigger: {bunnyToTest.name} CurrentState={bunnyToTest.CurrentState}, HP={bunnyToTest.HPValue}/{bunnyToTest.Stats.HP}, Energy={bunnyToTest.EnergyValue:F1}, returnCountdownActive={bunnyToTest.IsForagingReturnCountdownActive}, trip=({tripInfo})");

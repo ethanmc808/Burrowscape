@@ -30,6 +30,8 @@ public class ForagingScreenUI : MonoBehaviour
     [SerializeField] private GameObject activeTripRowPrefab; // prefab with a ForagingActiveTripRowUI component
     [Tooltip("Hidden entirely until a row is selected — see UpdateReturnControls.")]
     [SerializeField] private Button returnButton;
+    [Tooltip("Shown/hidden alongside row selection — see OnRowSelected/RefreshActiveTrips/OnReturnClicked/Close. See the Foraging Trip Detail Panel + Item Expansion design doc.")]
+    [SerializeField] private ForagingTripDetailUI detailUI;
     [Tooltip("How often the picker/active-trip lists rebuild while this screen is open — throttled rather than every frame, since HP/Energy don't need tighter-than-this granularity and rebuilding the list is a Destroy+Instantiate churn.")]
     [SerializeField] private float listRefreshInterval = 0.5f;
     private float listRefreshTimer;
@@ -60,6 +62,7 @@ public class ForagingScreenUI : MonoBehaviour
         listRefreshTimer = 0f;
         selectedForagingBunny = null;
         selectedPickerBunny = null;
+        detailUI?.Hide();
         RefreshPicker();
         RefreshActiveTrips();
     }
@@ -67,6 +70,7 @@ public class ForagingScreenUI : MonoBehaviour
     public void Close()
     {
         panelRoot.SetActive(false);
+        detailUI?.Hide();
     }
 
     // Throttled rebuild (see listRefreshInterval) rather than every frame — HP/Energy/carry-fullness
@@ -142,7 +146,11 @@ public class ForagingScreenUI : MonoBehaviour
 
         // The selected bunny may have finished its trip (auto-return) between refreshes without ever
         // being recalled here — drop the stale selection rather than leaving Return enabled for nothing.
-        if (!selectedStillActive) selectedForagingBunny = null;
+        if (!selectedStillActive)
+        {
+            selectedForagingBunny = null;
+            detailUI?.Hide();
+        }
 
         UpdateReturnControls();
     }
@@ -151,6 +159,7 @@ public class ForagingScreenUI : MonoBehaviour
     {
         selectedForagingBunny = bunny;
         RefreshActiveTrips();
+        detailUI?.Show(bunny, ForagingManager.Instance?.GetTripState(bunny));
     }
 
     // The row's own highlight (see ForagingActiveTripRowUI) already shows which bunny is selected — the
@@ -170,6 +179,7 @@ public class ForagingScreenUI : MonoBehaviour
 
         ForagingManager.Instance.RecallBunny(selectedForagingBunny);
         selectedForagingBunny = null;
+        detailUI?.Hide();
         RefreshActiveTrips();
     }
 }

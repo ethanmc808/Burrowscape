@@ -168,6 +168,15 @@ public class NPCBunny : MonoBehaviour
     public string BunnyName { get; private set; } = "Unnamed";
     public BunnyType Type { get; private set; }
     public Sprite TypeIcon { get; private set; }
+    // Exposed for ForagingPreviewStage, which needs this bunny's own prefab to spawn a decorative
+    // walking duplicate — not used anywhere else that cares about identity, just art lookup.
+    public BunnyTypeDefinition TypeDefinition => typeDefinition;
+    // Persistent Foraging accessory slot (Foraging Trip Detail Panel + Item Expansion design doc) —
+    // equipped/unequipped anytime via BunnyInfoUI while resident, unlike potions which stay a fresh
+    // per-trip choice. Stock withdraw/return bookkeeping lives in ForagingInventoryManager.TryEquipAccessory;
+    // this is deliberately just a dumb reference holder.
+    public ForagingAccessoryDefinition EquippedAccessory { get; private set; }
+    public void SetEquippedAccessory(ForagingAccessoryDefinition accessory) => EquippedAccessory = accessory;
     public int Level { get; private set; } = 1;
     public BunnyStats Stats { get; private set; }
     public IReadOnlyList<BunnyTraitDefinition> Traits { get; private set; } = new List<BunnyTraitDefinition>();
@@ -995,6 +1004,54 @@ public class NPCBunny : MonoBehaviour
         ActivePassives = BunnyPassiveResolver.ResolvePassives(typeDefinition, Level);
 
         currentHP = Mathf.Clamp(currentHP + (Stats.HP - previousMaxHP), 1, Stats.HP);
+    }
+
+    // First real EV-earning source (Fruits, via ForagingInventoryManager.TryFeedFruit) — MaxTotalEV has
+    // sat unenforced on this class since the Bunny Stat System Redesign, waiting for exactly this. Clamps
+    // to BOTH the per-stat cap (256) and the total-across-all-5 cap (MaxTotalEV) — granting less than
+    // requested rather than overflowing either. Re-resolves Stats the same way LevelUp already does
+    // (BunnyStatCalculator.Resolve already divides EV by 4 internally — no separate division needed here).
+    public void AddEV(BunnyStatType stat, int amount)
+    {
+        if (amount <= 0 || typeDefinition == null) return;
+
+        int currentTotal = EVHP + EVAttack + EVDefense + EVSpeed + EVLuck;
+        int currentStat = GetEV(stat);
+        int actualAmount = Mathf.Max(0, Mathf.Min(amount, Mathf.Min(256 - currentStat, MaxTotalEV - currentTotal)));
+        if (actualAmount <= 0) return;
+
+        SetEV(stat, currentStat + actualAmount);
+
+        int previousEVMaxHP = Stats.HP;
+        Stats = BunnyStatCalculator.Resolve(typeDefinition, Level,
+            IVHP, IVAttack, IVDefense, IVSpeed, IVLuck,
+            EVHP, EVAttack, EVDefense, EVSpeed, EVLuck);
+        ApplyNatureEffects();
+        currentHP = Mathf.Clamp(currentHP + (Stats.HP - previousEVMaxHP), 1, Stats.HP);
+    }
+
+    private int GetEV(BunnyStatType stat)
+    {
+        switch (stat)
+        {
+            case BunnyStatType.HP: return EVHP;
+            case BunnyStatType.Attack: return EVAttack;
+            case BunnyStatType.Defense: return EVDefense;
+            case BunnyStatType.Speed: return EVSpeed;
+            default: return EVLuck;
+        }
+    }
+
+    private void SetEV(BunnyStatType stat, int value)
+    {
+        switch (stat)
+        {
+            case BunnyStatType.HP: EVHP = value; break;
+            case BunnyStatType.Attack: EVAttack = value; break;
+            case BunnyStatType.Defense: EVDefense = value; break;
+            case BunnyStatType.Speed: EVSpeed = value; break;
+            default: EVLuck = value; break;
+        }
     }
 
     // Foraging is the first (and, for now, only) source of XP — see Foraging_DesignDoc.md's "XP system"

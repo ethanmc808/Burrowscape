@@ -7,6 +7,11 @@ public struct BunnyStats
     public int HP, Attack, Defense, Speed, Luck;
 }
 
+// All 5 core stats, including HP — deliberately separate from NatureStat (BunnyNature.cs), which only
+// covers Attack/Defense/Speed/Luck since Nature/Zodiac never affects HP anywhere in the resolver below.
+// Used by ForagingFruitDefinition/NPCBunny.AddEV, where HP needs to be a selectable target.
+public enum BunnyStatType { HP, Attack, Defense, Speed, Luck }
+
 // Resolves a BunnyTypeDefinition's Base stats plus this bunny's IV/EV individuality layer into actual
 // in-game stats at a given level — the modified Pokemon-style formula from the Bunny Stat System
 // Redesign design doc. Deliberately stops short of Nature (Zodiac): that's a separate second pass

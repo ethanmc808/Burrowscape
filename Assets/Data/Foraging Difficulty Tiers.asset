@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 413bc0605e287564cacde02285949be4, type: 3}
+  m_Name: Foraging Difficulty Tiers
+  m_EditorClassIdentifier: Assembly-CSharp::ForagingDifficultyTierConfig
+  tiers:
+  - tier: 0
+    enemyEffectivePower: 8
+    minDamageOnLoss: 2
+    maxDamageOnLoss: 5
+    xpPerEnemyDefeated: 4
+    attackCheck:
+      floor: 5
+      ceiling: 25
+    defenseCheck:
+      floor: 5
+      ceiling: 25
+    speedCheck:
+      floor: 5
+      ceiling: 25
+    luckCheck:
+      floor: 5
+      ceiling: 25
+    xpPerGateCheckPassed: 4
+    goldFindChance: 0.15
+    minGoldPerFind: 1
+    maxGoldPerFind: 3
+  - tier: 1
+    enemyEffectivePower: 15
+    minDamageOnLoss: 4
+    maxDamageOnLoss: 9
+    xpPerEnemyDefeated: 7
+    attackCheck:
+      floor: 10
+      ceiling: 35
+    defenseCheck:
+      floor: 10
+      ceiling: 35
+    speedCheck:
+      floor: 10
+      ceiling: 35
+    luckCheck:
+      floor: 10
+      ceiling: 35
+    xpPerGateCheckPassed: 7
+    goldFindChance: 0.15
+    minGoldPerFind: 2
+    maxGoldPerFind: 6
+  - tier: 2
+    enemyEffectivePower: 26
+    minDamageOnLoss: 7
+    maxDamageOnLoss: 14
+    xpPerEnemyDefeated: 12
+    attackCheck:
+      floor: 18
+      ceiling: 45
+    defenseCheck:
+      floor: 18
+      ceiling: 45
+    speedCheck:
+      floor: 18
+      ceiling: 45
+    luckCheck:
+      floor: 18
+      ceiling: 45
+    xpPerGateCheckPassed: 12
+    goldFindChance: 0.15
+    minGoldPerFind: 4
+    maxGoldPerFind: 10
+  - tier: 3
+    enemyEffectivePower: 42
+    minDamageOnLoss: 10
+    maxDamageOnLoss: 22
+    xpPerEnemyDefeated: 20
+    attackCheck:
+      floor: 28
+      ceiling: 60
+    defenseCheck:
+      floor: 28
+      ceiling: 60
+    speedCheck:
+      floor: 28
+      ceiling: 60
+    luckCheck:
+      floor: 28
+      ceiling: 60
+    xpPerGateCheckPassed: 20
+    goldFindChance: 0.15
+    minGoldPerFind: 8
+    maxGoldPerFind: 18

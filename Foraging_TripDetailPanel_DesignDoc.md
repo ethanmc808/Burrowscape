@@ -160,7 +160,8 @@ public List<string> enemyNames = new List<string>();
 ```csharp
 public enum ForagingLootKind { Carrot, Potion, Accessory, Fruit, Trinket, Herb, CrystalCarrot }
 ```
-`Material` deliberately absent — never rolled, only crafted.
+`Material` deliberately absent as a *kind* — Cloth/Metal are never rolled, only crafted. Herb IS a
+`ForagingMaterialType` (see below) but IS rolled directly, since it needs no crafting step.
 
 ### `ForagingLootEntry` (extended)
 ```csharp
@@ -168,10 +169,10 @@ public enum ForagingLootKind { Carrot, Potion, Accessory, Fruit, Trinket, Herb, 
 public ForagingFruitDefinition fruit;
 [Tooltip("Only used when kind == Trinket.")]
 public ForagingTrinketDefinition trinket;
-[Tooltip("Only used when kind == Herb.")]
-public ForagingHerbDefinition herb;
 ```
-`CrystalCarrot` needs no reference field — reuses `minAmount`/`maxAmount` like Carrot does.
+`Herb` needs no reference field of its own — same as `CrystalCarrot`, it reuses `minAmount`/`maxAmount`
+and the entry's own `rarity`, since there's only one generic Herb material asset (rarity alone identifies
+the tier granted).
 
 ### New ScriptableObjects (mirror `ForagingAccessoryDefinition`'s one-asset-per-entry shape)
 
@@ -204,38 +205,50 @@ public class ForagingTrinketDefinition : ScriptableObject
 }
 ```
 
-**`ForagingHerbDefinition.cs`**
+**`ForagingMaterialDefinition.cs`** (one asset per *type*, not per tier — Cloth, Metal, Herb: 3 assets total)
 ```csharp
-[CreateAssetMenu(fileName = "ForagingHerbDefinition", menuName = "Burrowscape/Foraging Herb Definition")]
-public class ForagingHerbDefinition : ScriptableObject
-{
-    public string displayName;
-    public Sprite icon;
-    [TextArea] public string description;
-}
-```
-
-**`ForagingMaterialDefinition.cs`** (one asset per *type*, not per tier — Cloth, Metal only)
-```csharp
-public enum ForagingMaterialType { Cloth, Metal }
+public enum ForagingMaterialType { Cloth, Metal, Herb }
 
 [CreateAssetMenu(fileName = "ForagingMaterialDefinition", menuName = "Burrowscape/Foraging Material Definition")]
 public class ForagingMaterialDefinition : ScriptableObject
 {
-    public string displayName; // "Cloth", "Metal" — tier prefix added at display time
-    public Sprite icon;
+    public string displayName; // "Cloth", "Metal", "Herb" — tier prefix added at display time
     [TextArea] public string description;
     public ForagingMaterialType materialType;
+
+    // One asset spans all 3 rarity tiers, so it needs 3 separate icons, not 1 — a Rare Cloth should be
+    // able to look visually distinct from a Common Cloth, not just carry a different text label.
+    public Sprite commonIcon;
+    public Sprite fineIcon;
+    public Sprite rareIcon;
+    public Sprite GetIcon(ForagingLootRarity rarity) => rarity switch
+    {
+        ForagingLootRarity.Uncommon => fineIcon,
+        ForagingLootRarity.Rare => rareIcon,
+        _ => commonIcon,
+    };
 }
 ```
 Display naming for a tiered material (presentation-layer only, e.g. building "Fine Cloth"): Common →
-"Common", Uncommon → "Fine", Rare → "Rare".
+"Common", Uncommon → "Fine", Rare → "Rare". `ForagingInventoryManager` exposes `HerbMaterial` (read-only)
+so `ForagingTripDetailUI`'s rarity-only mid-trip Herb tally can read the same tier icons rather than
+needing the same art assigned a second time as a fixed sprite.
+
+**Herb has no separate identity ScriptableObject** (the earlier `ForagingHerbDefinition` — Mint
+Leaf/Silverwort/Moonpetal — was retired). Ethan's correction: Herb's rarity system should match Cloth/Metal
+exactly (3 tiers, tracked the same way in `materialStock`); the only real difference is that Herb is
+*already usable as found* (granted directly by a Herb-kind loot roll), while Cloth/Metal are only ever
+produced by crafting a same-rarity Trinket down at the Workshop. So Herb became a third
+`ForagingMaterialType`, one generic asset, exactly like Cloth/Metal — not three named flavor items without
+tier tracking.
 
 ### `ForagingTripState` (extended)
 ```csharp
 public Dictionary<ForagingFruitDefinition, int> foundFruits = new Dictionary<ForagingFruitDefinition, int>();
 public Dictionary<(ForagingTrinketDefinition, ForagingLootRarity), int> foundTrinkets = new Dictionary<(ForagingTrinketDefinition, ForagingLootRarity), int>();
-public Dictionary<ForagingHerbDefinition, int> foundHerbs = new Dictionary<ForagingHerbDefinition, int>();
+// Keyed by rarity alone, not an asset — Herb has a single generic ForagingMaterialDefinition, so rarity
+// is the only thing distinguishing one find from another.
+public Dictionary<ForagingLootRarity, int> foundHerbs = new Dictionary<ForagingLootRarity, int>();
 public int carriedCrystalCarrots;
 
 public int enemiesSlain;
@@ -288,21 +301,24 @@ Same "plain ledger, nothing inferred" shape as existing `potionStock`/`accessory
 [SerializeField] private int crystalCarrotStock = 0;
 public int CrystalCarrotStock => crystalCarrotStock;
 
-private readonly Dictionary<ForagingHerbDefinition, int> herbStock = new Dictionary<ForagingHerbDefinition, int>();
 private readonly Dictionary<ForagingFruitDefinition, int> fruitStock = new Dictionary<ForagingFruitDefinition, int>();
 // Keyed by (trinket, rarity found at) — the SAME trinket asset could in principle sit in more than one
 // location's table at more than one rarity band, and rarity-at-find-time is what it crafts into.
 private readonly Dictionary<(ForagingTrinketDefinition, ForagingLootRarity), int> trinketStock = new Dictionary<(ForagingTrinketDefinition, ForagingLootRarity), int>();
-// Populated ONLY by TryCraftTrinketIntoMaterial, never by foraging directly.
+// Herb (found directly) AND Cloth/Metal (only via crafting a Trinket) all live here — see
+// ForagingMaterialType.
 private readonly Dictionary<(ForagingMaterialDefinition, ForagingLootRarity), int> materialStock = new Dictionary<(ForagingMaterialDefinition, ForagingLootRarity), int>();
 
 [SerializeField] private ForagingMaterialDefinition clothMaterial;
 [SerializeField] private ForagingMaterialDefinition metalMaterial;
+[SerializeField] private ForagingMaterialDefinition herbMaterial;
 ```
 
 New methods (`Add*`/`Get*Count` pattern, matching existing `AddAccessory`/`GetAccessoryCount`):
-`AddHerb`/`GetHerbCount`, `AddFruit`/`GetFruitCount`, `AddTrinket`/`GetTrinketCount`,
-`AddMaterial`/`GetMaterialCount`, `AddCrystalCarrots`.
+`AddFruit`/`GetFruitCount`, `AddTrinket`/`GetTrinketCount`, `AddMaterial`/`GetMaterialCount`,
+`AddCrystalCarrots`, plus `AddHerbLoot(rarity, amount)` — Herb's counterpart to
+`TryCraftTrinketIntoMaterial`'s Cloth/Metal output, just calling `AddMaterial(herbMaterial, rarity, amount)`
+directly since Herb needs no Trinket/crafting step in between.
 
 ```csharp
 public bool TryFeedFruit(NPCBunny bunny, ForagingFruitDefinition fruit)
@@ -353,11 +369,8 @@ case ForagingLootKind.Trinket:
     }
     break;
 case ForagingLootKind.Herb:
-    if (entry.herb != null)
-    {
-        trip.foundHerbs[entry.herb] = trip.foundHerbs.GetValueOrDefault(entry.herb) + amount;
-        trip.AddLogEntry($"Found {entry.herb.displayName}");
-    }
+    trip.foundHerbs[rarity] = trip.foundHerbs.GetValueOrDefault(rarity) + amount;
+    trip.AddLogEntry($"Found {amount} {ForagingRarityDisplay.GetTierLabel(rarity)} Herb{(amount == 1 ? "" : "s")}");
     break;
 case ForagingLootKind.CrystalCarrot:
     trip.carriedCrystalCarrots += amount;
@@ -387,7 +400,7 @@ listed together below for one complete reference:
 ```csharp
 foreach (var kvp in trip.foundFruits) ForagingInventoryManager.Instance?.AddFruit(kvp.Key, kvp.Value);
 foreach (var kvp in trip.foundTrinkets) ForagingInventoryManager.Instance?.AddTrinket(kvp.Key.Item1, kvp.Key.Item2, kvp.Value);
-foreach (var kvp in trip.foundHerbs) ForagingInventoryManager.Instance?.AddHerb(kvp.Key, kvp.Value);
+foreach (var kvp in trip.foundHerbs) ForagingInventoryManager.Instance?.AddHerbLoot(kvp.Key, kvp.Value);
 if (trip.carriedCrystalCarrots > 0) ForagingInventoryManager.Instance?.AddCrystalCarrots(trip.carriedCrystalCarrots);
 ```
 
