@@ -15,5 +15,6 @@ MonoBehaviour:
   displayName: Lightning Shoes
   icon: {fileID: 21300000, guid: a47426ba2625a114d9e3b305f00c287a, type: 3}
   description: +return speed
+  rarity: 3
   effectType: 2
   magnitude: 0.5

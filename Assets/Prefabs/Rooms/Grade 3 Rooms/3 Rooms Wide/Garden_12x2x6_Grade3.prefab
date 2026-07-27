@@ -823,7 +823,7 @@ MonoBehaviour:
     waypoints: []
   footprintWidth: 12
   grade: 3
-  gradeMultiplier: 1
+  gradeMultiplier: 2
   roomTypeId: Garden
   farmingSpots:
   - {fileID: 87078019840192008}

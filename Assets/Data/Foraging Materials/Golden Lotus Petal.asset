@@ -10,11 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 28bf634db8857dc42a8a30994cc1614c, type: 3}
-  m_Name: Metal
+  m_Name: Golden Lotus Petal
   m_EditorClassIdentifier: Assembly-CSharp::ForagingMaterialDefinition
-  displayName: Metal
-  description: Used in accessory crafting.
-  materialType: 1
-  commonIcon: {fileID: 21300000, guid: 69acb2e67dc6b594d886fbd194bea46d, type: 3}
-  fineIcon: {fileID: 21300000, guid: 3da7f846f6a261440a7157f750f6a1a2, type: 3}
-  rareIcon: {fileID: 21300000, guid: 1e7aad12ebfc9e34fb94b42e83a66ad1, type: 3}
+  displayName: Golden Lotus Petal
+  icon: {fileID: 0}
+  description: 
+  rarity: 4
+  materialType: 2

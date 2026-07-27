@@ -849,7 +849,7 @@ MonoBehaviour:
     - {fileID: 7068982589318164303}
   footprintWidth: 12
   grade: 3
-  gradeMultiplier: 1
+  gradeMultiplier: 2
   roomTypeId: CoalRoom
   shovelingSpots:
   - {fileID: 3929376181173281071}

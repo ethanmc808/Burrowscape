@@ -24,7 +24,9 @@ public class ForagingTripState
     // foundMaterials — Materials never appear mid-trip, only ever produced by crafting a Trinket
     // afterward at a future Workshop room.
     public Dictionary<ForagingFruitDefinition, int> foundFruits = new Dictionary<ForagingFruitDefinition, int>();
-    public Dictionary<(ForagingTrinketDefinition, ForagingLootRarity), int> foundTrinkets = new Dictionary<(ForagingTrinketDefinition, ForagingLootRarity), int>();
+    // Rarity is fixed on the Trinket asset now (see Rarity_DesignDoc.md), so trinket identity alone is
+    // enough to key this — no separate rarity dimension needed.
+    public Dictionary<ForagingTrinketDefinition, int> foundTrinkets = new Dictionary<ForagingTrinketDefinition, int>();
     // Keyed by rarity alone, not an asset — Herb has a single generic ForagingMaterialDefinition (see
     // ForagingMaterialType.Herb), so rarity is the only thing distinguishing one find from another.
     public Dictionary<ForagingLootRarity, int> foundHerbs = new Dictionary<ForagingLootRarity, int>();
@@ -89,14 +91,18 @@ public class ForagingManager : MonoBehaviour
     [SerializeField] private float xpPerCommonItem = 1f;
     [SerializeField] private float xpPerUncommonItem = 3f;
     [SerializeField] private float xpPerRareItem = 8f;
+    [SerializeField] private float xpPerSuperRareItem = 15f;
+    [SerializeField] private float xpPerMythicalItem = 30f;
     [Tooltip("Flat multiplier applied to the WHOLE trip's total XP (all four sources combined) if the bunny's Type is in the location's recommendedTypes — see the design doc's 'Recommended-type bonus'.")]
     [SerializeField] private float typeMatchXPMultiplier = 1.3f;
 
-    [Header("Loot Rarity Roll (base weights + additive Luck/Treasure-Finder/Binoculars bias)")]
-    [SerializeField] private float baseCommonWeight = 70f;
-    [SerializeField] private float baseUncommonWeight = 25f;
-    [SerializeField] private float baseRareWeight = 5f;
-    [Tooltip("Percentage points shifted from Common into Uncommon/Rare per point of Luck.")]
+    [Header("Loot Rarity Roll (base weights + additive Luck/Treasure-Finder/Binoculars bias — tune via Burrowscape/Rarity Manager)")]
+    [SerializeField] private float baseCommonWeight = 65f;
+    [SerializeField] private float baseUncommonWeight = 22f;
+    [SerializeField] private float baseRareWeight = 9f;
+    [SerializeField] private float baseSuperRareWeight = 3f;
+    [SerializeField] private float baseMythicalWeight = 1f;
+    [Tooltip("Percentage points shifted from Common into the 4 higher tiers (proportionally to their own base weight) per point of Luck.")]
     [SerializeField] private float luckRareBonusPerPoint = 0.3f;
 
     [Header("Encounter Resolver (placeholder — see 'Placeholder encounter resolver')")]
@@ -352,8 +358,7 @@ public class ForagingManager : MonoBehaviour
             case ForagingLootKind.Trinket:
                 if (entry.trinket != null)
                 {
-                    var trinketKey = (entry.trinket, rarity);
-                    trip.foundTrinkets[trinketKey] = trip.foundTrinkets.GetValueOrDefault(trinketKey) + amount;
+                    trip.foundTrinkets[entry.trinket] = trip.foundTrinkets.GetValueOrDefault(entry.trinket) + amount;
                     trip.AddLogEntry($"Found {entry.trinket.displayName}");
                 }
                 break;
@@ -376,29 +381,43 @@ public class ForagingManager : MonoBehaviour
         {
             case ForagingLootRarity.Uncommon: return xpPerUncommonItem;
             case ForagingLootRarity.Rare: return xpPerRareItem;
+            case ForagingLootRarity.SuperRare: return xpPerSuperRareItem;
+            case ForagingLootRarity.Mythical: return xpPerMythicalItem;
             default: return xpPerCommonItem;
         }
     }
 
     // Additive bias: Luck (per-point) + NPCBunny.ForagingRareLootBonus (Treasure Finder) + a Binoculars-
-    // style accessory all shift weight from Common into Uncommon/Rare — two separate inputs to the same
-    // roll, per the design doc, never competing with each other.
+    // style accessory all shift weight from Common into the 4 higher tiers — two separate inputs to the
+    // same roll, per the design doc, never competing with each other. The bonus is split across
+    // Uncommon/Rare/SuperRare/Mythical proportionally to each tier's own base weight, generalizing the
+    // old fixed 0.7/0.3 split across just 2 tiers.
     private ForagingLootRarity RollRarity(NPCBunny bunny, ForagingTripState trip)
     {
         float accessoryBonus = (trip.equippedAccessory != null && trip.equippedAccessory.effectType == ForagingAccessoryEffectType.RareLootChanceBonus)
             ? trip.equippedAccessory.magnitude : 0f;
         float rareBonus = bunny.Stats.Luck * luckRareBonusPerPoint + bunny.ForagingRareLootBonus + accessoryBonus;
 
+        float nonCommonBase = baseUncommonWeight + baseRareWeight + baseSuperRareWeight + baseMythicalWeight;
         float commonWeight = Mathf.Max(0f, baseCommonWeight - rareBonus);
-        float uncommonWeight = baseUncommonWeight + rareBonus * 0.7f;
-        float rareWeight = baseRareWeight + rareBonus * 0.3f;
-        float total = commonWeight + uncommonWeight + rareWeight;
+        float uncommonWeight = baseUncommonWeight + rareBonus * SafeShare(baseUncommonWeight, nonCommonBase);
+        float rareWeight = baseRareWeight + rareBonus * SafeShare(baseRareWeight, nonCommonBase);
+        float superRareWeight = baseSuperRareWeight + rareBonus * SafeShare(baseSuperRareWeight, nonCommonBase);
+        float mythicalWeight = baseMythicalWeight + rareBonus * SafeShare(baseMythicalWeight, nonCommonBase);
+        float total = commonWeight + uncommonWeight + rareWeight + superRareWeight + mythicalWeight;
 
         float roll = Random.value * total;
         if (roll < commonWeight) return ForagingLootRarity.Common;
-        if (roll < commonWeight + uncommonWeight) return ForagingLootRarity.Uncommon;
-        return ForagingLootRarity.Rare;
+        roll -= commonWeight;
+        if (roll < uncommonWeight) return ForagingLootRarity.Uncommon;
+        roll -= uncommonWeight;
+        if (roll < rareWeight) return ForagingLootRarity.Rare;
+        roll -= rareWeight;
+        if (roll < superRareWeight) return ForagingLootRarity.SuperRare;
+        return ForagingLootRarity.Mythical;
     }
+
+    private static float SafeShare(float part, float whole) => whole > 0f ? part / whole : 0f;
 
     // Explicitly disposable placeholder — see 'Placeholder encounter resolver'. Win chance is a smooth
     // power-ratio (higher effective power = more likely to win) rather than a hard threshold, so a
@@ -512,7 +531,7 @@ public class ForagingManager : MonoBehaviour
             ForagingInventoryManager.Instance?.AddFruit(kvp.Key, kvp.Value);
 
         foreach (var kvp in trip.foundTrinkets)
-            ForagingInventoryManager.Instance?.AddTrinket(kvp.Key.Item1, kvp.Key.Item2, kvp.Value);
+            ForagingInventoryManager.Instance?.AddTrinket(kvp.Key, kvp.Value);
 
         foreach (var kvp in trip.foundHerbs)
             ForagingInventoryManager.Instance?.AddHerbLoot(kvp.Key, kvp.Value);

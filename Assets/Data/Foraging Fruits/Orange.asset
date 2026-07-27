@@ -15,5 +15,6 @@ MonoBehaviour:
   displayName: Orange
   icon: {fileID: 21300000, guid: 5e4f51fb899f9e2409bc53ac5a7a9c69, type: 3}
   description: 
+  rarity: 2
   boostedStat: 1
   evAmount: 4

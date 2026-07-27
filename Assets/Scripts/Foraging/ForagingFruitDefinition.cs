@@ -11,6 +11,8 @@ public class ForagingFruitDefinition : ScriptableObject
     public string displayName;
     public Sprite icon;
     [TextArea] public string description;
+    [Tooltip("Fixed rarity for this item, independent of which weight band a location's loot table rolls it under — see Rarity_DesignDoc.md. Edit here or via Burrowscape/Rarity Manager.")]
+    public ForagingLootRarity rarity = ForagingLootRarity.Common;
 
     [Header("Effect")]
     public BunnyStatType boostedStat;

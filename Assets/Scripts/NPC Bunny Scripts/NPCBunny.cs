@@ -1011,6 +1011,16 @@ public class NPCBunny : MonoBehaviour
     // to BOTH the per-stat cap (256) and the total-across-all-5 cap (MaxTotalEV) — granting less than
     // requested rather than overflowing either. Re-resolves Stats the same way LevelUp already does
     // (BunnyStatCalculator.Resolve already divides EV by 4 internally — no separate division needed here).
+    // Lets the Fruit Feeding picker (BunnyInfoUI) grey out fruits that would currently grant 0 EV —
+    // mirrors the same per-stat (256) / total (MaxTotalEV) caps AddEV enforces, without exposing the
+    // private EV fields themselves. See FruitFeeding_DesignDoc.md.
+    public bool CanGainEV(BunnyStatType stat)
+    {
+        if (typeDefinition == null) return false;
+        int currentTotal = EVHP + EVAttack + EVDefense + EVSpeed + EVLuck;
+        return GetEV(stat) < 256 && currentTotal < MaxTotalEV;
+    }
+
     public void AddEV(BunnyStatType stat, int amount)
     {
         if (amount <= 0 || typeDefinition == null) return;

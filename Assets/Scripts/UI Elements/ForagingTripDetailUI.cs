@@ -30,7 +30,7 @@ public class ForagingTripDetailUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI equippedAccessoryText;
 
     [Header("Items Found (generic icon+name+count row list)")]
-    [Tooltip("Fixed icons for the 3 kinds with no per-find ScriptableObject icon of their own. Herb is NOT here — it reads its tier icon straight off ForagingInventoryManager.HerbMaterial instead.")]
+    [Tooltip("Fixed icons for the 3 kinds with no per-find ScriptableObject icon of their own. Herb is NOT here — it reads its tier's own icon straight off ForagingInventoryManager.GetHerbForRarity instead.")]
     [SerializeField] private Sprite carrotIcon;
     [SerializeField] private Sprite potionIcon;
     [SerializeField] private Sprite crystalCarrotIcon;
@@ -143,12 +143,12 @@ public class ForagingTripDetailUI : MonoBehaviour
             if (kvp.Key != null) AddFoundItemRow(kvp.Key.icon, kvp.Key.displayName, kvp.Value);
 
         foreach (var kvp in currentTrip.foundTrinkets)
-            if (kvp.Key.Item1 != null) AddFoundItemRow(kvp.Key.Item1.icon, kvp.Key.Item1.displayName, kvp.Value);
+            if (kvp.Key != null) AddFoundItemRow(kvp.Key.icon, kvp.Key.displayName, kvp.Value);
 
         foreach (var kvp in currentTrip.foundHerbs)
         {
-            Sprite icon = ForagingInventoryManager.Instance?.HerbMaterial?.GetIcon(kvp.Key);
-            AddFoundItemRow(icon, $"{ForagingRarityDisplay.GetTierLabel(kvp.Key)} Herb", kvp.Value);
+            ForagingMaterialDefinition herb = ForagingInventoryManager.Instance?.GetHerbForRarity(kvp.Key);
+            AddFoundItemRow(herb?.icon, herb != null ? herb.displayName : $"{ForagingRarityDisplay.GetTierLabel(kvp.Key)} Herb", kvp.Value);
         }
 
         foreach (ForagingAccessoryDefinition accessory in currentTrip.foundAccessories)

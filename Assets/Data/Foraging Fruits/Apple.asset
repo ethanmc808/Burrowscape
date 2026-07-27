@@ -15,5 +15,6 @@ MonoBehaviour:
   displayName: Apple
   icon: {fileID: 21300000, guid: d05d7d0c4c085ca4c96371f051797202, type: 3}
   description: 
+  rarity: 2
   boostedStat: 2
   evAmount: 4

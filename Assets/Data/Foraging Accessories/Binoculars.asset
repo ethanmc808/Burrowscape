@@ -15,5 +15,6 @@ MonoBehaviour:
   displayName: Binoculars
   icon: {fileID: 21300000, guid: 4ec7f4d4e2fbbda4fb0360f7bb44c490, type: 3}
   description: +rare loot chance
+  rarity: 3
   effectType: 1
   magnitude: 10

@@ -86,13 +86,14 @@ public class BaseInventoryScreenUI : MonoBehaviour
         foreach (ForagingFruitDefinition fruit in inv.GetFruitsInStock())
             AddRow(fruit.icon, fruit.displayName, inv.GetFruitCount(fruit));
 
-        foreach (var (trinket, rarity) in inv.GetTrinketsInStock())
-            AddRow(trinket.icon, $"{ForagingRarityDisplay.GetTierLabel(rarity)} {trinket.displayName}", inv.GetTrinketCount(trinket, rarity));
+        foreach (ForagingTrinketDefinition trinket in inv.GetTrinketsInStock())
+            AddRow(trinket.icon, $"{ForagingRarityDisplay.GetTierLabel(trinket.rarity)} {trinket.displayName}", inv.GetTrinketCount(trinket));
 
         // Herb (found directly) and Cloth/Metal (only via crafting a Trinket) all live in the same
-        // materialStock bucket — see ForagingMaterialType.
-        foreach (var (material, tier) in inv.GetMaterialsInStock())
-            AddRow(material.GetIcon(tier), $"{ForagingRarityDisplay.GetTierLabel(tier)} {material.displayName}", inv.GetMaterialCount(material, tier));
+        // materialStock bucket — see ForagingMaterialType. Each material asset is now a single fixed-rarity
+        // tier (e.g. Moonpetal is always Rare), so its own .rarity/.icon fields are enough.
+        foreach (ForagingMaterialDefinition material in inv.GetMaterialsInStock())
+            AddRow(material.icon, $"{ForagingRarityDisplay.GetTierLabel(material.rarity)} {material.displayName}", inv.GetMaterialCount(material));
     }
 
     private void AddRow(Sprite icon, string label, int count)

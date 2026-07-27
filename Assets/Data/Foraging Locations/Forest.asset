@@ -21,15 +21,29 @@ MonoBehaviour:
   - rarity: 0
     kind: 0
     accessory: {fileID: 0}
+    fruit: {fileID: 0}
+    trinket: {fileID: 0}
     minAmount: 1
     maxAmount: 3
   - rarity: 1
     kind: 1
     accessory: {fileID: 0}
+    fruit: {fileID: 0}
+    trinket: {fileID: 0}
     minAmount: 1
     maxAmount: 1
   - rarity: 2
     kind: 2
     accessory: {fileID: 11400000, guid: 4400f5b881b6eb24a9e32a6f8663c729, type: 2}
+    fruit: {fileID: 0}
+    trinket: {fileID: 0}
     minAmount: 1
     maxAmount: 3
+  - rarity: 2
+    kind: 3
+    accessory: {fileID: 0}
+    fruit: {fileID: 11400000, guid: 3c2f63ce67402934592da5ecaf328018, type: 2}
+    trinket: {fileID: 0}
+    minAmount: 1
+    maxAmount: 1
+  enemyNames: []

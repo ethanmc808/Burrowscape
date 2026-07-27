@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -78,6 +79,28 @@ public class BunnyInfoUI : MonoBehaviour
     [SerializeField] private Transform accessoryPickerListContainer;
     [SerializeField] private GameObject accessoryButtonPrefab; // Button + TextMeshProUGUI child
 
+    [Header("Foraging Fruit Feeding (see FruitFeeding_DesignDoc.md) — placement in the panel is Ethan's call, just wiring the button/lists here")]
+    [Tooltip("Opens fruitPickerRoot. Only interactable while the base has at least 1 fruit in stock.")]
+    [SerializeField] private Button feedFruitButton;
+    [Tooltip("List step — rebuilt from ForagingInventoryManager.GetFruitsInStock() every time it opens.")]
+    [SerializeField] private GameObject fruitPickerRoot;
+    [SerializeField] private Transform fruitPickerListContainer;
+    [Tooltip("Row prefab: a Button, an Image (icon) child, and 2 TextMeshProUGUI children — [0] name+count, [1] stat boosted.")]
+    [SerializeField] private GameObject fruitPickerRowPrefab;
+    [Tooltip("Detail/confirm step — shown after a fruit is picked from the list.")]
+    [SerializeField] private GameObject fruitDetailRoot;
+    [SerializeField] private Image fruitDetailIcon;
+    [SerializeField] private TextMeshProUGUI fruitDetailNameText;
+    [SerializeField] private TextMeshProUGUI fruitDetailStatText;
+    [SerializeField] private Button eatFruitButton;
+    [Tooltip("Returns to the list without feeding.")]
+    [SerializeField] private Button fruitDetailBackButton;
+    [Tooltip("Horizontal gap (pixels) between the clicked fruit row's right edge and FruitDetail's own anchor point (its left-middle). NOT the same as the visible gap to the Eat Fruit/Back buttons — those sit at their own local offset INSIDE FruitDetail (whatever you positioned them at in the Editor), so this value also has to cancel that out. If you ever move the buttons within FruitDetail, retune this to match.")]
+    [SerializeField] private float fruitDetailHorizontalOffset = -150f;
+
+    private ForagingFruitDefinition selectedFruit;
+    private RectTransform fruitDetailRect;
+
     private NPCBunny currentBunny;
 
     private void Awake()
@@ -96,6 +119,20 @@ public class BunnyInfoUI : MonoBehaviour
             accessorySlotButton.onClick.AddListener(ToggleAccessoryPicker);
         if (accessoryPickerRoot != null)
             accessoryPickerRoot.SetActive(false);
+
+        if (feedFruitButton != null)
+            feedFruitButton.onClick.AddListener(ToggleFruitPicker);
+        if (eatFruitButton != null)
+            eatFruitButton.onClick.AddListener(OnEatFruitClicked);
+        if (fruitDetailBackButton != null)
+            fruitDetailBackButton.onClick.AddListener(ShowFruitList);
+        if (fruitPickerRoot != null)
+            fruitPickerRoot.SetActive(false);
+        if (fruitDetailRoot != null)
+        {
+            fruitDetailRoot.SetActive(false);
+            fruitDetailRect = fruitDetailRoot.GetComponent<RectTransform>();
+        }
     }
 
     private void Update()
@@ -117,7 +154,9 @@ public class BunnyInfoUI : MonoBehaviour
             sendForagingButton.gameObject.SetActive(CanShowSendForagingButton());
 
         RefreshBars();
+        RefreshStatLabels();
         RefreshAccessorySlot();
+        RefreshFeedFruitButton();
     }
 
     public void OpenForBunny(NPCBunny bunny)
@@ -141,11 +180,7 @@ public class BunnyInfoUI : MonoBehaviour
         if (natureLabel != null)
             natureLabel.text = bunny.Nature.ToString();
 
-        hpLabel.text = bunny.Stats.HP.ToString(); // Nature never affects HP — no indicator possible here
-        attackLabel.text = FormatStatWithNatureIndicator(bunny, bunny.Stats.Attack, NatureStat.Attack);
-        defenseLabel.text = FormatStatWithNatureIndicator(bunny, bunny.Stats.Defense, NatureStat.Defense);
-        speedLabel.text = FormatStatWithNatureIndicator(bunny, bunny.Stats.Speed, NatureStat.Speed);
-        luckLabel.text = FormatStatWithNatureIndicator(bunny, bunny.Stats.Luck, NatureStat.Luck);
+        RefreshStatLabels();
 
         PopulateList(traitListContainer, bunny.Traits, t => t.displayName);
         PopulateList(passiveListContainer, bunny.ActivePassives, p => p.displayName);
@@ -158,6 +193,10 @@ public class BunnyInfoUI : MonoBehaviour
         RefreshBars();
         if (accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
         RefreshAccessorySlot();
+        if (fruitPickerRoot != null) fruitPickerRoot.SetActive(false);
+        if (fruitDetailRoot != null) fruitDetailRoot.SetActive(false);
+        selectedFruit = null;
+        RefreshFeedFruitButton();
     }
 
     public void Close()
@@ -165,6 +204,9 @@ public class BunnyInfoUI : MonoBehaviour
         panelRoot.SetActive(false);
         currentBunny = null;
         if (accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
+        if (fruitPickerRoot != null) fruitPickerRoot.SetActive(false);
+        if (fruitDetailRoot != null) fruitDetailRoot.SetActive(false);
+        selectedFruit = null;
     }
 
     private void RefreshBars()
@@ -173,6 +215,21 @@ public class BunnyInfoUI : MonoBehaviour
         thirstBar.fillAmount = currentBunny.ThirstValue / 100f;
         energyBar.fillAmount = currentBunny.EnergyValue / 100f;
         moodBar.fillAmount = currentBunny.MoodValue / 100f;
+    }
+
+    // Re-run every Update (not just on Open) so a stat change from another source while the panel is
+    // open — e.g. feeding a Fruit via the picker below, which deliberately doesn't reopen the whole
+    // panel — actually shows up without needing to close/reopen. Previously only ran once in
+    // OpenForBunny, which silently left these numbers stale after a feed.
+    private void RefreshStatLabels()
+    {
+        if (currentBunny == null) return;
+
+        hpLabel.text = currentBunny.Stats.HP.ToString(); // Nature never affects HP — no indicator possible here
+        attackLabel.text = FormatStatWithNatureIndicator(currentBunny, currentBunny.Stats.Attack, NatureStat.Attack);
+        defenseLabel.text = FormatStatWithNatureIndicator(currentBunny, currentBunny.Stats.Defense, NatureStat.Defense);
+        speedLabel.text = FormatStatWithNatureIndicator(currentBunny, currentBunny.Stats.Speed, NatureStat.Speed);
+        luckLabel.text = FormatStatWithNatureIndicator(currentBunny, currentBunny.Stats.Luck, NatureStat.Luck);
     }
 
     // ---------- Foraging accessory slot (persistent equip — see BunnyInfoUI's Header comment above) ----------
@@ -191,6 +248,8 @@ public class BunnyInfoUI : MonoBehaviour
         if (accessoryPickerRoot == null) return;
 
         bool opening = !accessoryPickerRoot.activeSelf;
+        // Only one picker open at a time.
+        if (opening) CloseFruitPicker();
         accessoryPickerRoot.SetActive(opening);
         if (opening) RefreshAccessoryPicker();
     }
@@ -226,6 +285,147 @@ public class BunnyInfoUI : MonoBehaviour
         ForagingInventoryManager.Instance.TryEquipAccessory(currentBunny, accessory);
         RefreshAccessorySlot();
         if (accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
+    }
+
+    // ---------- Foraging fruit feeding (see FruitFeeding_DesignDoc.md) ----------
+
+    private void RefreshFeedFruitButton()
+    {
+        if (feedFruitButton == null) return;
+        feedFruitButton.interactable = ForagingInventoryManager.Instance != null
+            && ForagingInventoryManager.Instance.GetFruitsInStock().Any();
+    }
+
+    private void ToggleFruitPicker()
+    {
+        if (fruitPickerRoot == null) return;
+
+        bool opening = !fruitPickerRoot.activeSelf;
+        // Only one picker open at a time.
+        if (opening && accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
+        fruitPickerRoot.SetActive(opening);
+        if (opening) ShowFruitList();
+    }
+
+    private void CloseFruitPicker()
+    {
+        if (fruitPickerRoot != null) fruitPickerRoot.SetActive(false);
+        if (fruitDetailRoot != null) fruitDetailRoot.SetActive(false);
+        selectedFruit = null;
+    }
+
+    // Back to the list step (from the detail/confirm step, or right after opening) — kept open rather
+    // than closing the whole picker so the player can feed several fruits in one sitting. The main
+    // panel's closeButton still works independently to dismiss everything.
+    private void ShowFruitList()
+    {
+        selectedFruit = null;
+        if (fruitDetailRoot != null) fruitDetailRoot.SetActive(false);
+        RefreshFruitPickerList();
+    }
+
+    private void RefreshFruitPickerList()
+    {
+        if (fruitPickerListContainer == null || fruitPickerRowPrefab == null
+            || ForagingInventoryManager.Instance == null || currentBunny == null) return;
+
+        foreach (Transform child in fruitPickerListContainer)
+            Destroy(child.gameObject);
+
+        foreach (ForagingFruitDefinition fruit in ForagingInventoryManager.Instance.GetFruitsInStock())
+        {
+            GameObject rowObj = Instantiate(fruitPickerRowPrefab, fruitPickerListContainer);
+
+            FruitRowUI row = rowObj.GetComponent<FruitRowUI>();
+            if (row == null)
+            {
+                Debug.LogWarning("BunnyInfoUI: fruitPickerRowPrefab needs a FruitRowUI component with icon/nameText/statText/button wired in the Inspector.");
+                continue;
+            }
+
+            if (row.icon != null)
+            {
+                row.icon.sprite = fruit.icon;
+                row.icon.enabled = fruit.icon != null;
+            }
+
+            int count = ForagingInventoryManager.Instance.GetFruitCount(fruit);
+            if (row.nameText != null) row.nameText.text = $"{fruit.displayName} x{count}";
+            if (row.statText != null) row.statText.text = FormatFruitStatLine(fruit);
+
+            // Greyed out (non-interactable) once this bunny can't gain any more of the stat this fruit
+            // boosts — Ethan's call: with 200+ bunnies, there's no realistic way to track per-bunny EV
+            // totals by memory alone, so the button itself needs to say "this would do nothing."
+            if (row.button != null)
+            {
+                RectTransform rowRect = rowObj.GetComponent<RectTransform>();
+                row.button.interactable = currentBunny.CanGainEV(fruit.boostedStat);
+                row.button.onClick.AddListener(() => OnFruitSelected(fruit, rowRect));
+            }
+        }
+    }
+
+    private void OnFruitSelected(ForagingFruitDefinition fruit, RectTransform rowRect)
+    {
+        selectedFruit = fruit;
+        if (fruitDetailRoot == null) return;
+
+        PositionDetailNextToRow(rowRect);
+
+        fruitDetailRoot.SetActive(true);
+        if (fruitDetailIcon != null)
+        {
+            fruitDetailIcon.sprite = fruit.icon;
+            fruitDetailIcon.enabled = fruit.icon != null;
+        }
+        if (fruitDetailNameText != null) fruitDetailNameText.text = fruit.displayName;
+        if (fruitDetailStatText != null) fruitDetailStatText.text = FormatFruitStatLine(fruit);
+    }
+
+    // Positions fruitDetailRoot (WITHOUT reparenting it — it stays under whatever parent it was
+    // designed with; needs to be under FruitPicker, a close sibling of fruitPickerListContainer, NOT
+    // BunnyStatsPanel directly — the latter had a degenerate zero-size rect that made this maths huge and
+    // impossible to reason about) at a point that's fruitDetailHorizontalOffset pixels to the right of the
+    // CLICKED ROW's own right edge, vertically centered on that same row. Deliberately NOT anchored off
+    // fruitPickerListContainer's edge (an earlier version was) — the container can be wider than the row
+    // itself, since rows don't stretch to fill it, which put the popup too far right. The offset is
+    // negative in practice because it also has to cancel out wherever Eat Fruit/Back happen to sit
+    // INSIDE FruitDetail (see the field's Tooltip) — this only ever moves FruitDetail's own anchor point,
+    // never touches its children directly.
+    private void PositionDetailNextToRow(RectTransform rowRect)
+    {
+        if (fruitDetailRect == null || rowRect == null) return;
+
+        RectTransform parentRect = fruitDetailRect.parent as RectTransform;
+        if (parentRect == null) return;
+
+        Vector3 targetWorld = rowRect.TransformPoint(
+            new Vector3(rowRect.rect.xMax + fruitDetailHorizontalOffset, rowRect.rect.center.y, 0f));
+
+        fruitDetailRect.anchorMin = new Vector2(0f, 0f);
+        fruitDetailRect.anchorMax = new Vector2(0f, 0f);
+        fruitDetailRect.pivot = new Vector2(0f, 0.5f); // "N px to the right" reads as the popup's LEFT edge
+
+        Vector3 localInParent = parentRect.InverseTransformPoint(targetWorld);
+        fruitDetailRect.anchoredPosition = new Vector2(
+            localInParent.x - parentRect.rect.xMin,
+            localInParent.y - parentRect.rect.yMin);
+    }
+
+    // Player-facing wording — deliberately hides the underlying EV number (e.g. "+4 EV") behind a
+    // simple "+1 Defense" per Ethan's ask: the exact EV-per-stat-point math is an internal implementation
+    // detail, not something the player needs to reason about.
+    private static string FormatFruitStatLine(ForagingFruitDefinition fruit) => $"+1 {fruit.boostedStat}";
+
+    private void OnEatFruitClicked()
+    {
+        if (currentBunny == null || selectedFruit == null || ForagingInventoryManager.Instance == null) return;
+
+        ForagingInventoryManager.Instance.TryFeedFruit(currentBunny, selectedFruit);
+        RefreshFeedFruitButton();
+        // Back to the list (refreshed — stock/greying may have changed), not closing the whole picker,
+        // so the player can immediately feed another fruit.
+        ShowFruitList();
     }
 
     // Green "+" for the stat Nature boosts, red "-" for the one it lowers, plain number otherwise --

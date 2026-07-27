@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum ForagingLootRarity { Common, Uncommon, Rare }
+public enum ForagingLootRarity { Common, Uncommon, Rare, SuperRare, Mythical }
 
 // Presentation-layer only (e.g. building "Fine Cloth") — not a new data field, just how a
 // ForagingLootRarity-tiered Material displays. See the Foraging Trip Detail Panel + Item Expansion
@@ -15,6 +15,8 @@ public static class ForagingRarityDisplay
         {
             case ForagingLootRarity.Uncommon: return "Fine";
             case ForagingLootRarity.Rare: return "Rare";
+            case ForagingLootRarity.SuperRare: return "Super Rare";
+            case ForagingLootRarity.Mythical: return "Mythical";
             default: return "Common";
         }
     }

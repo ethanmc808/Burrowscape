@@ -24,19 +24,38 @@ public class ForagingInventoryManager : MonoBehaviour
     public int CrystalCarrotStock => crystalCarrotStock;
 
     private readonly Dictionary<ForagingFruitDefinition, int> fruitStock = new Dictionary<ForagingFruitDefinition, int>();
-    // Keyed by (trinket, rarity found at) — the SAME trinket asset could in principle sit in more than
-    // one location's table at more than one rarity band, and rarity-at-find-time is what it crafts into.
-    private readonly Dictionary<(ForagingTrinketDefinition, ForagingLootRarity), int> trinketStock = new Dictionary<(ForagingTrinketDefinition, ForagingLootRarity), int>();
-    // Populated ONLY by TryCraftTrinketIntoMaterial, never by foraging directly.
-    private readonly Dictionary<(ForagingMaterialDefinition, ForagingLootRarity), int> materialStock = new Dictionary<(ForagingMaterialDefinition, ForagingLootRarity), int>();
+    // Rarity is fixed on the Trinket asset itself now (see Rarity_DesignDoc.md), so no separate rarity
+    // dimension is needed in the key anymore.
+    private readonly Dictionary<ForagingTrinketDefinition, int> trinketStock = new Dictionary<ForagingTrinketDefinition, int>();
+    // Populated ONLY by TryCraftTrinketIntoMaterial and AddHerbLoot, never added to directly by general UI.
+    private readonly Dictionary<ForagingMaterialDefinition, int> materialStock = new Dictionary<ForagingMaterialDefinition, int>();
 
-    [Header("Material Assets (Cloth/Metal only ever produced by crafting a Trinket; Herb is granted directly by foraging — see the Foraging Trip Detail Panel + Item Expansion design doc)")]
-    [SerializeField] private ForagingMaterialDefinition clothMaterial;
-    [SerializeField] private ForagingMaterialDefinition metalMaterial;
-    [SerializeField] private ForagingMaterialDefinition herbMaterial;
-    // Exposed read-only so ForagingTripDetailUI can look up the Herb material's own tier icons for its
-    // rarity-only mid-trip tally, instead of needing the same art assigned a second time.
-    public ForagingMaterialDefinition HerbMaterial => herbMaterial;
+    [Header("Material Tier Assets (index = ForagingLootRarity; Cloth/Metal only ever produced by crafting a Trinket, at the trinket's own fixed rarity; Herb is granted directly by foraging — see Rarity_DesignDoc.md)")]
+    [Tooltip("5 entries, one per ForagingLootRarity tier (Common..Mythical) — e.g. Coarse/Fine/Silken/Shimmering/Ethereal Cloth.")]
+    [SerializeField] private ForagingMaterialDefinition[] clothTiers = new ForagingMaterialDefinition[5];
+    [Tooltip("5 entries, one per ForagingLootRarity tier (Common..Mythical) — e.g. Scrap Metal/Iron/Silver/Gold/Starmetal Ingot.")]
+    [SerializeField] private ForagingMaterialDefinition[] metalTiers = new ForagingMaterialDefinition[5];
+    [Tooltip("5 entries, one per ForagingLootRarity tier (Common..Mythical) — Mint Leaf/Silverwort/Moonpetal/Sparkling Thistle/Golden Lotus Petal.")]
+    [SerializeField] private ForagingMaterialDefinition[] herbTiers = new ForagingMaterialDefinition[5];
+
+    [Header("Fixed rarity for the 3 asset-less kinds (Carrot/Potion/Crystal Carrot) — edit via Burrowscape/Rarity Manager")]
+    [SerializeField] private ForagingKindRarityConfig kindRarities;
+    public ForagingLootRarity CarrotRarity => kindRarities != null ? kindRarities.carrotRarity : ForagingLootRarity.Common;
+    public ForagingLootRarity PotionRarity => kindRarities != null ? kindRarities.potionRarity : ForagingLootRarity.Common;
+    public ForagingLootRarity CrystalCarrotRarity => kindRarities != null ? kindRarities.crystalCarrotRarity : ForagingLootRarity.Common;
+
+    // Looks up the named tier asset (e.g. Moonpetal for Herb/Rare) so callers can resolve a rolled rarity
+    // band down to a specific, fixed-rarity item. Exposed read-only so ForagingTripDetailUI can look up
+    // icons without needing the same art assigned a second time.
+    public ForagingMaterialDefinition GetHerbForRarity(ForagingLootRarity rarity) => herbTiers[(int)rarity];
+    private ForagingMaterialDefinition GetClothForRarity(ForagingLootRarity rarity) => clothTiers[(int)rarity];
+    private ForagingMaterialDefinition GetMetalForRarity(ForagingLootRarity rarity) => metalTiers[(int)rarity];
+
+    [Header("Debug / Playtesting")]
+    [Tooltip("Assign the Apple fruit asset once — the field below then behaves exactly like potionStock/crystalCarrotStock: edit the number directly in the Inspector during Play mode to set the real stock instantly. It also pulls UP to reflect the true count if it changes some other way (e.g. feeding a bunny), so it never silently drifts out of sync.")]
+    [SerializeField] private ForagingFruitDefinition debugAppleAsset;
+    [SerializeField] private int debugAppleStock = 0;
+    private int lastSyncedDebugAppleStock = 0;
 
     public event Action OnInventoryChanged;
 
@@ -44,6 +63,33 @@ public class ForagingInventoryManager : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+    }
+
+    private void Update()
+    {
+        SyncDebugAppleStock();
+    }
+
+    // Debug-only two-way mirror onto fruitStock for the assigned apple asset (see the field's Tooltip
+    // above). A typed-in Inspector value pushes down into the real stock; any other change to the real
+    // stock (feeding a bunny, a forage find) pulls back up into the field so it never reads stale.
+    private void SyncDebugAppleStock()
+    {
+        if (debugAppleAsset == null) return;
+
+        int actual = GetFruitCount(debugAppleAsset);
+        if (debugAppleStock == actual) return;
+
+        if (debugAppleStock != lastSyncedDebugAppleStock)
+        {
+            int clamped = Mathf.Max(0, debugAppleStock);
+            fruitStock[debugAppleAsset] = clamped;
+            actual = clamped;
+            OnInventoryChanged?.Invoke();
+        }
+
+        debugAppleStock = actual;
+        lastSyncedDebugAppleStock = actual;
     }
 
     public int GetAccessoryCount(ForagingAccessoryDefinition accessory)
@@ -164,60 +210,61 @@ public class ForagingInventoryManager : MonoBehaviour
 
     // ---------- Trinkets ----------
 
-    public int GetTrinketCount(ForagingTrinketDefinition trinket, ForagingLootRarity rarity)
-        => trinket != null && trinketStock.TryGetValue((trinket, rarity), out int count) ? count : 0;
+    public int GetTrinketCount(ForagingTrinketDefinition trinket)
+        => trinket != null && trinketStock.TryGetValue(trinket, out int count) ? count : 0;
 
-    public void AddTrinket(ForagingTrinketDefinition trinket, ForagingLootRarity rarity, int amount)
+    public void AddTrinket(ForagingTrinketDefinition trinket, int amount)
     {
         if (trinket == null) return;
-        var key = (trinket, rarity);
-        trinketStock[key] = GetTrinketCount(trinket, rarity) + Mathf.Max(0, amount);
+        trinketStock[trinket] = GetTrinketCount(trinket) + Mathf.Max(0, amount);
         OnInventoryChanged?.Invoke();
     }
 
     // Every trinket currently held with at least 1 in stock — used by BaseInventoryScreenUI and,
     // later, the Workshop room's crafting-menu UI (filtered there to craftsInto != None).
-    public IEnumerable<(ForagingTrinketDefinition trinket, ForagingLootRarity rarity)> GetTrinketsInStock()
+    public IEnumerable<ForagingTrinketDefinition> GetTrinketsInStock()
         => trinketStock.Where(kvp => kvp.Value > 0).Select(kvp => kvp.Key);
 
     // ---------- Materials ----------
 
-    public int GetMaterialCount(ForagingMaterialDefinition material, ForagingLootRarity tier)
-        => material != null && materialStock.TryGetValue((material, tier), out int count) ? count : 0;
+    public int GetMaterialCount(ForagingMaterialDefinition material)
+        => material != null && materialStock.TryGetValue(material, out int count) ? count : 0;
 
-    public void AddMaterial(ForagingMaterialDefinition material, ForagingLootRarity tier, int amount)
+    public void AddMaterial(ForagingMaterialDefinition material, int amount)
     {
         if (material == null) return;
-        var key = (material, tier);
-        materialStock[key] = GetMaterialCount(material, tier) + Mathf.Max(0, amount);
+        materialStock[material] = GetMaterialCount(material) + Mathf.Max(0, amount);
         OnInventoryChanged?.Invoke();
     }
 
-    public IEnumerable<(ForagingMaterialDefinition material, ForagingLootRarity tier)> GetMaterialsInStock()
+    public IEnumerable<ForagingMaterialDefinition> GetMaterialsInStock()
         => materialStock.Where(kvp => kvp.Value > 0).Select(kvp => kvp.Key);
 
     // Ledger-level entry point only — NOT callable from general UI. Meant to be invoked from wherever the
     // future Workshop room's job-flow lands (an IJobRoom, per Ethan's call — crafting only proceeds while
     // a bunny is actually staffed there), same relationship TryWithdrawAccessory has to TryDispatch.
-    public bool TryCraftTrinketIntoMaterial(ForagingTrinketDefinition trinket, ForagingLootRarity rarity)
+    public bool TryCraftTrinketIntoMaterial(ForagingTrinketDefinition trinket)
     {
         if (trinket == null || trinket.craftsInto == TrinketCraftFamily.None) return false;
-        if (GetTrinketCount(trinket, rarity) <= 0) return false;
+        if (GetTrinketCount(trinket) <= 0) return false;
 
-        var key = (trinket, rarity);
-        trinketStock[key] = trinketStock[key] - 1;
+        trinketStock[trinket] = trinketStock[trinket] - 1;
 
-        ForagingMaterialDefinition output = trinket.craftsInto == TrinketCraftFamily.Cloth ? clothMaterial : metalMaterial;
-        AddMaterial(output, rarity, 1);
+        // Output tier follows the trinket's own fixed rarity, not wherever it happened to be found.
+        ForagingMaterialDefinition output = trinket.craftsInto == TrinketCraftFamily.Cloth
+            ? GetClothForRarity(trinket.rarity)
+            : GetMetalForRarity(trinket.rarity);
+        AddMaterial(output, 1);
         OnInventoryChanged?.Invoke();
         return true;
     }
 
     // Herb's counterpart to TryCraftTrinketIntoMaterial's Cloth/Metal output — called directly from a
     // Herb-kind loot find (ForagingManager) rather than from a crafting action, since Herb needs no
-    // Trinket step in between; it's already usable as found.
+    // Trinket step in between; it's already usable as found. `rarity` here is the band the location's
+    // loot table rolled — resolved to the matching fixed-rarity Herb asset (Mint Leaf/Silverwort/...).
     public void AddHerbLoot(ForagingLootRarity rarity, int amount)
     {
-        AddMaterial(herbMaterial, rarity, amount);
+        AddMaterial(GetHerbForRarity(rarity), amount);
     }
 }

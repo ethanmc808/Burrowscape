@@ -15,5 +15,6 @@ MonoBehaviour:
   displayName: Iridescent Beetle Shell
   icon: {fileID: 21300000, guid: 671c13bd8538f8449809dc171b7f73e2, type: 3}
   description: 
+  rarity: 1
   sellValue: 5
   craftsInto: 0

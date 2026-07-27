@@ -637,7 +637,7 @@ MonoBehaviour:
     - {fileID: 5481895144549414613}
   footprintWidth: 8
   grade: 3
-  gradeMultiplier: 1
+  gradeMultiplier: 2
   roomTypeId: WaterRoom
   productionSpots:
   - {fileID: 7612317831466647811}

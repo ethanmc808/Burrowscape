@@ -15,5 +15,6 @@ MonoBehaviour:
   displayName: Backpack
   icon: {fileID: 21300000, guid: 85a7c552a97721442a4c8205867456dd, type: 3}
   description: +carry capacity
+  rarity: 3
   effectType: 0
   magnitude: 10

@@ -13,11 +13,13 @@ public class ForagingTrinketDefinition : ScriptableObject
     public string displayName;
     public Sprite icon;
     [TextArea] public string description;
+    [Tooltip("Fixed rarity for this item, independent of which weight band a location's loot table rolls it under — see Rarity_DesignDoc.md. Edit here or via Burrowscape/Rarity Manager.")]
+    public ForagingLootRarity rarity = ForagingLootRarity.Common;
 
     [Header("Sell (all trinkets are sellable regardless of craftsInto)")]
     public int sellValue = 5;
 
     [Header("Crafting (future Workshop room)")]
-    [Tooltip("None = collectible/sellable only, no material output. The tier produced when crafted is inherited from whatever rarity band this trinket was FOUND at, not stored here.")]
+    [Tooltip("None = collectible/sellable only, no material output. The tier produced when crafted is this trinket's own fixed rarity above, not the location entry that dropped it.")]
     public TrinketCraftFamily craftsInto = TrinketCraftFamily.None;
 }

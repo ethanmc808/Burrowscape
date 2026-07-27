@@ -15,5 +15,6 @@ MonoBehaviour:
   displayName: Peach
   icon: {fileID: 21300000, guid: b8cca8b1a4d2f4441ba9054f0fcba0fa, type: 3}
   description: 
+  rarity: 2
   boostedStat: 0
   evAmount: 4
