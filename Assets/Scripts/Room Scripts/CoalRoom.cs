@@ -77,6 +77,7 @@ public class CoalRoom : RoomBase, IJobRoom
             activeProductionRoutines.Remove(bunny);
             activeWorkerOrder.Remove(bunny);
             ReportWeightToPowerManager();
+            StopWorkXPRoutine(bunny);
         }
     }
 
@@ -103,6 +104,7 @@ public class CoalRoom : RoomBase, IJobRoom
             Coroutine routine = StartCoroutine(ProducePowerRoutine(bunny));
             activeProductionRoutines[bunny] = routine;
             ReportWeightToPowerManager();
+            StartWorkXPRoutine(bunny);
         }
     }
 
@@ -117,6 +119,7 @@ public class CoalRoom : RoomBase, IJobRoom
                 activeProductionRoutines.Remove(bunny);
                 activeWorkerOrder.Remove(bunny);
                 ReportWeightToPowerManager();
+                StopWorkXPRoutine(bunny);
                 yield break;
             }
 
@@ -162,6 +165,7 @@ public class CoalRoom : RoomBase, IJobRoom
         activeProductionRoutines.Clear();
         activeWorkerOrder.Clear();
         PowerManager.EnsureInstance().SetProducerWeight(this, 0f); // reset this room's weight to zero, regardless of how many were active
+        StopAllWorkXPRoutines();
     }
 
     public void OnRoomRestored()

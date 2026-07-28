@@ -125,6 +125,17 @@ public class NPCBunny : MonoBehaviour
     [SerializeField] private string isEatingParam = "IsEating";
     [SerializeField] private string isDrinkingParam = "IsDrinking";
     [SerializeField] private string isSleepingParam = "IsSleeping";
+    // One-shot Cheer TRIGGER param (despite the "Is" prefix matching the bool params above for naming
+    // consistency, this must stay an Animator Trigger, not a Bool — see PlayLevelUpFeedback's
+    // animator.SetTrigger call, and WorkRoomXP_DesignDoc.md's "Key decision: the cheer never touches
+    // CurrentState" section). Animator Controller wiring: Any State -> Cheering (condition: this
+    // trigger, Has Exit Time off), then Cheering -> back out (Has Exit Time ON, no conditions, ~0
+    // transition duration) so it falls back into whatever IsWorking/IsEating/etc. already say once the
+    // clip finishes, with no code ever touching CurrentState.
+    [SerializeField] private string isCheeringParam = "IsCheering";
+
+    [Header("Level-Up SFX (see AudioManager)")]
+    [SerializeField] private AudioClip levelUpClip;
 
     [Header("Facing Direction")]
     [SerializeField] private Transform bunnyScaleRoot;
@@ -214,6 +225,23 @@ public class NPCBunny : MonoBehaviour
     // additively alongside Luck's own separate contribution to the same roll rather than compete with
     // it. Defaults to 0 (no trait effect), same reasoning as ProductionMultiplier's default of 1.
     public float ForagingRareLootBonus { get; private set; } = 0f;
+
+    // Applied universally to XP from EVERY source — see TraitEffectType.XPGainMultiplier and
+    // AddExperience's own comment for why this is applied centrally there rather than by each XP
+    // source individually. Still exposed publicly (not folded away entirely) since a future UI might
+    // want to display it, e.g. a "+25% XP" indicator, the same way BoostedStat/LoweredStat are exposed
+    // for Nature's UI indicator. Defaults to 1 (no trait effect), same reasoning as ProductionMultiplier.
+    public float XPGainMultiplier { get; private set; } = 1f;
+
+    // Fires once per AddExperience call that leveled the bunny up at all (never once per individual
+    // LevelUp — a single big XP grant can cross several level thresholds at once, see AddExperience),
+    // passing the new Level. Purely a notification hook — PlayLevelUpFeedback (this class's own
+    // reaction: Cheer animation + SFX) subscribes to nothing; it's called directly from AddExperience
+    // instead. This event exists so external systems that don't live on NPCBunny can react too, without
+    // NPCBunny needing to know they exist — e.g. ForagingManager logging a bold trip-log entry when a
+    // bunny levels up while parked BunnyState.Foraging (where the Cheer/SFX are suppressed — see
+    // PlayLevelUpFeedback). See WorkRoomXP_DesignDoc.md's "Foraging's bold log entry" section.
+    public event System.Action<int> OnLevelUp;
 
     // Which BunnyTypeDefinition this bunny spawned from — needed later by LevelUp to re-resolve
     // Stats/ActivePassives against the same base stats/passive list. Not exposed publicly; external
@@ -948,6 +976,7 @@ public class NPCBunny : MonoBehaviour
     private void ApplyTraitEffects()
     {
         ProductionMultiplier = 1f;
+        XPGainMultiplier = 1f;
 
         foreach (BunnyTraitDefinition trait in Traits)
         {
@@ -979,6 +1008,9 @@ public class NPCBunny : MonoBehaviour
                     // Additive, not multiplicative — see ForagingRareLootBonus's own doc comment for why
                     // this case doesn't match the "*=" shape every other case above uses.
                     ForagingRareLootBonus += trait.effectMultiplier;
+                    break;
+                case TraitEffectType.XPGainMultiplier:
+                    XPGainMultiplier *= trait.effectMultiplier;
                     break;
             }
         }
@@ -1064,22 +1096,68 @@ public class NPCBunny : MonoBehaviour
         }
     }
 
-    // Foraging is the first (and, for now, only) source of XP — see Foraging_DesignDoc.md's "XP system"
-    // section. `experience` is a running CUMULATIVE total (never reset per level), checked against
-    // BunnyLevelCurve's cumulative-XP-per-level curve; LevelUp fires as many times as the new total
-    // justifies (covers a big single grant crossing more than one level at once), capped at level 50 to
-    // match WildBunnySpawner.RollSpawnLevel's own clamp.
+    // Single entry point for XP from EVERY source (Foraging today, Work Rooms too — see
+    // WorkRoomXP_DesignDoc.md — and whatever comes later). `experience` is a running CUMULATIVE total
+    // (never reset per level), checked against BunnyLevelCurve's cumulative-XP-per-level curve; LevelUp
+    // fires as many times as the new total justifies (covers a big single grant crossing more than one
+    // level at once), capped at level 50 to match WildBunnySpawner.RollSpawnLevel's own clamp.
+    //
+    // XPGainMultiplier (Smart/Dumb traits) is applied HERE, once, to `amount` itself — deliberately NOT
+    // left for each caller to apply on their own end. That makes it universal automatically: every
+    // existing and future XP source funnels through this one method, so a future XP source can't
+    // forget to apply it the way a per-caller convention could. Callers (ForagingManager,
+    // RoomBase.GrantWorkXPRoutine) pass their own raw, pre-multiplier amount.
     public void AddExperience(float amount)
     {
-        experience += amount;
+        int levelBefore = Level;
+        experience += amount * XPGainMultiplier;
 
         while (Level < 50 && experience >= BunnyLevelCurve.CumulativeXPForLevel(Level + 1))
             LevelUp(Level + 1);
+
+        // Fires once for this whole grant, not once per LevelUp() call above — a single big grant can
+        // cross several level thresholds at once (see the loop's own comment), and firing the Cheer/SFX
+        // that many times in the same frame would stutter rather than read as one satisfying level-up.
+        // See WorkRoomXP_DesignDoc.md's "Multi-level-in-one-grant handling" section.
+        if (Level > levelBefore)
+        {
+            PlayLevelUpFeedback();
+            OnLevelUp?.Invoke(Level);
+        }
     }
 
     // XP remaining to the next level, for a future UI progress bar — computed on demand from the curve
     // rather than stored, since `experience` is the only value that actually needs to persist.
     public float ExperienceToNextLevel => Level >= 50 ? 0f : BunnyLevelCurve.CumulativeXPForLevel(Level + 1) - experience;
+
+    // Cheer animation + SFX — see WorkRoomXP_DesignDoc.md's "Level-Up Feedback" section. Deliberately
+    // never touches CurrentState (only a one-shot Animator Trigger, see isCheeringParam's own comment)
+    // so no job-room production/XP coroutine (which self-terminates on
+    // `CurrentState != BunnyState.Working`) can ever mistake a level-up cheer for the bunny quitting its
+    // job. Two states are deliberately suppressed here (Ethan's calls, both confirmed unreachable by any
+    // code today but built now for a hypothetical future passive/accessory XP-over-time source):
+    //   - Transit states: a bunny sliding along a path shouldn't visibly/audibly interrupt to jump —
+    //     both animation and SFX suppressed together, no special-casing, since nothing grants XP
+    //     mid-transit today anyway (e.g. riding a lift doesn't earn XP).
+    //   - BunnyState.Foraging: parked off-screen at the staging point for the whole trip, so there's no
+    //     visible/audible bunny for the cheer to attach to — suppressed here too, but OnLevelUp still
+    //     fires above regardless of state, which is what lets ForagingManager log a bold trip-log entry
+    //     instead (see its own subscription in RunDispatchRoutine).
+    private void PlayLevelUpFeedback()
+    {
+        if (IsTransitStateForLevelUpFeedback(CurrentState) || CurrentState == BunnyState.Foraging) return;
+
+        if (animator != null) animator.SetTrigger(isCheeringParam);
+        if (levelUpClip != null) AudioManager.EnsureInstance().PlaySFXAtPosition(levelUpClip, transform.position);
+    }
+
+    private static bool IsTransitStateForLevelUpFeedback(BunnyState state)
+    {
+        return state == BunnyState.MovingToSpot || state == BunnyState.PassingGate
+            || state == BunnyState.DepartingThroughGate || state == BunnyState.WaitingForLift
+            || state == BunnyState.RidingLift || state == BunnyState.DisembarkingLift
+            || state == BunnyState.Despawning;
+    }
 
     // ---------- HP (spent by Foraging's placeholder encounter resolver — see ForagingManager) ----------
 

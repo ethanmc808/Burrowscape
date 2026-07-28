@@ -109,6 +109,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
             StopCoroutine(routine);
             activeProductionRoutines.Remove(bunny);
             activeWorkerOrder.Remove(bunny);
+            StopWorkXPRoutine(bunny);
         }
     }
 
@@ -134,6 +135,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
 
             Coroutine routine = StartCoroutine(ProduceCarrotsRoutine(bunny));
             activeProductionRoutines[bunny] = routine;
+            StartWorkXPRoutine(bunny);
         }
     }
 
@@ -164,6 +166,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
             {
                 activeProductionRoutines.Remove(bunny);
                 activeWorkerOrder.Remove(bunny);
+                StopWorkXPRoutine(bunny);
                 yield break;
             }
 
@@ -192,6 +195,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
         }
         activeProductionRoutines.Clear();
         activeWorkerOrder.Clear();
+        StopAllWorkXPRoutines();
     }
 
     public void OnRoomRestored()

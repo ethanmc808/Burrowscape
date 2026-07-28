@@ -20,6 +20,12 @@ public class WorkRoomProductionTuner : EditorWindow
     {
         ("diminishingReturnsRate", "Diminishing Returns Rate"),
         ("typeMatchProductionBonus", "Type-Match Production Bonus"),
+        // Work Room XP (WorkRoomXP_DesignDoc.md) — declared on RoomBase (all three job rooms inherit
+        // it), but DrawFieldGroup/ApplyScalingToAll below already resolve fields by name via
+        // SerializedObject, which finds inherited serialized fields the same as ones declared directly
+        // on GardenRoom/WaterRoom/CoalRoom, so no other code needs to change for these two.
+        ("baseXPPerSecond", "Base XP/sec (Work)"),
+        ("typeMatchXPBonus", "Type-Match XP Bonus"),
     };
 
     // Suggested recommendedTypes default per room-type label — just a one-click convenience for the
@@ -144,6 +150,10 @@ public class WorkRoomProductionTuner : EditorWindow
         EditorGUILayout.Space();
         EditorGUILayout.Space();
         DrawRecommendedTypesGrid();
+
+        EditorGUILayout.Space();
+        EditorGUILayout.Space();
+        DrawXPRecommendedTypesGrid();
 
         EditorGUILayout.EndScrollView();
     }
@@ -284,6 +294,70 @@ public class WorkRoomProductionTuner : EditorWindow
 
         AssetDatabase.SaveAssets();
         string summary = $"Set suggested Recommended Types on {changedCount} work room prefab(s).";
+        Debug.Log($"[WorkRoomProductionTuner] {summary}");
+        EditorUtility.DisplayDialog("Apply Suggested Defaults", summary, "OK");
+    }
+
+    // Own per-room grid, deliberately separate from recommendedTypes' grid above (Ethan's call — XP
+    // type-match is a fully independent field from production's, see WorkRoomXP_DesignDoc.md), even
+    // though the two typically start out matching the same suggested default per room type.
+    private void DrawXPRecommendedTypesGrid()
+    {
+        EditorGUILayout.LabelField("XP Recommended Types (per room — applied immediately, not broadcast)", EditorStyles.boldLabel);
+
+        if (GUILayout.Button("Apply Suggested Defaults (Garden=Plant, Water=Water, Coal=Shock)", GUILayout.Height(24)))
+        {
+            ApplySuggestedXPRecommendedTypeDefaults();
+        }
+
+        EditorGUILayout.Space();
+
+        foreach (WorkRoomEntry entry in discoveredRooms)
+        {
+            if (entry.component == null) continue;
+
+            SerializedObject so = entry.serializedObject;
+            so.Update();
+
+            SerializedProperty prop = so.FindProperty("xpRecommendedTypes");
+            if (prop == null) continue;
+
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(prop, new GUIContent($"[{entry.roomTypeLabel}] {entry.prefab.name}"), true);
+            if (EditorGUI.EndChangeCheck())
+            {
+                so.ApplyModifiedProperties();
+                EditorUtility.SetDirty(entry.component);
+                AssetDatabase.SaveAssets();
+            }
+        }
+    }
+
+    private void ApplySuggestedXPRecommendedTypeDefaults()
+    {
+        int changedCount = 0;
+
+        foreach (WorkRoomEntry entry in discoveredRooms)
+        {
+            if (entry.component == null) continue;
+            if (!SuggestedDefaults.TryGetValue(entry.roomTypeLabel, out BunnyType defaultType)) continue;
+
+            SerializedObject so = entry.serializedObject;
+            so.Update();
+
+            SerializedProperty prop = so.FindProperty("xpRecommendedTypes");
+            if (prop == null) continue;
+
+            prop.arraySize = 1;
+            prop.GetArrayElementAtIndex(0).enumValueIndex = (int)defaultType;
+
+            so.ApplyModifiedProperties();
+            EditorUtility.SetDirty(entry.component);
+            changedCount++;
+        }
+
+        AssetDatabase.SaveAssets();
+        string summary = $"Set suggested XP Recommended Types on {changedCount} work room prefab(s).";
         Debug.Log($"[WorkRoomProductionTuner] {summary}");
         EditorUtility.DisplayDialog("Apply Suggested Defaults", summary, "OK");
     }

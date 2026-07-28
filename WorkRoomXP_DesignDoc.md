@@ -1,5 +1,43 @@
 # Work Room XP & Level-Up Feedback — Design Doc
 
+**Status: implemented 2026-07-27, Cheer animation + SFX confirmed working in-Editor 2026-07-27.** All
+script changes described below are in place (`AudioManager`, `RoomBase`'s shared XP coroutine,
+`GardenRoom`/`WaterRoom`/`CoalRoom` wiring, `NPCBunny`'s `XPGainMultiplier`/`OnLevelUp`/
+`PlayLevelUpFeedback`, the Smart/Dumb trait seeds, the Tuner's XP section, and `ForagingManager`'s
+`OnLevelUp` subscription). Ethan authored the jump clip and a level-up SFX, wired `NPC_Rabbit_Neutral_
+Controller.controller` (the shared controller all 5 gameplay bunny prefabs use), and confirmed by
+playtest: a bunny leveling up mid-Working plays the Cheer, then falls straight back into its Working
+pose with zero interruption to the actual job/production/XP logic — the "never touches CurrentState"
+design worked exactly as intended.
+
+**Animator wiring gotcha hit during this pass** (worth remembering — see the session's diagnostic
+trail): the trigger parameter name silently became `IsCheering 0` (Unity auto-appends a numeric
+suffix when a new parameter's name collides with an existing/leftover one — here, from converting an
+earlier same-named Bool attempt to a Trigger without fully removing the old entry first). Neither
+`animator.SetTrigger("IsCheering")` in code nor the transition's own condition could match that name,
+so the whole thing silently no-op'd — no error, SFX still fired (unrelated code path), just no visual.
+Confirmed root cause only after directly reading the `.controller` YAML asset itself rather than
+guessing from a description of the Editor UI — `m_Name: IsCheering 0` was right there in the parameter
+list. Two secondary issues were also caught the same way and are worth remembering as general Animator
+patterns for this project's hub-based state machine (Idle is the default/hub state; spokes like
+Working/Eating transition back to it, not to each other directly): the *entry* transition (`Any State
+-> Cheering`) needs Has Exit Time OFF (fire immediately on trigger), while the *exit* transition
+(`Cheering -> Idle`) needs it ON with Exit Time near 1 (not 0 — Exit Time is a fraction of the clip's
+length, so 0 would cut it short) so it waits for the clip to actually finish before leaving.
+
+**Still not done**:
+- Run `Burrowscape > Generate Bunny Trait Seed Data` to actually create/update Smart/Dumb in whichever
+  `BunnyTraitCatalog` is in the open scene (code only touches the generator's seed list, not the scene
+  component itself — matches this project's usual "code first, Editor pass separately" workflow).
+- `AudioManager` self-creates via `EnsureInstance()` if nothing's placed in the scene, so no manual
+  setup is strictly required, but a manually-placed instance lets `masterVolume` be Inspector-tuned.
+- Balance values (`baseXPPerSecond`/`typeMatchXPBonus`/`xpGradeMultiplier` per-prefab, Smart/Dumb's
+  1.25x/0.75x) are the placeholders discussed below — expect a retuning pass once fully playtested,
+  same caveat as every other numeric system in this project.
+- The Work Room XP *rate itself* (bunnies actually earning XP from a full work shift, tick-decoupling
+  across Garden/Water/Coal's different production intervals) hasn't been playtested yet — only the
+  level-up feedback (animation/SFX/return-to-work) has been confirmed so far.
+
 ## Goal
 
 Give bunnies a second source of XP — working a job in Garden/Water/Coal Room — alongside the
@@ -69,8 +107,19 @@ balance, not XP pacing. XP needs its own rate, independent of any room's product
 ### Formula
 
 ```
-XP/sec = baseXPPerSecond × xpGradeMultiplier × (typeMatch ? 1 + typeMatchXPBonus : 1) × bunny.XPGainMultiplier
+XP/sec (raw, pre-trait) = baseXPPerSecond × xpGradeMultiplier × (typeMatch ? 1 + typeMatchXPBonus : 1)
 ```
+
+**Correction (2026-07-27, post-implementation):** `bunny.XPGainMultiplier` (Smart/Dumb) is **not**
+part of this room-side formula at all — it's applied once, centrally, inside
+`NPCBunny.AddExperience(amount)` itself (`experience += amount * XPGainMultiplier`), so it scales XP
+from *every* source automatically — Foraging, Work Rooms, and anything added later — without each
+caller needing to remember to apply it. The original version of this doc (and the first pass of code)
+scoped it to only the work-room formula above, matching a literal reading of Part 1's original
+formula; Ethan corrected this once he saw the Smart/Dumb trait descriptions only mentioned Work Rooms
+— the intent was always "affects all XP gain," not "affects Work Room XP specifically." Every XP
+source (`ForagingManager.DepositTripResults`, `RoomBase.GrantWorkXPRoutine`) now passes its own raw,
+pre-multiplier amount straight into `AddExperience`, which applies the trait once as the final step.
 
 - `baseXPPerSecond` — one shared placeholder value across every work room type, broadcast the same
   way `diminishingReturnsRate` already is.
@@ -80,8 +129,10 @@ XP/sec = baseXPPerSecond × xpGradeMultiplier × (typeMatch ? 1 + typeMatchXPBon
 - Type-match bonus — same shape as production's `typeMatchProductionBonus`, but its own separate
   `xpRecommendedTypes` list per room (also per Ethan's call to keep XP fields fully independent of
   production fields).
-- `bunny.XPGainMultiplier` — new trait-driven multiplier, mirrors `ProductionMultiplier`. Smart
-  (1.25x) and Dumb (0.75x) are new trait content — neither exists in `BunnyTraitCatalog` yet.
+- `bunny.XPGainMultiplier` — new trait-driven multiplier, mirrors `ProductionMultiplier` in shape but
+  NOT in scope — see the correction above, it applies inside `AddExperience` to ALL XP, not just this
+  formula. Smart (1.25x) and Dumb (0.75x) are new trait content — neither existed in
+  `BunnyTraitCatalog` before this pass.
 
 ### Pacing math
 
@@ -122,7 +173,8 @@ grind for max level under best-case buffs is normal pacing for a management sim'
   `OnRoomShutdown`) — so XP accrual shares the same "is this bunny actively working right now"
   lifecycle as production, without sharing its clock.
 - New `NPCBunny.XPGainMultiplier` float property, populated in `ApplyTraitEffects()` the same way
-  `ProductionMultiplier` is (defaults to 1, multiplies in place per matching trait).
+  `ProductionMultiplier` is (defaults to 1, multiplies in place per matching trait) — but applied to
+  the incoming `amount` inside `AddExperience` itself, not read by this room-side formula at all.
 - New `TraitEffectType.XPGainMultiplier` enum case; **Smart** (1.25x) and **Dumb** (0.75x) authored as
   new `BunnyTraitDefinition` entries in `BunnyTraitCatalog` — net-new data, nothing to migrate.
 - `WorkRoomProductionTuner` gets a second broadcast section (`baseXPPerSecond`/`typeMatchXPBonus`)

@@ -233,6 +233,8 @@ MonoBehaviour:
   isEatingParam: IsEating
   isDrinkingParam: IsDrinking
   isSleepingParam: IsSleeping
+  levelUpTriggerParam: LevelUpCheer
+  levelUpClip: {fileID: 8300000, guid: c07bf9444c47a1743a5c92bbf7499758, type: 3}
   bunnyScaleRoot: {fileID: 5325006013901068792}
   bunnyFacesLeftByDefault: 1
   wanderPauseDuration: 3

@@ -143,6 +143,7 @@ public class WaterRoom : RoomBase, IJobRoom
             StopCoroutine(routine);
             activeProductionRoutines.Remove(bunny);
             activeWorkerOrder.Remove(bunny);
+            StopWorkXPRoutine(bunny);
         }
     }
 
@@ -168,6 +169,7 @@ public class WaterRoom : RoomBase, IJobRoom
 
             Coroutine routine = StartCoroutine(ProduceWaterRoutine(bunny));
             activeProductionRoutines[bunny] = routine;
+            StartWorkXPRoutine(bunny);
         }
     }
 
@@ -198,6 +200,7 @@ public class WaterRoom : RoomBase, IJobRoom
             {
                 activeProductionRoutines.Remove(bunny);
                 activeWorkerOrder.Remove(bunny);
+                StopWorkXPRoutine(bunny);
                 yield break;
             }
 
@@ -226,6 +229,7 @@ public class WaterRoom : RoomBase, IJobRoom
         }
         activeProductionRoutines.Clear();
         activeWorkerOrder.Clear();
+        StopAllWorkXPRoutines();
     }
 
     public void OnRoomRestored()

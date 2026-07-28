@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -153,6 +154,79 @@ public class RoomBase : MonoBehaviour
     // tunable per prefab for balance.
     [SerializeField] protected float gradeMultiplier = 1f;
     public float GradeMultiplier => gradeMultiplier;
+
+    // ---------- WORK ROOM XP (see WorkRoomXP_DesignDoc.md) ----------
+    // Deliberately SEPARATE fields from gradeMultiplier/recommendedTypes above (Ethan's call — XP and
+    // production are allowed to diverge in pacing later even though they start at the same shape).
+    // Only meaningful on GardenRoom/WaterRoom/CoalRoom (the IJobRoom types), but lives here on RoomBase
+    // since the coroutine that grants XP is shared by all three rather than tripled per room script.
+    [Header("Work XP (separate from production tuning — see WorkRoomXP_DesignDoc.md)")]
+    [Tooltip("Broadcast across every work room via Burrowscape > Work Room Production Tuner, same as diminishingReturnsRate/typeMatchProductionBonus.")]
+    [SerializeField] protected float baseXPPerSecond = 0.25f;
+    [Tooltip("Broadcast across every work room via the Tuner. 0.25 = 1.25x XP while bunny.Type is in xpRecommendedTypes.")]
+    [SerializeField] protected float typeMatchXPBonus = 0.25f;
+    [Tooltip("Authored per-prefab, same as gradeMultiplier (1 / 1.5 / 2 for Grade 1/2/3) — NOT broadcast by the Tuner, since it's meant to be tunable independently per room instance.")]
+    [SerializeField] protected float xpGradeMultiplier = 1f;
+    [Tooltip("Edited via the Tuner's per-room XP grid — its own list, separate from recommendedTypes (production's type-match list).")]
+    [HideInInspector] [SerializeField] protected List<BunnyType> xpRecommendedTypes = new List<BunnyType>();
+
+    // Fixed tick, deliberately NOT tied to any room's productionInterval/PowerProductionInterval — see
+    // the design doc's "the actual fix for the tick-rate mismatch" note. One dict per room instance,
+    // separate from each room's own activeProductionRoutines, so XP accrual can be started/stopped at
+    // the same lifecycle points as production without sharing its clock.
+    private const float WorkXPTickInterval = 1f;
+    private readonly Dictionary<NPCBunny, Coroutine> activeXPRoutines = new Dictionary<NPCBunny, Coroutine>();
+
+    // Called by GardenRoom/WaterRoom/CoalRoom at the exact same point they start their own production
+    // coroutine (NotifyBunnyReadyToWork) — see each room's own call site for why.
+    protected void StartWorkXPRoutine(NPCBunny bunny)
+    {
+        if (activeXPRoutines.ContainsKey(bunny)) return;
+        activeXPRoutines[bunny] = StartCoroutine(GrantWorkXPRoutine(bunny));
+    }
+
+    // Called by GardenRoom/WaterRoom/CoalRoom at the exact same points they stop their own production
+    // coroutine (StopProductionRoutine and each room's own inline self-stop when CurrentState drifts
+    // away from Working) — an eager stop rather than waiting for this routine's own next tick to notice,
+    // mirroring why production does the same (avoids a stray XP tick after the bunny's already left).
+    protected void StopWorkXPRoutine(NPCBunny bunny)
+    {
+        if (activeXPRoutines.TryGetValue(bunny, out Coroutine routine))
+        {
+            StopCoroutine(routine);
+            activeXPRoutines.Remove(bunny);
+        }
+    }
+
+    // Called by OnRoomShutdown (Power/Water cutting out) — mirrors how each room's own OnRoomShutdown
+    // iterates and clears activeProductionRoutines directly rather than one bunny at a time.
+    protected void StopAllWorkXPRoutines()
+    {
+        foreach (KeyValuePair<NPCBunny, Coroutine> kvp in activeXPRoutines)
+            StopCoroutine(kvp.Value);
+        activeXPRoutines.Clear();
+    }
+
+    private IEnumerator GrantWorkXPRoutine(NPCBunny bunny)
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(WorkXPTickInterval);
+
+            if (bunny.CurrentState != BunnyState.Working)
+            {
+                activeXPRoutines.Remove(bunny);
+                yield break;
+            }
+
+            // NOT multiplied by bunny.XPGainMultiplier here — AddExperience itself applies that
+            // universally to every XP source, this room's raw amount included. See NPCBunny.
+            // AddExperience's own comment for why.
+            bool typeMatch = xpRecommendedTypes != null && xpRecommendedTypes.Contains(bunny.Type);
+            float rate = baseXPPerSecond * xpGradeMultiplier * (typeMatch ? 1f + typeMatchXPBonus : 1f);
+            bunny.AddExperience(rate * WorkXPTickInterval);
+        }
+    }
 
     // Identifies a room's TYPE (e.g. "Garden", "Kitchen", "Storage Room") independent of which
     // MonoBehaviour subclass it uses — needed because purely decorative room types share the bare

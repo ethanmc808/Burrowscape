@@ -219,6 +219,21 @@ public class ForagingManager : MonoBehaviour
 
     private IEnumerator RunDispatchRoutine(NPCBunny bunny, ForagingTripState trip)
     {
+        // Reacts to NPCBunny.OnLevelUp for the duration of this trip only — see WorkRoomXP_DesignDoc.md's
+        // "Foraging's bold log entry" section. PlayLevelUpFeedback (NPCBunny's own animation/SFX
+        // reaction) already suppresses itself while CurrentState == Foraging (parked off-screen at the
+        // staging point, nothing visible/audible to attach a cheer to), so this is what surfaces that
+        // moment instead: a bold entry in the trip's own event log. Currently unreachable — the only real
+        // AddExperience call today (DepositTripResults below) runs strictly after CurrentState is back to
+        // Idle — but built now for a hypothetical future passive/accessory XP-over-time source, per
+        // Ethan's call. Harmless no-op otherwise (e.g. today's actual post-return call).
+        void HandleLevelUpDuringTrip(int newLevel)
+        {
+            if (bunny != null && bunny.CurrentState == BunnyState.Foraging)
+                trip.AddLogEntry($"<b>Level Up! Reached Level {newLevel}</b>");
+        }
+        bunny.OnLevelUp += HandleLevelUpDuringTrip;
+
         // Don't start ticking until the bunny has actually finished walking out and reached the staging
         // point (DepartForForaging's own departure-through-gate leg) — see NPCBunny.
         // OnArrivedAtForagingStagingPoint, which is what flips CurrentState to Foraging.
@@ -235,7 +250,10 @@ public class ForagingManager : MonoBehaviour
             && (GateQueueManager.Instance == null || !GateQueueManager.Instance.IsInQueue(bunny))));
 
         if (bunny != null)
+        {
             DepositTripResults(bunny, trip);
+            bunny.OnLevelUp -= HandleLevelUpDuringTrip;
+        }
 
         activeTrips.Remove(bunny);
     }

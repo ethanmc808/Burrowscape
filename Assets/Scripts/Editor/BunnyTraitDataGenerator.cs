@@ -58,6 +58,11 @@ public static class BunnyTraitDataGenerator
         // IgnoresNature (kept at 1f as a neutral placeholder since every SeedTrait needs one). No
         // incompatible traits — Stoic doesn't oppose any of the rate-based traits above.
         new SeedTrait("stoic", "Stoic", "Ignores this bunny's Zodiac (Nature) stat modifier entirely.", TraitEffectType.IgnoresNature, 1f),
+
+        // Work Room XP system (2026-07-27): applies to XP from every source (Foraging, Work Rooms, and
+        // any future source) — see WorkRoomXP_DesignDoc.md.
+        new SeedTrait("smart", "Smart", "Gains 1.25x XP from all sources.", TraitEffectType.XPGainMultiplier, 1.25f, "dumb"),
+        new SeedTrait("dumb", "Dumb", "Gains 0.75x XP from all sources.", TraitEffectType.XPGainMultiplier, 0.75f, "smart"),
     };
 
     [MenuItem("Burrowscape/Generate Bunny Trait Seed Data")]
