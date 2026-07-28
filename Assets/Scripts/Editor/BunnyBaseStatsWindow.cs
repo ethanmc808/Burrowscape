@@ -24,7 +24,7 @@ public class BunnyBaseStatsWindow : EditorWindow
     private static void ShowWindow()
     {
         BunnyBaseStatsWindow window = GetWindow<BunnyBaseStatsWindow>("Bunny Base Stats");
-        window.minSize = new Vector2(760, 300);
+        window.minSize = new Vector2(900, 300);
         window.LoadDefinitions();
     }
 
@@ -69,7 +69,10 @@ public class BunnyBaseStatsWindow : EditorWindow
 
         EditorGUILayout.HelpBox(
             "These are pre-multiplier base stats. At spawn, HP is x2 and Luck is x0.5 relative to what's " +
-            "shown here (Attack/Defense/Speed are unmodified) — see BunnyStatCalculator in the design doc.",
+            "shown here (Attack/Defense/Speed are unmodified) — see BunnyStatCalculator in the design doc. " +
+            "Changing a row's Group inherits that group's existing Unlocks At value automatically (unless " +
+            "it's the first type moved into a brand-new group). Rows stay in their old group's section " +
+            "until you click Refresh, which re-sorts everything by the new values.",
             MessageType.None);
 
         DrawHeaderRow();
@@ -119,6 +122,8 @@ public class BunnyBaseStatsWindow : EditorWindow
         GUILayout.Label("Speed", EditorStyles.boldLabel, GUILayout.Width(60));
         GUILayout.Label("Luck", EditorStyles.boldLabel, GUILayout.Width(60));
         GUILayout.Label("Total", EditorStyles.boldLabel, GUILayout.Width(60));
+        GUILayout.Label("Group", EditorStyles.boldLabel, GUILayout.Width(50));
+        GUILayout.Label("Unlocks At", EditorStyles.boldLabel, GUILayout.Width(70));
         GUILayout.Label("Prefab", EditorStyles.boldLabel, GUILayout.Width(60));
         EditorGUILayout.EndHorizontal();
     }
@@ -145,6 +150,41 @@ public class BunnyBaseStatsWindow : EditorWindow
         }
 
         GUILayout.Label(def.BaseTotal.ToString(), GUILayout.Width(60));
+
+        // Group is organizational-only on the data itself (see BunnyTypeDefinition's own doc comment) —
+        // populationThreshold is the real gate, read directly per-definition by BunnyTypeUnlockTracker,
+        // with no other source of truth anywhere. So moving a type into a group that already has other
+        // members inherits THAT group's threshold automatically here, rather than requiring it to be
+        // retyped by hand and risking it drifting out of sync with its new groupmates. A brand-new/empty
+        // group has nothing to inherit from, so the threshold field just below stays directly editable
+        // for exactly that first-in-group case.
+        SerializedProperty groupProp = so.FindProperty("group");
+        SerializedProperty thresholdProp = so.FindProperty("populationThreshold");
+
+        EditorGUI.BeginChangeCheck();
+        int newGroup = EditorGUILayout.IntField(groupProp.intValue, GUILayout.Width(50));
+        if (EditorGUI.EndChangeCheck())
+        {
+            groupProp.intValue = newGroup;
+
+            BunnyTypeDefinition groupMate = definitions.FirstOrDefault(d => d != def && d.group == newGroup);
+            if (groupMate != null)
+                thresholdProp.intValue = groupMate.populationThreshold;
+
+            so.ApplyModifiedProperties();
+            EditorUtility.SetDirty(def);
+            dirtySinceLastSave = true;
+        }
+
+        EditorGUI.BeginChangeCheck();
+        int newThreshold = EditorGUILayout.IntField(thresholdProp.intValue, GUILayout.Width(70));
+        if (EditorGUI.EndChangeCheck())
+        {
+            thresholdProp.intValue = newThreshold;
+            so.ApplyModifiedProperties();
+            EditorUtility.SetDirty(def);
+            dirtySinceLastSave = true;
+        }
 
         GUI.enabled = false;
         EditorGUILayout.ObjectField(def.prefab, typeof(GameObject), false, GUILayout.Width(60));

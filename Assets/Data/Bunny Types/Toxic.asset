@@ -21,6 +21,6 @@ MonoBehaviour:
   baseDefense: 90
   baseSpeed: 60
   baseLuck: 20
-  group: 3
-  populationThreshold: 50
+  group: 2
+  populationThreshold: 25
   passives: []
