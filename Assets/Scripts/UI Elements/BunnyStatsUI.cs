@@ -45,12 +45,14 @@ public class BunnyStatsUI : MonoBehaviour
         currentBunny = bunny;
         bunnyNameLabel.text = bunny.name;
         panelRoot.SetActive(true);
+        AudioManager.EnsureInstance().PlayUIOpen();
         RefreshBars();
     }
 
     public void Close()
     {
         panelRoot.SetActive(false);
+        AudioManager.EnsureInstance().PlayUIClose();
         currentBunny = null;
     }
 

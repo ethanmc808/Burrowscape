@@ -54,12 +54,14 @@ public class BuildMenuUI : MonoBehaviour
     {
         PlacementModeManager.Instance?.RequestMode(PlacementMode.Build);
         panelRoot.SetActive(true);
+        AudioManager.EnsureInstance().PlayUIOpen();
         RefreshList();
     }
 
     public void Close()
     {
         panelRoot.SetActive(false);
+        AudioManager.EnsureInstance().PlayUIClose();
     }
 
     // Re-evaluated fresh every open — live-checked unlock conditions (e.g. population) need to reflect
@@ -79,6 +81,7 @@ public class BuildMenuUI : MonoBehaviour
 
     private void OnDefinitionChosen(RoomDefinition definition)
     {
+        AudioManager.EnsureInstance().PlayButtonClick();
         BuildModeController.Instance?.EnterBuildMode(definition);
         Close();
     }

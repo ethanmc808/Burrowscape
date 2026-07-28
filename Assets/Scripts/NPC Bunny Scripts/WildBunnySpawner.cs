@@ -257,6 +257,7 @@ public class WildBunnySpawner : MonoBehaviour
         if (typesEverSpawned.Add(chosenType.type) && !baseStartingTypes.Contains(chosenType.type))
         {
             NewBunnyTypeNotification.Instance?.Show(chosenType);
+            AudioManager.EnsureInstance().PlayNewBunnyTypeRevealed();
         }
     }
 }

@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 032476e5235ff09469e4d7ec81db0403, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Kitchen_Cabinet_001
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 032476e5235ff09469e4d7ec81db0403, type: 3}
---- !u!1 &1080455125904510872 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 032476e5235ff09469e4d7ec81db0403, type: 3}
-  m_PrefabInstance: {fileID: 162100894111167177}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &5476524438319612166
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1080455125904510872}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -552047807290627621, guid: 032476e5235ff09469e4d7ec81db0403, type: 3}

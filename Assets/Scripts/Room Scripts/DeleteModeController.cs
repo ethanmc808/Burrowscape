@@ -88,5 +88,6 @@ public class DeleteModeController : MonoBehaviour
         }
 
         Destroy(room.gameObject);
+        AudioManager.EnsureInstance().PlayRoomDestroyed();
     }
 }

@@ -14,6 +14,7 @@ public class RoomUpgradeUI : MonoBehaviour
     [Header("Panel")]
     [SerializeField] private GameObject panelRoot;
     [SerializeField] private TextMeshProUGUI gradeLabel;
+    [SerializeField] private Button closeButton;
 
     [Header("Upgrade Button")]
     [SerializeField] private Button upgradeButton;
@@ -37,6 +38,12 @@ public class RoomUpgradeUI : MonoBehaviour
         // — same pattern AssignmentUI/BuildModeController/DeleteModeController already use.
         upgradeButton.onClick.RemoveAllListeners();
         upgradeButton.onClick.AddListener(OnUpgradeClicked);
+
+        if (closeButton != null)
+        {
+            closeButton.onClick.RemoveAllListeners();
+            closeButton.onClick.AddListener(Close);
+        }
     }
 
     public void OpenForRoom(RoomBase room)
@@ -46,6 +53,7 @@ public class RoomUpgradeUI : MonoBehaviour
         currentRoom = room;
         if (gradeLabel != null) gradeLabel.text = $"Grade {room.Grade}";
         panelRoot.SetActive(true);
+        AudioManager.EnsureInstance().PlayUIOpen();
         RefreshUpgradeOption();
     }
 
@@ -55,6 +63,7 @@ public class RoomUpgradeUI : MonoBehaviour
         if (!panelRoot.activeSelf) return;
 
         panelRoot.SetActive(false);
+        AudioManager.EnsureInstance().PlayUIClose();
         currentRoom = null;
         targetDefinition = null;
         AssignmentUI.Instance?.Close();
@@ -85,6 +94,8 @@ public class RoomUpgradeUI : MonoBehaviour
     private void OnUpgradeClicked()
     {
         if (currentRoom == null || targetDefinition == null) return;
+
+        AudioManager.EnsureInstance().PlayButtonClick();
 
         if (GoldManager.Instance == null || !GoldManager.Instance.TrySpendGold(targetDefinition.goldCost))
         {

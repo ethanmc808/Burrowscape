@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 5026724960263064765}
     m_Modifications:
     - target: {fileID: 465564849553241341, guid: d82e262fee62e504a9a4b3b1f914557e, type: 3}
@@ -55,13 +56,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -4741241539831342833, guid: d82e262fee62e504a9a4b3b1f914557e, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d82e262fee62e504a9a4b3b1f914557e, type: 3}
+--- !u!4 &1840895164392899434 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 954152269534146119, guid: d82e262fee62e504a9a4b3b1f914557e, type: 3}
+  m_PrefabInstance: {fileID: 1491245669332593965}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4776132046343678806
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 9f11861c24eda9d48925f3556acd235e, type: 3}
@@ -113,28 +124,15 @@ PrefabInstance:
       value: Container_type_A_001
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9f11861c24eda9d48925f3556acd235e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1840895164392899434}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9f11861c24eda9d48925f3556acd235e, type: 3}
 --- !u!4 &5026724960263064765 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9f11861c24eda9d48925f3556acd235e, type: 3}
   m_PrefabInstance: {fileID: 4776132046343678806}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &5659145783851718151 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 9f11861c24eda9d48925f3556acd235e, type: 3}
-  m_PrefabInstance: {fileID: 4776132046343678806}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &4808883379003948293
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5659145783851718151}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 2967449095979345520, guid: 9f11861c24eda9d48925f3556acd235e, type: 3}

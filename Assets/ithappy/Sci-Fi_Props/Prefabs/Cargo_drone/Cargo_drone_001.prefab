@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 6356611285242035310}
     m_Modifications:
     - target: {fileID: 3727909913477309813, guid: 919ff324e70c7924783c435a2f58be0d, type: 3}
@@ -55,13 +56,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 2462380957106897006, guid: 919ff324e70c7924783c435a2f58be0d, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 919ff324e70c7924783c435a2f58be0d, type: 3}
+--- !u!4 &4166997377017823097 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4104999158300590031, guid: 919ff324e70c7924783c435a2f58be0d, type: 3}
+  m_PrefabInstance: {fileID: 82125776327606454}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &586852760374935596
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 6356611285242035310}
     m_Modifications:
     - target: {fileID: 8481494289877758263, guid: 9f1f3fbb3db41d74598c4371c378d2a0, type: 3}
@@ -112,13 +123,23 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cargo_drone_001_door_001
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 7742005765554351011, guid: 9f1f3fbb3db41d74598c4371c378d2a0, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9f1f3fbb3db41d74598c4371c378d2a0, type: 3}
+--- !u!4 &9047935504580997403 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8481494289877758263, guid: 9f1f3fbb3db41d74598c4371c378d2a0, type: 3}
+  m_PrefabInstance: {fileID: 586852760374935596}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2223545692131834483
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 6356611285242035310}
     m_Modifications:
     - target: {fileID: 5973644442488105322, guid: 24a53e79fef6b214bab232c6561f4ccb, type: 3}
@@ -169,13 +190,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 2208825225761526987, guid: 24a53e79fef6b214bab232c6561f4ccb, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 24a53e79fef6b214bab232c6561f4ccb, type: 3}
+--- !u!4 &5149560864723110307 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6461950044425499600, guid: 24a53e79fef6b214bab232c6561f4ccb, type: 3}
+  m_PrefabInstance: {fileID: 2223545692131834483}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2513800770131823794
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 6356611285242035310}
     m_Modifications:
     - target: {fileID: 7412546133756929754, guid: 2042e5929eff8654ba42eb836c65ff26, type: 3}
@@ -226,13 +257,23 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cargo_drone_001_chassis_001
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -4423541809843531391, guid: 2042e5929eff8654ba42eb836c65ff26, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2042e5929eff8654ba42eb836c65ff26, type: 3}
+--- !u!4 &4916935821972040296 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7412546133756929754, guid: 2042e5929eff8654ba42eb836c65ff26, type: 3}
+  m_PrefabInstance: {fileID: 2513800770131823794}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3406668760770536030
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 6356611285242035310}
     m_Modifications:
     - target: {fileID: 8304864663142820003, guid: ecadfda88d07b924fbea7057baa99fa4, type: 3}
@@ -283,13 +324,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -5536160492260875253, guid: ecadfda88d07b924fbea7057baa99fa4, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ecadfda88d07b924fbea7057baa99fa4, type: 3}
+--- !u!4 &6290954683528237127 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8650041338083029529, guid: ecadfda88d07b924fbea7057baa99fa4, type: 3}
+  m_PrefabInstance: {fileID: 3406668760770536030}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4314841553493226292
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 6356611285242035310}
     m_Modifications:
     - target: {fileID: 484050148850701729, guid: 781016f144cc157489619219c560f5bd, type: 3}
@@ -340,13 +391,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 7340965061954832550, guid: 781016f144cc157489619219c560f5bd, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 781016f144cc157489619219c560f5bd, type: 3}
+--- !u!4 &3899277452400540719 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1007787787267133211, guid: 781016f144cc157489619219c560f5bd, type: 3}
+  m_PrefabInstance: {fileID: 4314841553493226292}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5430566556160230309
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 6356611285242035310}
     m_Modifications:
     - target: {fileID: 1497243630348654732, guid: 0788db3898201dc46915043ef0083435, type: 3}
@@ -397,13 +458,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 3028754579044025358, guid: 0788db3898201dc46915043ef0083435, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0788db3898201dc46915043ef0083435, type: 3}
+--- !u!4 &6111850922145055123 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2273358533889458742, guid: 0788db3898201dc46915043ef0083435, type: 3}
+  m_PrefabInstance: {fileID: 5430566556160230309}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6898812266664844165
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 2978febee61f41f419347228bc16302c, type: 3}
@@ -455,26 +526,37 @@ PrefabInstance:
       value: Cargo_drone_001
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2978febee61f41f419347228bc16302c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4916935821972040296}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2978febee61f41f419347228bc16302c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3899277452400540719}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2978febee61f41f419347228bc16302c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5149560864723110307}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2978febee61f41f419347228bc16302c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4166997377017823097}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2978febee61f41f419347228bc16302c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9047935504580997403}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2978febee61f41f419347228bc16302c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6290954683528237127}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2978febee61f41f419347228bc16302c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2468054225749677412}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2978febee61f41f419347228bc16302c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6111850922145055123}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2978febee61f41f419347228bc16302c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2762097748690373551}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2978febee61f41f419347228bc16302c, type: 3}
---- !u!1 &6015939275099956948 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 2978febee61f41f419347228bc16302c, type: 3}
-  m_PrefabInstance: {fileID: 6898812266664844165}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &2497466505289695365
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6015939275099956948}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 6451594539174932818, guid: 2978febee61f41f419347228bc16302c, type: 3}
 --- !u!4 &6356611285242035310 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2978febee61f41f419347228bc16302c, type: 3}
@@ -485,6 +567,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 6356611285242035310}
     m_Modifications:
     - target: {fileID: 4638598589768363022, guid: 5dc5c9ec6a0ed8f4aba56f5f3a271b2f, type: 3}
@@ -535,13 +618,23 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cargo_drone_001_engine_004
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 7165188679128698729, guid: 5dc5c9ec6a0ed8f4aba56f5f3a271b2f, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5dc5c9ec6a0ed8f4aba56f5f3a271b2f, type: 3}
+--- !u!4 &2762097748690373551 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4638598589768363022, guid: 5dc5c9ec6a0ed8f4aba56f5f3a271b2f, type: 3}
+  m_PrefabInstance: {fileID: 7353091298621777825}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7383008513617445282
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 6356611285242035310}
     m_Modifications:
     - target: {fileID: 4915112872157926598, guid: 1c38f5970ee608449894f4bfc7627914, type: 3}
@@ -592,5 +685,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cargo_drone_001_engine_002
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -3878674227101354320, guid: 1c38f5970ee608449894f4bfc7627914, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1c38f5970ee608449894f4bfc7627914, type: 3}
+--- !u!4 &2468054225749677412 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4915112872157926598, guid: 1c38f5970ee608449894f4bfc7627914, type: 3}
+  m_PrefabInstance: {fileID: 7383008513617445282}
+  m_PrefabAsset: {fileID: 0}

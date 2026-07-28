@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: d30362ad1cfaad44e8a73ac6bb1c5541, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Crate_014_cap_001
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d30362ad1cfaad44e8a73ac6bb1c5541, type: 3}
---- !u!1 &1398715792869875353 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d30362ad1cfaad44e8a73ac6bb1c5541, type: 3}
-  m_PrefabInstance: {fileID: 2281166994888844232}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-7057133302623710038
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1398715792869875353}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -3264071233814280477, guid: d30362ad1cfaad44e8a73ac6bb1c5541, type: 3}

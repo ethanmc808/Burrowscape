@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: f402d9d82ae097546b3d42caeb8c0259, type: 3}
@@ -52,7 +53,7 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: f402d9d82ae097546b3d42caeb8c0259, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 0994916b7e52bb34d991cefd39558b16, type: 2}
     - target: {fileID: 919132149155446097, guid: f402d9d82ae097546b3d42caeb8c0259, type: 3}
@@ -60,23 +61,7 @@ PrefabInstance:
       value: medical_chair_014
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f402d9d82ae097546b3d42caeb8c0259, type: 3}
---- !u!1 &2774805711471581774 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f402d9d82ae097546b3d42caeb8c0259, type: 3}
-  m_PrefabInstance: {fileID: 3045417162789365535}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-1484334420800006196
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2774805711471581774}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -5124465867335514037, guid: f402d9d82ae097546b3d42caeb8c0259, type: 3}

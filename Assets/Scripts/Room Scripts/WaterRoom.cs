@@ -44,6 +44,9 @@ public class WaterRoom : RoomBase, IJobRoom
     [HideInInspector] [SerializeField] private List<BunnyType> recommendedTypes = new List<BunnyType>();
     [SerializeField] private float typeMatchProductionBonus = 0.25f;
 
+    [Header("Work Ambient (see AudioManager — proximity-based, ref-counted per active worker)")]
+    [SerializeField] private AudioClip workAmbientClip;
+
     public float ProductionInterval => productionInterval;
     public int WaterPerProduction => waterPerProduction;
     public float WaterRationingPoolAmount => waterRationingPoolAmount;
@@ -144,6 +147,7 @@ public class WaterRoom : RoomBase, IJobRoom
             activeProductionRoutines.Remove(bunny);
             activeWorkerOrder.Remove(bunny);
             StopWorkXPRoutine(bunny);
+            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work"));
         }
     }
 
@@ -170,6 +174,7 @@ public class WaterRoom : RoomBase, IJobRoom
             Coroutine routine = StartCoroutine(ProduceWaterRoutine(bunny));
             activeProductionRoutines[bunny] = routine;
             StartWorkXPRoutine(bunny);
+            AudioManager.EnsureInstance().IncrementProximityLoop((this, "Work"), workAmbientClip, transform);
         }
     }
 
@@ -201,6 +206,7 @@ public class WaterRoom : RoomBase, IJobRoom
                 activeProductionRoutines.Remove(bunny);
                 activeWorkerOrder.Remove(bunny);
                 StopWorkXPRoutine(bunny);
+                AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work"));
                 yield break;
             }
 
@@ -226,6 +232,7 @@ public class WaterRoom : RoomBase, IJobRoom
             StopCoroutine(kvp.Value);
             kvp.Key.ForceIdleDueToRoomShutdown();
             idledByShutdown.Add(kvp.Key);
+            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work")); // one per worker that was actively producing, matching IncrementProximityLoop in NotifyBunnyReadyToWork
         }
         activeProductionRoutines.Clear();
         activeWorkerOrder.Clear();

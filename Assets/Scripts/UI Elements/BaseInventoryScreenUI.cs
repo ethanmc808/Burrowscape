@@ -53,12 +53,14 @@ public class BaseInventoryScreenUI : MonoBehaviour
     public void Open()
     {
         if (panelRoot != null) panelRoot.SetActive(true);
+        AudioManager.EnsureInstance().PlayUIOpen();
         Refresh();
     }
 
     public void Close()
     {
         if (panelRoot != null) panelRoot.SetActive(false);
+        AudioManager.EnsureInstance().PlayUIClose();
     }
 
     private void OnInventoryChanged()

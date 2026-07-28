@@ -67,6 +67,7 @@ public class ForagingDispatchUI : MonoBehaviour
     {
         currentBunny = bunny;
         panelRoot.SetActive(true);
+        AudioManager.EnsureInstance().PlayUIOpen();
 
         unlockedLocations = ForagingManager.Instance != null && ForagingLocationUnlockTracker.Instance != null
             ? ForagingManager.Instance.Locations.Where(l => l != null && ForagingLocationUnlockTracker.Instance.IsUnlocked(l)).ToList()
@@ -79,6 +80,7 @@ public class ForagingDispatchUI : MonoBehaviour
     public void Close()
     {
         panelRoot.SetActive(false);
+        AudioManager.EnsureInstance().PlayUIClose();
         currentBunny = null;
     }
 
@@ -168,6 +170,8 @@ public class ForagingDispatchUI : MonoBehaviour
     private void OnConfirmClicked()
     {
         if (currentBunny == null || selectedLocation == null || ForagingManager.Instance == null) return;
+
+        AudioManager.EnsureInstance().PlayButtonClick();
 
         bool dispatched = ForagingManager.Instance.TryDispatch(currentBunny, selectedLocation, selectedPotionCount);
         if (dispatched)

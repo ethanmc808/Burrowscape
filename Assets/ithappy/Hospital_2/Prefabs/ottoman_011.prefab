@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: abe80fe574221ee4eb413e4e63ce1c32, type: 3}
@@ -52,7 +53,7 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: abe80fe574221ee4eb413e4e63ce1c32, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 0994916b7e52bb34d991cefd39558b16, type: 2}
     - target: {fileID: 919132149155446097, guid: abe80fe574221ee4eb413e4e63ce1c32, type: 3}
@@ -60,23 +61,7 @@ PrefabInstance:
       value: ottoman_011
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: abe80fe574221ee4eb413e4e63ce1c32, type: 3}
---- !u!1 &4783924538221996199 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: abe80fe574221ee4eb413e4e63ce1c32, type: 3}
-  m_PrefabInstance: {fileID: 5666236230039377398}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-1963006561100205504
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4783924538221996199}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -5827155601140871298, guid: abe80fe574221ee4eb413e4e63ce1c32, type: 3}

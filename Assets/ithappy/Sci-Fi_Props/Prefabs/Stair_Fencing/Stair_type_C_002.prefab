@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 1644b54b6441bea48865d8902f99f1e6, type: 3}
@@ -56,36 +57,24 @@ PrefabInstance:
       value: Stair_type_C_002
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1644b54b6441bea48865d8902f99f1e6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6924555868983654287}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1644b54b6441bea48865d8902f99f1e6, type: 3}
 --- !u!4 &7191162734151737659 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1644b54b6441bea48865d8902f99f1e6, type: 3}
   m_PrefabInstance: {fileID: 7225635367789610704}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &7532258027027856257 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 1644b54b6441bea48865d8902f99f1e6, type: 3}
-  m_PrefabInstance: {fileID: 7225635367789610704}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-2002708750673301360
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7532258027027856257}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -5066086881745593747, guid: 1644b54b6441bea48865d8902f99f1e6, type: 3}
 --- !u!1001 &7774560381931150992
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 7191162734151737659}
     m_Modifications:
     - target: {fileID: 51772750145614757, guid: eb378a148b5abe443a08e392932d1e34, type: 3}
@@ -136,5 +125,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 1514195231472013591, guid: eb378a148b5abe443a08e392932d1e34, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: eb378a148b5abe443a08e392932d1e34, type: 3}
+--- !u!4 &6924555868983654287 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 863635211412908319, guid: eb378a148b5abe443a08e392932d1e34, type: 3}
+  m_PrefabInstance: {fileID: 7774560381931150992}
+  m_PrefabAsset: {fileID: 0}

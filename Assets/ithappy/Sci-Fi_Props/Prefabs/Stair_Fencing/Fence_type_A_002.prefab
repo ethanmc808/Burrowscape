@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: c0cbae4e62e2e04439d9bbc74b64cb29, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Fence_type_A_002
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c0cbae4e62e2e04439d9bbc74b64cb29, type: 3}
---- !u!1 &958150144842021897 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: c0cbae4e62e2e04439d9bbc74b64cb29, type: 3}
-  m_PrefabInstance: {fileID: 111852953169625432}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &329278451016502810
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 958150144842021897}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 2937096463224135763, guid: c0cbae4e62e2e04439d9bbc74b64cb29, type: 3}

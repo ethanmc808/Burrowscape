@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 9755e6a0eed2a234f8cf0001c327aef1, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: "\u0421apsule_008"
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9755e6a0eed2a234f8cf0001c327aef1, type: 3}
---- !u!1 &60756516922693860 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 9755e6a0eed2a234f8cf0001c327aef1, type: 3}
-  m_PrefabInstance: {fileID: 871077551902729653}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &2739278465519885341
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 60756516922693860}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -5118298473125554975, guid: 9755e6a0eed2a234f8cf0001c327aef1, type: 3}

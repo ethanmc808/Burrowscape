@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 20ef72ebe5e160049a681f6a588edcc2, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Gas_can_004
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 20ef72ebe5e160049a681f6a588edcc2, type: 3}
---- !u!1 &8255518119112153725 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 20ef72ebe5e160049a681f6a588edcc2, type: 3}
-  m_PrefabInstance: {fileID: 9101797029255194412}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-6444637206552605302
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8255518119112153725}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 1534606083901892484, guid: 20ef72ebe5e160049a681f6a588edcc2, type: 3}

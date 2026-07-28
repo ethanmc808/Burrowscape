@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: b7553227d0bc15148a5a750ffe5c5bae, type: 3}
@@ -56,36 +57,27 @@ PrefabInstance:
       value: Drone_006
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: b7553227d0bc15148a5a750ffe5c5bae, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4505919132108031687}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: b7553227d0bc15148a5a750ffe5c5bae, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3823061072252469809}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b7553227d0bc15148a5a750ffe5c5bae, type: 3}
 --- !u!4 &461526406382747975 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b7553227d0bc15148a5a750ffe5c5bae, type: 3}
   m_PrefabInstance: {fileID: 138787707359159980}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &949269406194097149 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: b7553227d0bc15148a5a750ffe5c5bae, type: 3}
-  m_PrefabInstance: {fileID: 138787707359159980}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-2932915212116989459
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 949269406194097149}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -1450012687794601018, guid: b7553227d0bc15148a5a750ffe5c5bae, type: 3}
 --- !u!1001 &1641003116037005157
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 461526406382747975}
     m_Modifications:
     - target: {fileID: 2578379409787084116, guid: f262ea3390ac8154b88ba707168fe43d, type: 3}
@@ -136,13 +128,23 @@ PrefabInstance:
       propertyPath: m_Name
       value: Drone_006_wing_002
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -1791526539166287156, guid: f262ea3390ac8154b88ba707168fe43d, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f262ea3390ac8154b88ba707168fe43d, type: 3}
+--- !u!4 &3823061072252469809 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2578379409787084116, guid: f262ea3390ac8154b88ba707168fe43d, type: 3}
+  m_PrefabInstance: {fileID: 1641003116037005157}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2387706542651874752
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 461526406382747975}
     m_Modifications:
     - target: {fileID: 1504548950067888573, guid: 81b5466cacf9a614381848005edb4a8b, type: 3}
@@ -193,5 +195,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -459351545712814404, guid: 81b5466cacf9a614381848005edb4a8b, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 81b5466cacf9a614381848005edb4a8b, type: 3}
+--- !u!4 &4505919132108031687 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2281895512435825415, guid: 81b5466cacf9a614381848005edb4a8b, type: 3}
+  m_PrefabInstance: {fileID: 2387706542651874752}
+  m_PrefabAsset: {fileID: 0}

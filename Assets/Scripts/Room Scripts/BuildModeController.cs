@@ -169,6 +169,7 @@ public class BuildModeController : MonoBehaviour
         // Existing RoomBase.OnEnable -> BaseLayoutManager.RegisterRoom handles registration. For lift
         // segments, LiftRoom.Start()'s existing auto-grouping takes over from here automatically.
         GameObject instance = Instantiate(selectedDefinition.prefab, position, Quaternion.Euler(0f, 180f, 0f));
+        AudioManager.EnsureInstance().PlayRoomBuilt();
 
         // Auto-merge check — only on explicit player placement, never on RegisterRoom generically (which
         // also fires for every hand-placed room at scene load, where auto-merge should never trigger).

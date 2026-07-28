@@ -137,6 +137,11 @@ public class NPCBunny : MonoBehaviour
     [Header("Level-Up SFX (see AudioManager)")]
     [SerializeField] private AudioClip levelUpClip;
 
+    [Header("Proximity Ambient SFX (see AudioManager — only audible near the camera)")]
+    [SerializeField] private AudioClip eatingAmbientClip;
+    [SerializeField] private AudioClip drinkingAmbientClip;
+    [SerializeField] private AudioClip sleepingAmbientClip;
+
     [Header("Facing Direction")]
     [SerializeField] private Transform bunnyScaleRoot;
     [SerializeField] private bool bunnyFacesLeftByDefault = true;
@@ -259,6 +264,15 @@ public class NPCBunny : MonoBehaviour
     private LivingRoom claimedRelaxRoom; // which room claimedRelaxSpot belongs to
     private RoomSpot claimedSleepSpot; // Bedroom spot reserved/occupied while sleeping; mirrors claimedRelaxSpot
     private Bedroom claimedSleepRoom; // which room claimedSleepSpot belongs to
+
+    // Which room (if any) this bunny currently holds a proximity-ambient ref count against, per need —
+    // see SyncProximityAmbient. Tracked separately from cafeteriaBeingUsed/waterRoomBeingUsed/
+    // claimedSleepRoom because those stay set across an interrupt-chain (e.g. woken early from Sleeping
+    // to eat, see LeaveSleepingForCafeteria) while CurrentState itself has already moved on — the ambient
+    // loop needs to follow CurrentState, not the reservation.
+    private CafeteriaRoom proximityEatingRoom;
+    private WaterRoom proximityDrinkingRoom;
+    private Bedroom proximitySleepingRoom;
     private RoomBase currentRoom;
     private RoomSpot currentSpot; // the spot bunny is currently occupying, null if none/mid-transit
     private Transform currentWanderPoint; // last wander destination reached, null if occupying a RoomSpot instead
@@ -401,6 +415,43 @@ public class NPCBunny : MonoBehaviour
             TickMood();
 
         UpdateAnimator();
+        SyncProximityAmbient();
+    }
+
+    // Called every frame from Update(), same as UpdateAnimator — recomputed from CurrentState directly
+    // rather than at each individual state-transition call site, since Eating/Drinking/Sleeping can each
+    // be entered/exited from several different places (normal finish, critical-need interrupt chains,
+    // room merge/upgrade resettle) and this way there's exactly one place that can ever get it wrong.
+    private void SyncProximityAmbient()
+    {
+        SyncProximityAmbientRoom(ref proximityEatingRoom, CurrentState == BunnyState.Eating ? cafeteriaBeingUsed : null, eatingAmbientClip, "Eating");
+        SyncProximityAmbientRoom(ref proximityDrinkingRoom, CurrentState == BunnyState.Drinking ? waterRoomBeingUsed : null, drinkingAmbientClip, "Drinking");
+        SyncProximityAmbientRoom(ref proximitySleepingRoom, CurrentState == BunnyState.Sleeping ? claimedSleepRoom : null, sleepingAmbientClip, "Sleeping");
+    }
+
+    // `category` disambiguates the AudioManager proximity-loop key from any OTHER concern keyed on the
+    // same room instance — e.g. a WaterRoom is also keyed as (room, "Work") for its own production
+    // ambient (see WaterRoom.NotifyBunnyReadyToWork). Without the category, a WaterRoom with active
+    // workers AND a bunny drinking would collide onto the same ref-counted AudioSource/clip.
+    private void SyncProximityAmbientRoom<T>(ref T registeredRoom, T desiredRoom, AudioClip clip, string category) where T : Component
+    {
+        if (registeredRoom == desiredRoom) return;
+
+        if (registeredRoom != null)
+            AudioManager.EnsureInstance().DecrementProximityLoop((registeredRoom, category));
+        if (desiredRoom != null)
+            AudioManager.EnsureInstance().IncrementProximityLoop((desiredRoom, category), clip, desiredRoom.transform);
+
+        registeredRoom = desiredRoom;
+    }
+
+    private void OnDestroy()
+    {
+        // Mirrors SyncProximityAmbientRoom's decrement — a bunny destroyed mid-Eating/Drinking/Sleeping
+        // (deleted/despawned) would otherwise leak a ref count and leave that room's ambient loop stuck on.
+        if (proximityEatingRoom != null) AudioManager.EnsureInstance().DecrementProximityLoop((proximityEatingRoom, "Eating"));
+        if (proximityDrinkingRoom != null) AudioManager.EnsureInstance().DecrementProximityLoop((proximityDrinkingRoom, "Drinking"));
+        if (proximitySleepingRoom != null) AudioManager.EnsureInstance().DecrementProximityLoop((proximitySleepingRoom, "Sleeping"));
     }
 
     // Passive decay applies in every state except Sleeping (handled separately in Update()). Working

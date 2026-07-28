@@ -48,6 +48,7 @@ public class AssignmentUI : MonoBehaviour
         currentRoom = room;
         roomNameLabel.text = roomDisplayName;
         panelRoot.SetActive(true);
+        AudioManager.EnsureInstance().PlayUIOpen();
         ClearSelection();
         PopulateLists();
     }
@@ -61,6 +62,7 @@ public class AssignmentUI : MonoBehaviour
         if (!panelRoot.activeSelf) return;
 
         panelRoot.SetActive(false);
+        AudioManager.EnsureInstance().PlayUIClose();
         currentRoom = null;
         ClearSelection();
         RoomUpgradeUI.Instance?.Close();
@@ -148,6 +150,7 @@ public class AssignmentUI : MonoBehaviour
 
         if (selectedAssignedBunny == null) return;
 
+        AudioManager.EnsureInstance().PlayButtonClick();
         selectedAssignedBunny.UnassignFromJob();
         DebugLog.Log($"AssignmentUI: UnassignFromJob() called on {selectedAssignedBunny.name}.");
 

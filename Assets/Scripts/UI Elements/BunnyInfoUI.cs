@@ -190,6 +190,7 @@ public class BunnyInfoUI : MonoBehaviour
             sendForagingButton.gameObject.SetActive(CanShowSendForagingButton());
 
         panelRoot.SetActive(true);
+        AudioManager.EnsureInstance().PlayUIOpen();
         RefreshBars();
         if (accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
         RefreshAccessorySlot();
@@ -202,6 +203,7 @@ public class BunnyInfoUI : MonoBehaviour
     public void Close()
     {
         panelRoot.SetActive(false);
+        AudioManager.EnsureInstance().PlayUIClose();
         currentBunny = null;
         if (accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
         if (fruitPickerRoot != null) fruitPickerRoot.SetActive(false);
@@ -464,6 +466,7 @@ public class BunnyInfoUI : MonoBehaviour
     private void OnApproveClicked()
     {
         if (currentBunny == null) return;
+        AudioManager.EnsureInstance().PlayButtonClick();
         GateQueueManager.Instance.ApproveFrontBunny(currentBunny);
         Close();
     }
@@ -471,6 +474,7 @@ public class BunnyInfoUI : MonoBehaviour
     private void OnRejectClicked()
     {
         if (currentBunny == null) return;
+        AudioManager.EnsureInstance().PlayButtonClick();
         GateQueueManager.Instance.RejectFrontBunny(currentBunny);
         Close();
     }

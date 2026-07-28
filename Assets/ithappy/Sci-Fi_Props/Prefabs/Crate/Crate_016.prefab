@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 6922715174568177280}
     m_Modifications:
     - target: {fileID: 4028380031301878276, guid: a41ca7c9f6f4e88428df26f64e3b0b87, type: 3}
@@ -55,13 +56,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -1590145801684161486, guid: a41ca7c9f6f4e88428df26f64e3b0b87, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a41ca7c9f6f4e88428df26f64e3b0b87, type: 3}
+--- !u!4 &1144088105218943835 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4372008869018654910, guid: a41ca7c9f6f4e88428df26f64e3b0b87, type: 3}
+  m_PrefabInstance: {fileID: 3696576745221518309}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7464951371098933611
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 7e554a710552e0a41a42a5cbe829a6b3, type: 3}
@@ -113,28 +124,15 @@ PrefabInstance:
       value: Crate_016
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7e554a710552e0a41a42a5cbe829a6b3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1144088105218943835}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7e554a710552e0a41a42a5cbe829a6b3, type: 3}
 --- !u!4 &6922715174568177280 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7e554a710552e0a41a42a5cbe829a6b3, type: 3}
   m_PrefabInstance: {fileID: 7464951371098933611}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &7735420996154815546 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 7e554a710552e0a41a42a5cbe829a6b3, type: 3}
-  m_PrefabInstance: {fileID: 7464951371098933611}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-8730711736232359491
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7735420996154815546}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 3866522725024010366, guid: 7e554a710552e0a41a42a5cbe829a6b3, type: 3}

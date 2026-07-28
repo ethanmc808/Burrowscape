@@ -89,6 +89,9 @@ public class RoomTransitionService : MonoBehaviour
         // normal player-placed room (BuildModeController.TryConfirmPlacement).
         GameObject newInstance = Instantiate(target.prefab, position, Quaternion.Euler(0f, 180f, 0f));
         RoomBase newRoom = newInstance.GetComponent<RoomBase>();
+        // Distinct from PlayRoomBuilt/PlayRoomDestroyed — a merge/upgrade swap is one event, not a
+        // destroy+build combo, and Ethan wanted it to sound different from a plain build/delete click.
+        AudioManager.EnsureInstance().PlayRoomUpgraded();
 
         Debug.Log($"[PathDebug] SwapRooms: newRoom={(newRoom != null ? newRoom.name : "NULL")}, isIJobRoom={(newRoom is IJobRoom)}");
 

@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 994532723ae80bf4c9963c7932869bf2, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Pouf_001
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 994532723ae80bf4c9963c7932869bf2, type: 3}
---- !u!1 &4110766680116996494 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 994532723ae80bf4c9963c7932869bf2, type: 3}
-  m_PrefabInstance: {fileID: 3876765118921413855}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &6319144212378083954
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4110766680116996494}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4035586020370424087, guid: 994532723ae80bf4c9963c7932869bf2, type: 3}

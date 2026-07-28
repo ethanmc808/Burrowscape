@@ -95,6 +95,9 @@ public class EntranceGate : MonoBehaviour
         CurrentState = toState;
         DebugLog.Log($"Gate: entering {toState}");
 
+        if (toState == GateState.Opening) AudioManager.EnsureInstance().PlayGateOpen();
+        else if (toState == GateState.Closing) AudioManager.EnsureInstance().PlayGateClose();
+
         float duration = toState == GateState.Opening ? openDuration : closeDuration;
         float startY = gateTransform != null ? gateTransform.localPosition.y : 0f;
         float targetY = toState == GateState.Opening ? openLocalY : closedLocalY;

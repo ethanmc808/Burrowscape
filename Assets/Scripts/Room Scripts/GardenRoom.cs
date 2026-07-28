@@ -23,6 +23,9 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
     [HideInInspector] [SerializeField] private List<BunnyType> recommendedTypes = new List<BunnyType>();
     [SerializeField] private float typeMatchProductionBonus = 0.25f;
 
+    [Header("Work Ambient (see AudioManager — proximity-based, ref-counted per active worker)")]
+    [SerializeField] private AudioClip workAmbientClip;
+
     private Dictionary<NPCBunny, Coroutine> activeProductionRoutines = new Dictionary<NPCBunny, Coroutine>();
 
     // Order bunnies became active producers in THIS room — a bunny's live index here is its slot rank
@@ -110,6 +113,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
             activeProductionRoutines.Remove(bunny);
             activeWorkerOrder.Remove(bunny);
             StopWorkXPRoutine(bunny);
+            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work"));
         }
     }
 
@@ -136,6 +140,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
             Coroutine routine = StartCoroutine(ProduceCarrotsRoutine(bunny));
             activeProductionRoutines[bunny] = routine;
             StartWorkXPRoutine(bunny);
+            AudioManager.EnsureInstance().IncrementProximityLoop((this, "Work"), workAmbientClip, transform);
         }
     }
 
@@ -167,6 +172,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
                 activeProductionRoutines.Remove(bunny);
                 activeWorkerOrder.Remove(bunny);
                 StopWorkXPRoutine(bunny);
+                AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work"));
                 yield break;
             }
 
@@ -192,6 +198,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
             StopCoroutine(kvp.Value);
             kvp.Key.ForceIdleDueToRoomShutdown();
             idledByShutdown.Add(kvp.Key);
+            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work")); // one per worker that was actively producing, matching IncrementProximityLoop in NotifyBunnyReadyToWork
         }
         activeProductionRoutines.Clear();
         activeWorkerOrder.Clear();

@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 636b17ac1ed839048a8235c34cc4c8f7, type: 3}
@@ -56,36 +57,24 @@ PrefabInstance:
       value: Stair_type_B_003
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 636b17ac1ed839048a8235c34cc4c8f7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8650952276541498396}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 636b17ac1ed839048a8235c34cc4c8f7, type: 3}
 --- !u!4 &357172242014207008 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 636b17ac1ed839048a8235c34cc4c8f7, type: 3}
   m_PrefabInstance: {fileID: 251734555099110347}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1134694829927868058 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 636b17ac1ed839048a8235c34cc4c8f7, type: 3}
-  m_PrefabInstance: {fileID: 251734555099110347}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-1470361075651024682
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1134694829927868058}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -1206520784745032025, guid: 636b17ac1ed839048a8235c34cc4c8f7, type: 3}
 --- !u!1001 &5743318428231162388
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 357172242014207008}
     m_Modifications:
     - target: {fileID: 4015529631098650120, guid: 26761b47758b11941b0752fc98f5bbde, type: 3}
@@ -136,5 +125,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Stair_type_B_fence_003
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -7000332081399888612, guid: 26761b47758b11941b0752fc98f5bbde, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 26761b47758b11941b0752fc98f5bbde, type: 3}
+--- !u!4 &8650952276541498396 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4015529631098650120, guid: 26761b47758b11941b0752fc98f5bbde, type: 3}
+  m_PrefabInstance: {fileID: 5743318428231162388}
+  m_PrefabAsset: {fileID: 0}

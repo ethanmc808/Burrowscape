@@ -59,6 +59,7 @@ public class ForagingScreenUI : MonoBehaviour
     public void Open()
     {
         panelRoot.SetActive(true);
+        AudioManager.EnsureInstance().PlayUIOpen();
         listRefreshTimer = 0f;
         selectedForagingBunny = null;
         selectedPickerBunny = null;
@@ -70,6 +71,7 @@ public class ForagingScreenUI : MonoBehaviour
     public void Close()
     {
         panelRoot.SetActive(false);
+        AudioManager.EnsureInstance().PlayUIClose();
         detailUI?.Hide();
     }
 
@@ -172,6 +174,8 @@ public class ForagingScreenUI : MonoBehaviour
     private void OnReturnClicked()
     {
         if (selectedForagingBunny == null || ForagingManager.Instance == null) return;
+
+        AudioManager.EnsureInstance().PlayButtonClick();
 
         // Recall itself has no other feedback — the bunny keeps walking/ticking exactly as before until
         // its return countdown starts, so without this the player has no sign the click did anything.

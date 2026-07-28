@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 79fcfa5a4eb53494bbc01b3023e6c8e5, type: 3}
@@ -56,36 +57,24 @@ PrefabInstance:
       value: Generator_002
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 79fcfa5a4eb53494bbc01b3023e6c8e5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2561551207350691753}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 79fcfa5a4eb53494bbc01b3023e6c8e5, type: 3}
 --- !u!4 &287222517927060275 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 79fcfa5a4eb53494bbc01b3023e6c8e5, type: 3}
   m_PrefabInstance: {fileID: 321675487379473624}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &628177343146981769 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 79fcfa5a4eb53494bbc01b3023e6c8e5, type: 3}
-  m_PrefabInstance: {fileID: 321675487379473624}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &1567959082423590909
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 628177343146981769}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4951255920522298785, guid: 79fcfa5a4eb53494bbc01b3023e6c8e5, type: 3}
 --- !u!1001 &6932984144983902080
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 287222517927060275}
     m_Modifications:
     - target: {fileID: 4880385875687645225, guid: faf5954109e42094da9e448f681a8752, type: 3}
@@ -136,5 +125,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Generator_rotor_001
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -4371426635968187636, guid: faf5954109e42094da9e448f681a8752, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: faf5954109e42094da9e448f681a8752, type: 3}
+--- !u!4 &2561551207350691753 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4880385875687645225, guid: faf5954109e42094da9e448f681a8752, type: 3}
+  m_PrefabInstance: {fileID: 6932984144983902080}
+  m_PrefabAsset: {fileID: 0}

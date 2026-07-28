@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: d1808269a1bda0d4dbddcb3f8fa87854, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Snow_003
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d1808269a1bda0d4dbddcb3f8fa87854, type: 3}
---- !u!1 &5793886364245971692 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d1808269a1bda0d4dbddcb3f8fa87854, type: 3}
-  m_PrefabInstance: {fileID: 6676987917863317437}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-990122599432813710
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5793886364245971692}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -7253630936970158726, guid: d1808269a1bda0d4dbddcb3f8fa87854, type: 3}

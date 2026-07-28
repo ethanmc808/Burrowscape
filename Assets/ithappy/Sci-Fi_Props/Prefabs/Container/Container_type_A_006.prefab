@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 7722215435781393538}
     m_Modifications:
     - target: {fileID: 1259219433834745188, guid: 16d5889c4dae2584596a1142a70e3562, type: 3}
@@ -55,13 +56,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -1416638691460706657, guid: 16d5889c4dae2584596a1142a70e3562, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 16d5889c4dae2584596a1142a70e3562, type: 3}
+--- !u!4 &1977205322663553400 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1887700712273303518, guid: 16d5889c4dae2584596a1142a70e3562, type: 3}
+  m_PrefabInstance: {fileID: 90639375780691622}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2906804507577348514
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 7722215435781393538}
     m_Modifications:
     - target: {fileID: 118947973927824305, guid: afe6eb92312848e45b8190c6d4ac8b5d, type: 3}
@@ -112,13 +123,23 @@ PrefabInstance:
       propertyPath: m_Name
       value: Container_type_A_door_005
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 8321169257584624276, guid: afe6eb92312848e45b8190c6d4ac8b5d, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: afe6eb92312848e45b8190c6d4ac8b5d, type: 3}
+--- !u!4 &3022370277953542675 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 118947973927824305, guid: afe6eb92312848e45b8190c6d4ac8b5d, type: 3}
+  m_PrefabInstance: {fileID: 2906804507577348514}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7827374329040251753
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 45ccb2612ad34d047b630c8a330fad48, type: 3}
@@ -170,26 +191,16 @@ PrefabInstance:
       value: Container_type_A_006
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 45ccb2612ad34d047b630c8a330fad48, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3022370277953542675}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 45ccb2612ad34d047b630c8a330fad48, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1977205322663553400}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 45ccb2612ad34d047b630c8a330fad48, type: 3}
---- !u!1 &6944835032812459576 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 45ccb2612ad34d047b630c8a330fad48, type: 3}
-  m_PrefabInstance: {fileID: 7827374329040251753}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &2314247754033892931
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6944835032812459576}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -3661068889688698836, guid: 45ccb2612ad34d047b630c8a330fad48, type: 3}
 --- !u!4 &7722215435781393538 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 45ccb2612ad34d047b630c8a330fad48, type: 3}

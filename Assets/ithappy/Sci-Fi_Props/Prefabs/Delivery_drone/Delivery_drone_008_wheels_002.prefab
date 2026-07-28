@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: d611a49c2c319e442b70998a129ddc56, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Delivery_drone_008_wheels_002
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d611a49c2c319e442b70998a129ddc56, type: 3}
---- !u!1 &6725702623842075688 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d611a49c2c319e442b70998a129ddc56, type: 3}
-  m_PrefabInstance: {fileID: 5879193363731200377}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-4791049204236701664
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6725702623842075688}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -5280431546752819839, guid: d611a49c2c319e442b70998a129ddc56, type: 3}

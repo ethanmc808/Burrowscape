@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 1395359575120547769}
     m_Modifications:
     - target: {fileID: 5961357402835551424, guid: c8b2c9a4a99df614385fcd2e598bd1c5, type: 3}
@@ -55,13 +56,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 9186260513585244704, guid: c8b2c9a4a99df614385fcd2e598bd1c5, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c8b2c9a4a99df614385fcd2e598bd1c5, type: 3}
+--- !u!4 &5970506070279514968 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6481012284550864506, guid: c8b2c9a4a99df614385fcd2e598bd1c5, type: 3}
+  m_PrefabInstance: {fileID: 804545604566529314}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1501925571355830354
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: bfa3ed8acb3d23e41a9174d69ad68f0e, type: 3}
@@ -113,36 +124,27 @@ PrefabInstance:
       value: Crate_008
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: bfa3ed8acb3d23e41a9174d69ad68f0e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4338441208732315363}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: bfa3ed8acb3d23e41a9174d69ad68f0e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5970506070279514968}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bfa3ed8acb3d23e41a9174d69ad68f0e, type: 3}
 --- !u!4 &1395359575120547769 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: bfa3ed8acb3d23e41a9174d69ad68f0e, type: 3}
   m_PrefabInstance: {fileID: 1501925571355830354}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1735716030613837059 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: bfa3ed8acb3d23e41a9174d69ad68f0e, type: 3}
-  m_PrefabInstance: {fileID: 1501925571355830354}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-7578098027955954048
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1735716030613837059}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -1422442257002842027, guid: bfa3ed8acb3d23e41a9174d69ad68f0e, type: 3}
 --- !u!1001 &6825618317643313986
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 1395359575120547769}
     m_Modifications:
     - target: {fileID: 7101133146550214049, guid: bc196fa5ebbef57409faa8b3db1e55ee, type: 3}
@@ -193,5 +195,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Crate_008_cap_001
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -1402314070146438110, guid: bc196fa5ebbef57409faa8b3db1e55ee, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bc196fa5ebbef57409faa8b3db1e55ee, type: 3}
+--- !u!4 &4338441208732315363 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7101133146550214049, guid: bc196fa5ebbef57409faa8b3db1e55ee, type: 3}
+  m_PrefabInstance: {fileID: 6825618317643313986}
+  m_PrefabAsset: {fileID: 0}

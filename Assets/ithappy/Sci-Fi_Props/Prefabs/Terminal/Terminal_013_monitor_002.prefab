@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 8f35b9e487a4ce648b4230ea9ddc4635, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Terminal_013_monitor_002
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8f35b9e487a4ce648b4230ea9ddc4635, type: 3}
---- !u!1 &3106911963306873606 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 8f35b9e487a4ce648b4230ea9ddc4635, type: 3}
-  m_PrefabInstance: {fileID: 2872344564865986135}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-1019769443958539534
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3106911963306873606}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 3556557595838267444, guid: 8f35b9e487a4ce648b4230ea9ddc4635, type: 3}

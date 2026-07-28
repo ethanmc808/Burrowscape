@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: a91d91993c07d7041880c0c207582b96, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Baloon_001
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a91d91993c07d7041880c0c207582b96, type: 3}
---- !u!1 &675589682433449668 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: a91d91993c07d7041880c0c207582b96, type: 3}
-  m_PrefabInstance: {fileID: 405681228273968021}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-6000963075693547419
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 675589682433449668}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 8514424130543447016, guid: a91d91993c07d7041880c0c207582b96, type: 3}

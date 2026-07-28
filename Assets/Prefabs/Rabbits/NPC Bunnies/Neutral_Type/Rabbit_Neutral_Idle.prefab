@@ -1833,6 +1833,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7765067403726037452}
   - component: {fileID: 8545965331803330553}
+  - component: {fileID: 821275287642878376}
   m_Layer: 0
   m_Name: Effect_Trigger_LevelUp
   m_TagString: Untagged
@@ -1914,6 +1915,18 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &821275287642878376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5643874923471536330}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2215a0c2ebb0d224f830d81f1131ddd4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CounterFlipX
 --- !u!1 &6031489489634316232
 GameObject:
   m_ObjectHideFlags: 0

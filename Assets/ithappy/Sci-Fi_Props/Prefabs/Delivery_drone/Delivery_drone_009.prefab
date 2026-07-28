@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 3f371ac70370cb3438177f3fe2dca22a, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Delivery_drone_009
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3f371ac70370cb3438177f3fe2dca22a, type: 3}
---- !u!1 &2118459906452877555 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3f371ac70370cb3438177f3fe2dca22a, type: 3}
-  m_PrefabInstance: {fileID: 1272022659119107490}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &4885497031201744536
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2118459906452877555}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 1549363941478663958, guid: 3f371ac70370cb3438177f3fe2dca22a, type: 3}

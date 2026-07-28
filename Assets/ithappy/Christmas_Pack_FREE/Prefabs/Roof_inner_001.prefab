@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: f334e6f147afe774f80b7cf0aa68e222, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Roof_inner_001
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f334e6f147afe774f80b7cf0aa68e222, type: 3}
---- !u!1 &4543943674653384118 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f334e6f147afe774f80b7cf0aa68e222, type: 3}
-  m_PrefabInstance: {fileID: 3732988639149564135}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-1039156084143216794
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4543943674653384118}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -4847202707584762516, guid: f334e6f147afe774f80b7cf0aa68e222, type: 3}

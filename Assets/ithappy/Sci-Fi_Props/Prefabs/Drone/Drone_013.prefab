@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 9f395b5af43c57c4c921b94966b29af3, type: 3}
@@ -56,36 +57,27 @@ PrefabInstance:
       value: Drone_013
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9f395b5af43c57c4c921b94966b29af3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 338276098143993481}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9f395b5af43c57c4c921b94966b29af3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 469142042280981282}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9f395b5af43c57c4c921b94966b29af3, type: 3}
 --- !u!4 &294297963305623638 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9f395b5af43c57c4c921b94966b29af3, type: 3}
   m_PrefabInstance: {fileID: 260987833564432317}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1107426860087884524 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 9f395b5af43c57c4c921b94966b29af3, type: 3}
-  m_PrefabInstance: {fileID: 260987833564432317}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &3990510890060499122
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1107426860087884524}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -6552526534355993348, guid: 9f395b5af43c57c4c921b94966b29af3, type: 3}
 --- !u!1001 &3968045243990309762
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 469142042280981282}
     m_Modifications:
     - target: {fileID: 1601662946530533361, guid: 3d9f8a79c09b387468fd212f37df5efb, type: 3}
@@ -136,13 +128,23 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -4028292196144559847, guid: 3d9f8a79c09b387468fd212f37df5efb, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3d9f8a79c09b387468fd212f37df5efb, type: 3}
+--- !u!4 &3053646681893748425 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2121740070828098891, guid: 3d9f8a79c09b387468fd212f37df5efb, type: 3}
+  m_PrefabInstance: {fileID: 3968045243990309762}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5657808429123077363
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 294297963305623638}
     m_Modifications:
     - target: {fileID: 4849805417854545259, guid: e4c867e3253f22a4cb90cb754e0bead1, type: 3}
@@ -193,7 +195,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -7528273650937053585, guid: e4c867e3253f22a4cb90cb754e0bead1, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 5189880672957528017, guid: e4c867e3253f22a4cb90cb754e0bead1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3053646681893748425}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e4c867e3253f22a4cb90cb754e0bead1, type: 3}
 --- !u!4 &469142042280981282 stripped
 Transform:
@@ -205,6 +214,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 294297963305623638}
     m_Modifications:
     - target: {fileID: 7418028603325666902, guid: 0d247db097667944cbce18a5d2ada855, type: 3}
@@ -255,7 +265,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Drone_013_wing_001
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -7877792704617299531, guid: 0d247db097667944cbce18a5d2ada855, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 7418028603325666902, guid: 0d247db097667944cbce18a5d2ada855, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8530653333944225010}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0d247db097667944cbce18a5d2ada855, type: 3}
 --- !u!4 &338276098143993481 stripped
 Transform:
@@ -267,6 +284,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 338276098143993481}
     m_Modifications:
     - target: {fileID: 1526418876475196666, guid: f8360cb4d6001f14b8d018b9630b50a1, type: 3}
@@ -317,5 +335,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 738573883564887755, guid: f8360cb4d6001f14b8d018b9630b50a1, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f8360cb4d6001f14b8d018b9630b50a1, type: 3}
+--- !u!4 &8530653333944225010 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2190224198540009024, guid: f8360cb4d6001f14b8d018b9630b50a1, type: 3}
+  m_PrefabInstance: {fileID: 7496177049549034162}
+  m_PrefabAsset: {fileID: 0}

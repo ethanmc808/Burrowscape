@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 7b4e379d742ac6946a5f25491f4f3584, type: 3}
@@ -56,36 +57,24 @@ PrefabInstance:
       value: Crate_010
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7b4e379d742ac6946a5f25491f4f3584, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 235784690672683626}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7b4e379d742ac6946a5f25491f4f3584, type: 3}
 --- !u!4 &49148094920560093 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7b4e379d742ac6946a5f25491f4f3584, type: 3}
   m_PrefabInstance: {fileID: 514574276169165366}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &857174051084359527 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 7b4e379d742ac6946a5f25491f4f3584, type: 3}
-  m_PrefabInstance: {fileID: 514574276169165366}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &-2874171690245703947
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 857174051084359527}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -3097672366128470131, guid: 7b4e379d742ac6946a5f25491f4f3584, type: 3}
 --- !u!1001 &7979362478604692025
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 49148094920560093}
     m_Modifications:
     - target: {fileID: 7400011927073929961, guid: dca597783915dc74890d09db786761b9, type: 3}
@@ -136,5 +125,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -655645391055539842, guid: dca597783915dc74890d09db786761b9, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dca597783915dc74890d09db786761b9, type: 3}
+--- !u!4 &235784690672683626 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7924592655224627283, guid: dca597783915dc74890d09db786761b9, type: 3}
+  m_PrefabInstance: {fileID: 7979362478604692025}
+  m_PrefabAsset: {fileID: 0}

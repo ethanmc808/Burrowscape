@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 00a14c9b83607ef4d87e43c2cb5dca8b, type: 3}
@@ -56,23 +57,7 @@ PrefabInstance:
       value: Vending_Machine_006
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 00a14c9b83607ef4d87e43c2cb5dca8b, type: 3}
---- !u!1 &4243706537520165174 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 00a14c9b83607ef4d87e43c2cb5dca8b, type: 3}
-  m_PrefabInstance: {fileID: 3901741588835552359}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &80462105195986704
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4243706537520165174}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -4054216059193322318, guid: 00a14c9b83607ef4d87e43c2cb5dca8b, type: 3}

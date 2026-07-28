@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 1237423620005699899}
     m_Modifications:
     - target: {fileID: 5903719204623426959, guid: 6d949ee756b416741a773fb056823bc1, type: 3}
@@ -55,13 +56,23 @@ PrefabInstance:
       propertyPath: m_Name
       value: Door_panel_018
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5540642831894086105, guid: 6d949ee756b416741a773fb056823bc1, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6d949ee756b416741a773fb056823bc1, type: 3}
+--- !u!4 &6296236135755290569 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5903719204623426959, guid: 6d949ee756b416741a773fb056823bc1, type: 3}
+  m_PrefabInstance: {fileID: 472456015914676806}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1632149439699437264
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 4ff6c646f5ac719419e197c9955d68ba, type: 3}
@@ -113,36 +124,27 @@ PrefabInstance:
       value: Door_010
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ff6c646f5ac719419e197c9955d68ba, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1388082963068265391}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ff6c646f5ac719419e197c9955d68ba, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6296236135755290569}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4ff6c646f5ac719419e197c9955d68ba, type: 3}
 --- !u!4 &1237423620005699899 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4ff6c646f5ac719419e197c9955d68ba, type: 3}
   m_PrefabInstance: {fileID: 1632149439699437264}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1902742897119099777 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4ff6c646f5ac719419e197c9955d68ba, type: 3}
-  m_PrefabInstance: {fileID: 1632149439699437264}
-  m_PrefabAsset: {fileID: 0}
---- !u!64 &6270234600886766384
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1902742897119099777}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -4926880736951328890, guid: 4ff6c646f5ac719419e197c9955d68ba, type: 3}
 --- !u!1001 &5163460947712466665
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 1237423620005699899}
     m_Modifications:
     - target: {fileID: 6119048592317775174, guid: 1ff6b77a23b68144d8695603694e3c3f, type: 3}
@@ -193,5 +195,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Door_panel_017
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: -4802909586532473149, guid: 1ff6b77a23b68144d8695603694e3c3f, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1ff6b77a23b68144d8695603694e3c3f, type: 3}
+--- !u!4 &1388082963068265391 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6119048592317775174, guid: 1ff6b77a23b68144d8695603694e3c3f, type: 3}
+  m_PrefabInstance: {fileID: 5163460947712466665}
+  m_PrefabAsset: {fileID: 0}
