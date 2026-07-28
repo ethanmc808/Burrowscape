@@ -53,7 +53,13 @@ public class AssignmentUI : MonoBehaviour
         PopulateLists();
     }
 
-    public void Close()
+    public void Close() => Close(true);
+
+    // playSound=false is used by confirm actions (e.g. AssignAndClose) that close this panel as a side
+    // effect of succeeding — PlayUIClose is reserved for an actual Close/Back button press, not layered
+    // on top of the confirm action's own PlayButtonClick. Propagated through the RoomUpgradeUI cross-close
+    // too, so assigning a bunny never plays either panel's close cue.
+    public void Close(bool playSound)
     {
         // Room clicks always open AssignmentUI and RoomUpgradeUI together (see RoomClickHandler/
         // RoomUpgradeClickHandler), so either one's Close button should close both rather than making
@@ -62,10 +68,10 @@ public class AssignmentUI : MonoBehaviour
         if (!panelRoot.activeSelf) return;
 
         panelRoot.SetActive(false);
-        AudioManager.EnsureInstance().PlayUIClose();
+        if (playSound) AudioManager.EnsureInstance().PlayUIClose();
         currentRoom = null;
         ClearSelection();
-        RoomUpgradeUI.Instance?.Close();
+        RoomUpgradeUI.Instance?.Close(playSound);
     }
 
     private void PopulateLists()
@@ -120,8 +126,9 @@ public class AssignmentUI : MonoBehaviour
             return; // don't assign, don't close the panel — let them pick a different bunny or cancel
         }
 
+        AudioManager.EnsureInstance().PlayButtonClick();
         bunny.AssignToJob(currentRoom);
-        Close();
+        Close(false); // click sound already fired above — don't also play the close cue
     }
 
     private void SelectAssignedBunny(NPCBunny bunny, Button btn)

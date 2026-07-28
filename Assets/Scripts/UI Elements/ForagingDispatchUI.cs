@@ -77,10 +77,15 @@ public class ForagingDispatchUI : MonoBehaviour
         ApplySelectedLocation();
     }
 
-    public void Close()
+    public void Close() => Close(true);
+
+    // playSound=false is used by confirm actions (OnConfirmClicked) that close this panel as a side
+    // effect of succeeding — PlayUIClose is reserved for an actual Close/Back button press, not layered
+    // on top of the confirm action's own PlayButtonClick.
+    public void Close(bool playSound)
     {
         panelRoot.SetActive(false);
-        AudioManager.EnsureInstance().PlayUIClose();
+        if (playSound) AudioManager.EnsureInstance().PlayUIClose();
         currentBunny = null;
     }
 
@@ -175,7 +180,7 @@ public class ForagingDispatchUI : MonoBehaviour
 
         bool dispatched = ForagingManager.Instance.TryDispatch(currentBunny, selectedLocation, selectedPotionCount);
         if (dispatched)
-            Close();
+            Close(false); // click sound already fired above — don't also play the close cue
         // On failure, ForagingManager.TryDispatch already surfaces a NotificationToast explaining why —
         // leave the panel open so the player can adjust and retry rather than losing their selections.
     }

@@ -878,6 +878,10 @@ MonoBehaviour:
   footprintWidth: 8
   grade: 2
   gradeMultiplier: 1.5
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: CoalRoom
   shovelingSpots:
   - {fileID: 9184088085778036738}
@@ -887,6 +891,7 @@ MonoBehaviour:
   diminishingReturnsRate: 0.7
   recommendedTypes: 04000000
   typeMatchProductionBonus: 0.25
+  workAmbientClip: {fileID: 8300000, guid: 40b0db6f09e35684eb7a3c7b4e3a4791, type: 3}
 --- !u!1 &5269368504905911588
 GameObject:
   m_ObjectHideFlags: 0

@@ -25,8 +25,11 @@ public class CoalRoom : RoomBase, IJobRoom
     [HideInInspector] [SerializeField] private List<BunnyType> recommendedTypes = new List<BunnyType>();
     [SerializeField] private float typeMatchProductionBonus = 0.25f;
 
-    [Header("Work Ambient (see AudioManager — proximity-based, ref-counted per active worker)")]
+    [Header("Room Ambient (see AudioManager — proximity-based, both audible only near the camera)")]
+    [Tooltip("Plays continuously the whole time this room exists, regardless of whether any bunny is working here — e.g. a low machine hum. Kept as the same field/clip assignment this room already had before the occupancy-gated field below was split out.")]
     [SerializeField] private AudioClip workAmbientClip;
+    [Tooltip("Only plays while at least one bunny is actively Working here — ref-counted per active worker.")]
+    [SerializeField] private AudioClip workingAmbientClip;
 
     private Dictionary<NPCBunny, Coroutine> activeProductionRoutines = new Dictionary<NPCBunny, Coroutine>();
 
@@ -38,6 +41,21 @@ public class CoalRoom : RoomBase, IJobRoom
     // Bunnies idled because THIS room shut down (lost Power/Water) while they were actively working —
     // resumed automatically by OnRoomRestored. Mirrors GardenRoom/WaterRoom.
     private List<NPCBunny> idledByShutdown = new List<NPCBunny>();
+
+    // Always-on ambient (workAmbientClip) is registered once for this room's whole lifetime, NOT tied to
+    // worker presence like workingAmbientClip's ref-counted Increment/Decrement in NotifyBunnyReadyToWork/
+    // StopProductionRoutine below — see AudioManager's proximity-loop system for the shared falloff logic.
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        AudioManager.EnsureInstance().IncrementProximityLoop((this, "Ambient"), workAmbientClip, transform, AudioCategory.Ambient);
+    }
+
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        AudioManager.EnsureInstance().DecrementProximityLoop((this, "Ambient"));
+    }
 
     public RoomSpot RequestSpot(NPCBunny bunny)
     {
@@ -81,7 +99,7 @@ public class CoalRoom : RoomBase, IJobRoom
             activeWorkerOrder.Remove(bunny);
             ReportWeightToPowerManager();
             StopWorkXPRoutine(bunny);
-            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work"));
+            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Working"));
         }
     }
 
@@ -109,7 +127,7 @@ public class CoalRoom : RoomBase, IJobRoom
             activeProductionRoutines[bunny] = routine;
             ReportWeightToPowerManager();
             StartWorkXPRoutine(bunny);
-            AudioManager.EnsureInstance().IncrementProximityLoop((this, "Work"), workAmbientClip, transform);
+            AudioManager.EnsureInstance().IncrementProximityLoop((this, "Working"), workingAmbientClip, transform, AudioCategory.Ambient);
         }
     }
 
@@ -125,7 +143,7 @@ public class CoalRoom : RoomBase, IJobRoom
                 activeWorkerOrder.Remove(bunny);
                 ReportWeightToPowerManager();
                 StopWorkXPRoutine(bunny);
-                AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work"));
+                AudioManager.EnsureInstance().DecrementProximityLoop((this, "Working"));
                 yield break;
             }
 
@@ -167,7 +185,7 @@ public class CoalRoom : RoomBase, IJobRoom
             StopCoroutine(kvp.Value);
             kvp.Key.ForceIdleDueToRoomShutdown();
             idledByShutdown.Add(kvp.Key);
-            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work")); // one per worker that was actively producing, matching IncrementProximityLoop in NotifyBunnyReadyToWork
+            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Working")); // one per worker that was actively producing, matching IncrementProximityLoop in NotifyBunnyReadyToWork
         }
         activeProductionRoutines.Clear();
         activeWorkerOrder.Clear();

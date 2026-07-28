@@ -1190,6 +1190,10 @@ MonoBehaviour:
   footprintWidth: 12
   grade: 1
   gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: Garden
   farmingSpots:
   - {fileID: 463882255244156673}
@@ -1203,6 +1207,8 @@ MonoBehaviour:
   diminishingReturnsRate: 0.7
   recommendedTypes: 03000000
   typeMatchProductionBonus: 0.25
+  workAmbientClip: {fileID: 0}
+  workingAmbientClip: {fileID: 8300000, guid: ca36cc43bb221cb42870406d2084a9b0, type: 3}
 --- !u!65 &4991280497254301588
 BoxCollider:
   m_ObjectHideFlags: 0

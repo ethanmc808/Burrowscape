@@ -440,7 +440,7 @@ public class NPCBunny : MonoBehaviour
         if (registeredRoom != null)
             AudioManager.EnsureInstance().DecrementProximityLoop((registeredRoom, category));
         if (desiredRoom != null)
-            AudioManager.EnsureInstance().IncrementProximityLoop((desiredRoom, category), clip, desiredRoom.transform);
+            AudioManager.EnsureInstance().IncrementProximityLoop((desiredRoom, category), clip, desiredRoom.transform, AudioCategory.BunnyNoise);
 
         registeredRoom = desiredRoom;
     }

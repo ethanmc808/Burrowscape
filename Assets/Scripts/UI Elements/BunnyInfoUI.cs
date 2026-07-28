@@ -200,10 +200,15 @@ public class BunnyInfoUI : MonoBehaviour
         RefreshFeedFruitButton();
     }
 
-    public void Close()
+    public void Close() => Close(true);
+
+    // playSound=false is used by confirm actions (OnApproveClicked/OnRejectClicked) that close this
+    // panel as a side effect of succeeding — PlayUIClose is reserved for an actual Close/Back button
+    // press, not layered on top of the confirm action's own PlayButtonClick.
+    public void Close(bool playSound)
     {
         panelRoot.SetActive(false);
-        AudioManager.EnsureInstance().PlayUIClose();
+        if (playSound) AudioManager.EnsureInstance().PlayUIClose();
         currentBunny = null;
         if (accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
         if (fruitPickerRoot != null) fruitPickerRoot.SetActive(false);
@@ -468,7 +473,7 @@ public class BunnyInfoUI : MonoBehaviour
         if (currentBunny == null) return;
         AudioManager.EnsureInstance().PlayButtonClick();
         GateQueueManager.Instance.ApproveFrontBunny(currentBunny);
-        Close();
+        Close(false); // click sound already fired above — don't also play the close cue
     }
 
     private void OnRejectClicked()
@@ -476,7 +481,7 @@ public class BunnyInfoUI : MonoBehaviour
         if (currentBunny == null) return;
         AudioManager.EnsureInstance().PlayButtonClick();
         GateQueueManager.Instance.RejectFrontBunny(currentBunny);
-        Close();
+        Close(false); // click sound already fired above — don't also play the close cue
     }
 
     // Visible for an already-resident bunny that's actually eligible to depart (mirrors

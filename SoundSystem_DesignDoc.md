@@ -9,12 +9,20 @@ Inspector field — nothing will actually be audible until Ethan drags in real `
 for the proximity system, tunes `baseProximityRadius`/`referenceOrthographicSize` against the actual
 camera setup in-Editor. Not yet compiled/playtested in the Unity Editor itself.
 
-**One implementation-time correction worth flagging**: the doc originally assumed proximity distance
-would be computed on the XZ plane. Re-reading `TestCamera.cs`, the orthographic camera actually pans in
-X/Z (middle-mouse drag) and moves along Y for floor switching (Q/E) — since it's orthographic and looks
-down Z, only X and Y actually affect what's visibly on screen. The implementation computes proximity
-distance on the **XY plane** instead (ignoring Z, which is just view depth), which is what "audible
-when visibly close" actually requires.
+**Correction (2026-07-29) — the camera is Perspective, not orthographic.** Two earlier assumptions in
+this doc were both built on `TestCamera.cs` being orthographic, which turned out not to match the actual
+scene camera's Inspector setting. This was diagnosed after Ethan reported proximity volume not
+responding to zoom at all regardless of the `zoomInfluence` slider. Corrected understanding:
+- `TestCamera.cs`'s scroll-wheel zoom code is gated behind `cam.orthographic` — on a Perspective camera
+  that block never runs, so `orthographicSize` never changes and any `zoomInfluence`/
+  `referenceOrthographicSize` math built on it is inert.
+- The real "zoom" in this game is `TestCamera`'s middle-mouse drag, which moves `transform.position` in
+  **X and Z**. For a Perspective camera looking down Z, moving along Z is a genuine dolly/zoom.
+- Proximity distance is now computed as **full 3D distance** (`Vector3.Distance`), not XY-only as an
+  earlier pass here incorrectly concluded — excluding Z was only correct for an orthographic camera,
+  which this project doesn't actually use. `AudioManager.UpdateProximityVolumes` still supports the
+  orthographic-scaling path (`zoomInfluence`/`referenceOrthographicSize`) as a fallback, gated behind
+  `camera.orthographic`, in case the camera setup ever changes back.
 
 **Key-collision fix**: `WaterRoom` is simultaneously a Work Room (production ambient) and the
 drinking-spot room (drinking ambient) — the same instance, two unrelated sounds. Proximity loop keys

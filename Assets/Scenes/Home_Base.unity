@@ -2283,6 +2283,42 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
   masterVolume: 1
+  musicVolume: 1
+  uiVolume: 0.5
+  ambientVolume: 0.749
+  bunnyNoiseVolume: 1
+  musicPlaylist:
+  - clip: {fileID: 8300000, guid: ca6ff61bb67589247ad029286df54dfd, type: 3}
+    volumeScale: 1
+  - clip: {fileID: 8300000, guid: defe296c183a13e4b986511b432ac27e, type: 3}
+    volumeScale: 1
+  - clip: {fileID: 8300000, guid: c2d44c8c269640e4a9ba5b0e81f1e8b2, type: 3}
+    volumeScale: 1
+  - clip: {fileID: 8300000, guid: 049aecfb2fa2eb445b4bf8998b05c93e, type: 3}
+    volumeScale: 1
+  - clip: {fileID: 8300000, guid: 8527be30e890ca945b2e06f6c114867a, type: 3}
+    volumeScale: 1
+  - clip: {fileID: 8300000, guid: 0329425a39c47f140bb31b5c7cdbd396, type: 3}
+    volumeScale: 1
+  - clip: {fileID: 8300000, guid: d5539d14f56169b4ea4136d0d4588cf3, type: 3}
+    volumeScale: 1
+  shuffleMusic: 1
+  musicFadeDuration: 2
+  musicGapDuration: 2
+  defaultMenuOpenClip: {fileID: 8300000, guid: 538aacd0ded8ecd47aa804423747f863, type: 3}
+  defaultMenuCloseClip: {fileID: 8300000, guid: 6612f63150163e94fadebad0157b284a, type: 3}
+  defaultButtonClickClip: {fileID: 8300000, guid: b93aec0af15a5aa4cb3f80a5dac37dce, type: 3}
+  gateOpenClip: {fileID: 8300000, guid: 7e79a1dd6bfa069458771d19405110ba, type: 3}
+  gateCloseClip: {fileID: 8300000, guid: da360cb5b9318db4c9ffad6f00015c69, type: 3}
+  roomBuildClip: {fileID: 8300000, guid: 82df52aa1e3dfb640a8c6e85e01a0304, type: 3}
+  roomDestroyClip: {fileID: 8300000, guid: 2ba4838d57220db4dbff33569d7cf82d, type: 3}
+  roomUpgradeClip: {fileID: 8300000, guid: 9ad625084b35eff4ba0502756f5d35c7, type: 3}
+  newBunnyTypeClip: {fileID: 8300000, guid: 463399b460b96f84ca92a8e1d539d03d, type: 3}
+  baseProximityRadius: 6
+  referenceOrthographicSize: 5
+  zoomInfluence: 0.502
+  proximityFadeBandFraction: 0.51
+  proximityFadeDuration: 1.5
 --- !u!4 &223234166
 Transform:
   m_ObjectHideFlags: 0
@@ -14053,6 +14089,7 @@ MonoBehaviour:
     description: Energy decays 0.75x as slowly as normal.
     incompatibleTraitIds:
     - lazy
+    - sluggish
     effectType: 1
     effectMultiplier: 0.75
   - id: lazy
@@ -14060,10 +14097,11 @@ MonoBehaviour:
     description: Energy decays 1.25x faster than normal.
     incompatibleTraitIds:
     - energetic
+    - adventurous
     effectType: 1
     effectMultiplier: 1.25
-  - id: diligent
-    displayName: Diligent
+  - id: hard_worker
+    displayName: Hard Worker
     description: Produces 1.25x more than normal.
     incompatibleTraitIds:
     - slacker
@@ -14108,11 +14146,11 @@ MonoBehaviour:
     displayName: Parched
     description: Thirst decays 1.25x faster than normal.
     incompatibleTraitIds:
-    - reservoir
+    - quenched
     effectType: 4
     effectMultiplier: 1.25
-  - id: reservoir
-    displayName: Reservoir
+  - id: quenched
+    displayName: Quenched
     description: Thirst decays 0.75x as slowly as normal.
     incompatibleTraitIds:
     - parched
@@ -14123,6 +14161,7 @@ MonoBehaviour:
     description: Moves 1.25x faster than normal.
     incompatibleTraitIds:
     - sluggish
+    - lazy
     effectType: 5
     effectMultiplier: 1.25
   - id: sluggish
@@ -14130,12 +14169,15 @@ MonoBehaviour:
     description: Moves 0.75x as fast as normal.
     incompatibleTraitIds:
     - quick_footed
+    - energetic
     effectType: 5
     effectMultiplier: 0.75
   - id: stoic
     displayName: Stoic
     description: Ignores this bunny's Zodiac (Nature) stat modifier entirely.
-    incompatibleTraitIds: []
+    incompatibleTraitIds:
+    - cheerful
+    - grumpy
     effectType: 7
     effectMultiplier: 1
   - id: adventurous
@@ -14143,6 +14185,7 @@ MonoBehaviour:
     description: Energy decays 0.75x as slowly as normal while Foraging.
     incompatibleTraitIds:
     - homebody
+    - lazy
     effectType: 1
     effectMultiplier: 0.75
   - id: homebody

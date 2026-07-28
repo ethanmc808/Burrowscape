@@ -414,6 +414,10 @@ MonoBehaviour:
   footprintWidth: 4
   grade: 2
   gradeMultiplier: 1.5
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: WaterRoom
   productionSpots:
   - {fileID: 7612317831466647811}
@@ -432,6 +436,7 @@ MonoBehaviour:
   diminishingReturnsRate: 0.7
   recommendedTypes: 02000000
   typeMatchProductionBonus: 0.25
+  workAmbientClip: {fileID: 8300000, guid: ee511615537162041a7bebb83a9653f7, type: 3}
 --- !u!65 &731587572180687953
 BoxCollider:
   m_ObjectHideFlags: 0

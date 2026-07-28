@@ -23,8 +23,11 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
     [HideInInspector] [SerializeField] private List<BunnyType> recommendedTypes = new List<BunnyType>();
     [SerializeField] private float typeMatchProductionBonus = 0.25f;
 
-    [Header("Work Ambient (see AudioManager — proximity-based, ref-counted per active worker)")]
+    [Header("Room Ambient (see AudioManager — proximity-based, both audible only near the camera)")]
+    [Tooltip("Plays continuously the whole time this room exists, regardless of whether any bunny is working here.")]
     [SerializeField] private AudioClip workAmbientClip;
+    [Tooltip("Only plays while at least one bunny is actively Working here — ref-counted per active worker. E.g. Garden's leaf-rustling sound, which only makes sense while someone's actually farming.")]
+    [SerializeField] private AudioClip workingAmbientClip;
 
     private Dictionary<NPCBunny, Coroutine> activeProductionRoutines = new Dictionary<NPCBunny, Coroutine>();
 
@@ -36,6 +39,21 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
     // Bunnies idled because this room lost Power or Water while they were actively working — resumed
     // automatically by OnRoomRestored. See RoomBase.RecheckOperational / IJobRoom.OnRoomShutdown.
     private List<NPCBunny> idledByShutdown = new List<NPCBunny>();
+
+    // Always-on ambient (workAmbientClip) is registered once for this room's whole lifetime, NOT tied to
+    // worker presence like workingAmbientClip's ref-counted Increment/Decrement in NotifyBunnyReadyToWork/
+    // StopProductionRoutine below — see AudioManager's proximity-loop system for the shared falloff logic.
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        AudioManager.EnsureInstance().IncrementProximityLoop((this, "Ambient"), workAmbientClip, transform, AudioCategory.Ambient);
+    }
+
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        AudioManager.EnsureInstance().DecrementProximityLoop((this, "Ambient"));
+    }
 
     public RoomSpot RequestSpot(NPCBunny bunny)
     {
@@ -113,7 +131,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
             activeProductionRoutines.Remove(bunny);
             activeWorkerOrder.Remove(bunny);
             StopWorkXPRoutine(bunny);
-            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work"));
+            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Working"));
         }
     }
 
@@ -140,7 +158,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
             Coroutine routine = StartCoroutine(ProduceCarrotsRoutine(bunny));
             activeProductionRoutines[bunny] = routine;
             StartWorkXPRoutine(bunny);
-            AudioManager.EnsureInstance().IncrementProximityLoop((this, "Work"), workAmbientClip, transform);
+            AudioManager.EnsureInstance().IncrementProximityLoop((this, "Working"), workingAmbientClip, transform, AudioCategory.Ambient);
         }
     }
 
@@ -172,7 +190,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
                 activeProductionRoutines.Remove(bunny);
                 activeWorkerOrder.Remove(bunny);
                 StopWorkXPRoutine(bunny);
-                AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work"));
+                AudioManager.EnsureInstance().DecrementProximityLoop((this, "Working"));
                 yield break;
             }
 
@@ -198,7 +216,7 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
             StopCoroutine(kvp.Value);
             kvp.Key.ForceIdleDueToRoomShutdown();
             idledByShutdown.Add(kvp.Key);
-            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Work")); // one per worker that was actively producing, matching IncrementProximityLoop in NotifyBunnyReadyToWork
+            AudioManager.EnsureInstance().DecrementProximityLoop((this, "Working")); // one per worker that was actively producing, matching IncrementProximityLoop in NotifyBunnyReadyToWork
         }
         activeProductionRoutines.Clear();
         activeWorkerOrder.Clear();

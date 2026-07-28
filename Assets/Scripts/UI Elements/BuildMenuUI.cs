@@ -58,10 +58,15 @@ public class BuildMenuUI : MonoBehaviour
         RefreshList();
     }
 
-    public void Close()
+    public void Close() => Close(true);
+
+    // playSound=false is used by confirm actions (OnDefinitionChosen) that close this panel as a side
+    // effect of succeeding — PlayUIClose is reserved for an actual Close/Back button press, not layered
+    // on top of the confirm action's own PlayButtonClick.
+    public void Close(bool playSound)
     {
         panelRoot.SetActive(false);
-        AudioManager.EnsureInstance().PlayUIClose();
+        if (playSound) AudioManager.EnsureInstance().PlayUIClose();
     }
 
     // Re-evaluated fresh every open — live-checked unlock conditions (e.g. population) need to reflect
@@ -83,6 +88,6 @@ public class BuildMenuUI : MonoBehaviour
     {
         AudioManager.EnsureInstance().PlayButtonClick();
         BuildModeController.Instance?.EnterBuildMode(definition);
-        Close();
+        Close(false); // click sound already fired above — don't also play the close cue
     }
 }

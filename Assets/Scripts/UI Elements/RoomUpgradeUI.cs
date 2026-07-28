@@ -57,16 +57,22 @@ public class RoomUpgradeUI : MonoBehaviour
         RefreshUpgradeOption();
     }
 
-    public void Close()
+    public void Close() => Close(true);
+
+    // playSound=false is used by confirm actions (e.g. OnUpgradeClicked) that close this panel as a side
+    // effect of succeeding — PlayUIClose is reserved for an actual Close/Back button press, not layered
+    // on top of the confirm action's own PlayButtonClick. Propagated through the AssignmentUI cross-close
+    // too, so confirming an upgrade never plays either panel's close cue.
+    public void Close(bool playSound)
     {
         // See AssignmentUI.Close() — same cross-close pairing, same activeSelf guard against recursion.
         if (!panelRoot.activeSelf) return;
 
         panelRoot.SetActive(false);
-        AudioManager.EnsureInstance().PlayUIClose();
+        if (playSound) AudioManager.EnsureInstance().PlayUIClose();
         currentRoom = null;
         targetDefinition = null;
-        AssignmentUI.Instance?.Close();
+        AssignmentUI.Instance?.Close(playSound);
     }
 
     private void RefreshUpgradeOption()
@@ -108,6 +114,6 @@ public class RoomUpgradeUI : MonoBehaviour
         // This is what makes EntranceRoom upgradable despite CanBeDeleted() unconditionally blocking
         // deletion (a separate, orthogonal axis — see EntranceRoom.cs).
         RoomTransitionService.Instance?.UpgradeRoom(currentRoom, targetDefinition);
-        Close();
+        Close(false); // PlayButtonClick already fired above — don't also play the close cue
     }
 }
