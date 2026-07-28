@@ -475,9 +475,16 @@ public class RoomBase : MonoBehaviour
         DrawPointGizmo(middleLeft, Color.yellow);
         DrawPointGizmo(middleRight, Color.yellow);
 
+        HashSet<Transform> referencedWaypoints = new HashSet<Transform>();
+
         if (passThroughWaypoints != null)
+        {
             foreach (Transform wp in passThroughWaypoints)
+            {
                 DrawPointGizmo(wp, Color.cyan);
+                if (wp != null) referencedWaypoints.Add(wp);
+            }
+        }
 
         if (paths != null)
         {
@@ -485,8 +492,24 @@ public class RoomBase : MonoBehaviour
             {
                 if (path?.waypoints == null) continue;
                 foreach (Transform wp in path.waypoints)
+                {
                     DrawPointGizmo(wp, Color.magenta);
+                    if (wp != null) referencedWaypoints.Add(wp);
+                }
             }
+        }
+
+        // Every "Waypoint_*" child draws even when not currently referenced by any path/pass-through
+        // list, so RoomSpotPathAutoPopulator wiping paths.waypoints (by design — see that tool's header
+        // comment) can no longer make these markers vanish. The Transforms themselves were never touched
+        // by that tool; only RoomBase's references to them were. Drawn gray to visually distinguish
+        // "exists but not wired into any path yet" from the colored/referenced states above.
+        foreach (Transform t in GetComponentsInChildren<Transform>(true))
+        {
+            if (t == transform) continue;
+            if (!t.name.StartsWith("Waypoint")) continue;
+            if (referencedWaypoints.Contains(t)) continue;
+            DrawPointGizmo(t, Color.gray);
         }
     }
 
