@@ -353,12 +353,12 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 25
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -8256846335022217103, guid: 57d948565c0942441a03b1947bffa1d4, type: 3}
+  m_Sprite: {fileID: 4578174147002566522, guid: 57d948565c0942441a03b1947bffa1d4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1.85, y: 0.61}
+  m_Size: {x: 0.85546875, y: 0.31640625}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -654,12 +654,12 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 11
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -8638020643805487381, guid: 57d948565c0942441a03b1947bffa1d4, type: 3}
+  m_Sprite: {fileID: -8630939029676495388, guid: 57d948565c0942441a03b1947bffa1d4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 2.8476562, y: 2.921875}
+  m_Size: {x: 2.9453125, y: 3.015625}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -678,8 +678,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.2D.Animation.Runtime::UnityEngine.U2D.Animation.SpriteSkin
   m_RootBone: {fileID: 274810252851738540}
   m_BoneTransforms:
-  - {fileID: 1648735289774359729}
   - {fileID: 7018368176524863551}
+  - {fileID: 1648735289774359729}
   m_Bounds:
     m_Center: {x: 2.8459096, y: 2.7851572, z: 0.0078125}
     m_Extent: {x: 1.4228477, y: 1.460938, z: 0}
@@ -1294,12 +1294,12 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 23
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 4261518826053656845, guid: 57d948565c0942441a03b1947bffa1d4, type: 3}
+  m_Sprite: {fileID: 3504565124644458039, guid: 57d948565c0942441a03b1947bffa1d4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 2.3203125, y: 1.2890625}
+  m_Size: {x: 2.359375, y: 1.3984375}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -2885,12 +2885,12 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 7
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 6345176053444270478, guid: 57d948565c0942441a03b1947bffa1d4, type: 3}
+  m_Sprite: {fileID: -113710847324452076, guid: 57d948565c0942441a03b1947bffa1d4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 2.203125, y: 2.1367188}
+  m_Size: {x: 2.2070312, y: 2.1523438}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1

@@ -14098,6 +14098,7 @@ MonoBehaviour:
     incompatibleTraitIds:
     - energetic
     - adventurous
+    - hard_worker
     effectType: 1
     effectMultiplier: 1.25
   - id: hard_worker
@@ -14105,6 +14106,7 @@ MonoBehaviour:
     description: Produces 1.25x more than normal.
     incompatibleTraitIds:
     - slacker
+    - lazy
     effectType: 6
     effectMultiplier: 1.25
   - id: slacker
