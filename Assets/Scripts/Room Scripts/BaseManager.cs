@@ -10,6 +10,10 @@ public class BaseManager : MonoBehaviour
     private List<LivingRoom> livingRooms = new List<LivingRoom>();
     private List<WaterRoom> waterRooms = new List<WaterRoom>();
     private List<Bedroom> bedrooms = new List<Bedroom>();
+    // Combat scaffolding only (see Combat_DesignDoc.md) — registered the same way as every other room
+    // type here so the future deploy-UX "nearest Guard Room" lookup has this list ready to use; no such
+    // lookup exists yet, deploy logic itself isn't designed.
+    private List<GuardRoom> guardRooms = new List<GuardRoom>();
 
     private void Awake()
     {
@@ -65,6 +69,17 @@ public class BaseManager : MonoBehaviour
     public void UnregisterLivingRoom(LivingRoom room)
     {
         livingRooms.Remove(room);
+    }
+
+    public void RegisterGuardRoom(GuardRoom room)
+    {
+        if (!guardRooms.Contains(room))
+            guardRooms.Add(room);
+    }
+
+    public void UnregisterGuardRoom(GuardRoom room)
+    {
+        guardRooms.Remove(room);
     }
 
     // Nearest room with an actual open spot, not just nearest room — a full living room right next

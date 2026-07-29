@@ -24,3 +24,4 @@ MonoBehaviour:
   group: 2
   populationThreshold: 25
   passives: []
+  attackName: Sludge Hurl

@@ -27,6 +27,10 @@ public class BunnyTypeDefinition : ScriptableObject
 
     public int BaseTotal => baseHP + baseAttack + baseDefense + baseSpeed + baseLuck;
 
+    [Header("Combat")]
+    [Tooltip("Every type has exactly one signature attack; its Base Power scales with level via CombatMath.GetBasePower, not authored here. Empty until this type's attack is designed — enemies of this type (see EnemyDefinition.attackSource) reuse this same identity/animation/VFX rather than getting their own.")]
+    public string attackName;
+
     [Header("Unlock")]
     [Tooltip("Organizational only (matches the design groupings) — actual gating is populationThreshold.")]
     public int group;

@@ -111,6 +111,13 @@ public class RoomBase : MonoBehaviour
     [Header("Spot Paths")]
     [SerializeField] protected List<RoomPath> paths; // entrance-to-spot paths, shared by Garden/Cafeteria
 
+    // Combat scaffolding only (see Combat_DesignDoc.md) — every room can be invaded, not just Guard
+    // Rooms, so this lives on RoomBase rather than GuardRoom. 3 per room per the design doc. Nothing
+    // reads this yet; the invasion/enemy-positioning system itself isn't built.
+    [SpotNamePrefix("EnemySpot")]
+    [SerializeField] protected List<RoomSpot> enemySpots;
+    public List<RoomSpot> EnemySpots => enemySpots;
+
     public Transform LeftEntrance => leftEntrance;
     public Transform RightEntrance => rightEntrance;
     public Transform MiddleLeft => middleLeft;
