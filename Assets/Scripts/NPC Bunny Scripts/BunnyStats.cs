@@ -27,13 +27,25 @@ public static class BunnyStatCalculator
         int ivHP, int ivAttack, int ivDefense, int ivSpeed, int ivLuck,
         int evHP, int evAttack, int evDefense, int evSpeed, int evLuck)
     {
+        return Resolve(def.baseHP, def.baseAttack, def.baseDefense, def.baseSpeed, def.baseLuck, level,
+            ivHP, ivAttack, ivDefense, ivSpeed, ivLuck, evHP, evAttack, evDefense, evSpeed, evLuck);
+    }
+
+    // Raw-base-stat overload, extracted so callers with no BunnyTypeDefinition of their own (EnemyInstance
+    // — see Combat_DesignDoc.md's "enemies level like bunnies") can reuse the exact same formula against
+    // EnemyDefinition's base stats instead of duplicating it. Behavior of the BunnyTypeDefinition overload
+    // above is unchanged — it's now a thin wrapper over this.
+    public static BunnyStats Resolve(int baseHP, int baseAttack, int baseDefense, int baseSpeed, int baseLuck, int level,
+        int ivHP, int ivAttack, int ivDefense, int ivSpeed, int ivLuck,
+        int evHP, int evAttack, int evDefense, int evSpeed, int evLuck)
+    {
         return new BunnyStats
         {
-            HP = ResolveHP(def.baseHP, level, ivHP, evHP),
-            Attack = ResolvePreNatureStat(def.baseAttack, level, ivAttack, evAttack),
-            Defense = ResolvePreNatureStat(def.baseDefense, level, ivDefense, evDefense),
-            Speed = ResolvePreNatureStat(def.baseSpeed, level, ivSpeed, evSpeed),
-            Luck = ResolvePreNatureStat(def.baseLuck, level, ivLuck, evLuck),
+            HP = ResolveHP(baseHP, level, ivHP, evHP),
+            Attack = ResolvePreNatureStat(baseAttack, level, ivAttack, evAttack),
+            Defense = ResolvePreNatureStat(baseDefense, level, ivDefense, evDefense),
+            Speed = ResolvePreNatureStat(baseSpeed, level, ivSpeed, evSpeed),
+            Luck = ResolvePreNatureStat(baseLuck, level, ivLuck, evLuck),
         };
     }
 

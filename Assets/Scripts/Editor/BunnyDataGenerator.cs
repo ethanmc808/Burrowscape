@@ -106,6 +106,9 @@ public static class BunnyDataGenerator
                 def.baseDefense = seed.defense;
                 def.baseSpeed = seed.speed;
                 def.baseLuck = seed.luck;
+                // Melee-vs-ranged roster per Combat_DesignDoc.md — Neutral/Melee are the only two
+                // confirmed melee types so far; everything else defaults to ranged (false).
+                def.isMelee = seed.type == BunnyType.Neutral || seed.type == BunnyType.Melee;
 
                 string assetPath = AssetDatabase.GenerateUniqueAssetPath($"{DefinitionsFolder}/{seed.type}.asset");
                 AssetDatabase.CreateAsset(def, assetPath);

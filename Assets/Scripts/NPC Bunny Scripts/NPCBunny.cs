@@ -67,7 +67,7 @@ public enum RoomTransitionRole
 }
 
 [RequireComponent(typeof(Animator))]
-public class NPCBunny : MonoBehaviour
+public class NPCBunny : MonoBehaviour, ICombatant
 {
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 0.5f;
@@ -1241,6 +1241,27 @@ public class NPCBunny : MonoBehaviour
     public void HealHP(int amount)
     {
         currentHP = Mathf.Clamp(currentHP + Mathf.Max(0, amount), 1, Stats.HP);
+    }
+
+    // ---------- ICombatant (see Combat_DesignDoc.md) ----------
+    // Deliberately separate from ApplyForagingDamage above — that method floors at 1 by design (Foraging
+    // never kills, per its own design doc), whereas real combat damage can and does reach 0. Nothing in
+    // NPCBunny's existing state machine reacts to OnDefeated yet (no "fainted" state exists) — that's a
+    // deliberate scope boundary for this pass, not an oversight; wiring an actual faint/recovery
+    // behavior into the state machine needs its own design pass plus in-Editor verification.
+    int ICombatant.CurrentHP => currentHP;
+    bool ICombatant.IsAlive => currentHP > 0;
+    BunnyTypeDefinition ICombatant.AttackSource => typeDefinition;
+    Transform ICombatant.CombatTransform => transform;
+    GameObject ICombatant.CombatGameObject => gameObject;
+
+    public event System.Action OnDefeated;
+
+    public void TakeCombatDamage(int amount)
+    {
+        if (currentHP <= 0) return; // already defeated — no further hits matter until something revives it (not yet designed)
+        currentHP = Mathf.Max(0, currentHP - Mathf.Max(0, amount));
+        if (currentHP == 0) OnDefeated?.Invoke();
     }
 
     // Set by ForagingManager the instant a trip's return countdown begins (any of the four return

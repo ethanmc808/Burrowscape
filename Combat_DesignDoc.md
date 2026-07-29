@@ -1,14 +1,17 @@
 # Combat System — Design Doc
 
-**Status: design-only, pending review.** Everything below was worked out in conversation across
-2026-07-28; nothing is implemented as an actual combat system yet. A handful of small pieces of pure
-data/math and room scaffolding already exist ahead of the rest: `Assets/Scripts/Combat Scripts/
-TypeChart.cs`, `Assets/Scripts/Combat Scripts/CombatMath.cs` (crit chance + Base Power tiers only —
-accuracy formula not yet added), `Assets/Scripts/Combat Scripts/EnemyDefinition.cs`,
-`Assets/Scripts/Editor/EnemyDataGenerator.cs` (not yet run in-Editor, so the actual Slime asset doesn't
-exist on disk yet), and `Assets/Scripts/Room Scripts/GuardRoom.cs` + `RoomBase.enemySpots` (room-shell
-scaffolding only, no deploy/combat behavior). Everything else described here — the damage formula,
-status effects, positioning/flanking logic, Guard Room deploy logic — is spec, not code.
+**Status: core math/resolution layer implemented 2026-07-28, not yet playtested or AI-wired.** Every
+formula/system this doc specifies concretely — type chart, crit/hit/damage math, status effects, the
+attack travel/fizzle pipeline, flanking-slot bookkeeping, enemy stat/level resolution — now has real code
+behind it (see "Implementation checklist" at the bottom for the full file list). **What's deliberately
+NOT built yet**: any AI/behavior-tree logic that decides when a bunny or enemy actually attacks, walks to
+a flank position, or targets something; the invasion spawn/trigger system (when/where enemies appear);
+Guard Room deploy logic; and NPCBunny "fainting" (HP can reach 0 and fires `OnDefeated`, but nothing
+reacts to it — no state machine integration). This is a deliberate scope boundary, not an oversight: it
+either requires design decisions this doc doesn't have yet (exact melee distance, invasion triggering,
+faint/recovery behavior) or touches NPCBunny's large, already-stable state machine in ways that need
+in-Editor testing to verify safely, which wasn't available while writing this code. See each section
+below for exactly what exists vs. what's still a stub.
 
 This doc covers **base-invasion combat** (the first, simpler combat track). Squad-based quest combat
 (3-bunny squads, full type-coverage strategy layer) and the Guard Room's manual-deploy UX are related
@@ -342,22 +345,63 @@ transit (redeployment is an infrequent, deliberate player action, not continuous
   unavailable" bookkeeping as `CanDepartForForaging`, multiplied across several bunnies. Worth designing
   for up front when quests get scoped.
 
-## Implementation checklist (once this doc is confirmed)
+## Implementation checklist
 
-- [ ] Run `EnemyDataGenerator` in-Editor to create the actual Slime asset.
-- [ ] Add level field/range to `EnemyDefinition` (or otherwise wire population-based leveling).
-- [ ] Add `attackName`/melee-flag/`attackVFXPrefab` data authoring for at least one more type if needed
-      for testing.
-- [ ] Build the "AttackInstance" prefab shape (root + Collider + child ParticleSystem(s)) and its
-      homing-movement + deterministic distance/time arrival script.
-- [ ] Build the hit/evasion formula into `CombatMath` (currently only crit chance + Base Power exist).
-- [ ] Build the actual damage-resolution function combining `TypeChart` + `CombatMath` + stats.
-- [ ] Build the status-effect system (application, tick damage, stat/speed modifiers, duration/expiry).
-- [ ] Build the attack-hitbox travel/homing/fizzle pipeline.
-- [ ] Author CombatSpots (6/room) and EnemySpots (3/room) via the Spot/Path auto-populator.
-- [ ] Build flanking-slot assignment/contention logic (2 per target, idle otherwise).
+**Done (code), needs in-Editor follow-up:**
+- [x] `CombatBalanceConfig.cs` — every "easily editable for balance" number (crit, random variance, STAB,
+      hit/evasion, all 5 statuses' chances/durations/DOT-fractions/debuffs, positioning ranges, enemy
+      level-ramp knobs) as an Inspector-editable ScriptableObject, loaded via `Resources` (same pattern as
+      `RoomThemeCatalog.Load`). **Needs**: run `Burrowscape > Generate Combat Balance Config` in-Editor to
+      actually create `Assets/Resources/CombatBalanceConfig.asset` — nothing reads real values until then
+      (falls back to code defaults with a warning).
+- [x] `CombatMath.cs` — `GetCritChance`, `GetBasePower` (unchanged, structural), and new `GetHitChance`
+      (the Speed-based accuracy formula) + `RollDamageVariance`, all reading from `CombatBalanceConfig`.
+- [x] `TypeChart.cs` — unchanged from earlier this session, still the sparse hardcoded lookup.
+- [x] `ICombatant.cs` — shared interface implemented by `NPCBunny` (additive — no existing state-machine
+      code touched) and the new `EnemyInstance.cs`.
+- [x] `EnemyInstance.cs` — runtime counterpart to `EnemyDefinition`. Rolls its level once at spawn via
+      `CombatBalanceConfig.RollEnemyLevel()` (mirrors `WildBunnySpawner`'s population-ramp shape on
+      separate knobs), resolves stats via `BunnyStatCalculator`'s new raw-stat overload (IV/EV fixed at 0
+      — no individual variance, pure stat-stick). **Needs**: nothing spawns this yet — no invasion-trigger
+      system exists. Whatever does eventually should `Instantiate(EnemyDefinition.prefab)` +
+      `GetComponent<EnemyInstance>().Initialize(def)`.
+- [x] `BunnyStatCalculator` (`BunnyStats.cs`) — refactored (behavior-preserving) to expose a raw-base-stat
+      overload so `EnemyInstance` reuses the exact same level-scaling formula instead of duplicating it.
+- [x] `StatusEffectType.cs` / `StatusEffectController.cs` — all 5 statuses, application/tick/expiry, stat
+      modifiers (`ModifyAttack`/`ModifyDefense`/`ModifySpeed`) and movement/attack-speed multipliers for
+      Paralyze. **Judgment call**: only ONE status active at a time (a new one replaces the old) — the
+      design doc didn't specify stacking rules; this is the simpler, classic interpretation, not confirmed
+      by Ethan. **Needs**: this component must actually be added to bunny/enemy prefabs in-Editor to do
+      anything (it's inert without one).
+- [x] `CombatResolver.cs` — the full damage formula (level/power/A/D core, crit, random, STAB, type),
+      gated by the hit/evasion roll, applying status-effect modifiers and rolling status application.
+      Called by `AttackInstance` on arrival, never at cast time.
+- [x] `AttackInstance.cs` — homing movement, deterministic distance-based arrival (NOT physics
+      `OnTriggerEnter`, per the fragility concern in "Attack visuals" above), fizzle-on-dead-target,
+      stationary/instant resolution for melee. **Needs**: the actual prefab (Collider + ParticleSystem
+      hierarchy) doesn't exist — this script has nothing to attach to yet, and nothing calls `Launch()`.
+- [x] `FlankSlots.cs` — 2-slot (left/right) claim/release bookkeeping, symmetric for bunny-on-enemy and
+      enemy-on-bunny. **Needs**: nothing calls `TryClaimSlot` yet — the AI that decides "approach and
+      flank this target" doesn't exist.
+- [x] `BunnyTypeDefinition.isMelee`/`.attackVFXPrefab` — added; Neutral/Melee assets set `isMelee: true`
+      (both by hand-editing the existing 2 assets and in `BunnyDataGenerator` for future fresh installs).
 - [x] Guard Room room-shell scaffolding (`GuardRoom.cs` + `RoomBase.enemySpots` + `BaseManager`
-      registration) — done, not yet Editor-wired (needs a prefab/RoomDefinition like any other room type).
-- [ ] Build Guard Room deploy logic (single-unit-per-room lock, nearest/picker UX).
-- [ ] Balance-editability: decide whether crit/accuracy/status numbers move into an Inspector-editable
-      config asset (recommended, not yet confirmed) or stay as code consts like `TypeChart`.
+      registration) — from earlier this session, unchanged, still not Editor-wired.
+
+**Still fully open (no code, needs more design first):**
+- [ ] Invasion spawn/trigger system — when/where/how enemy groups actually appear in a room. Nothing in
+      this doc specifies this; `EnemyInstance`/`EnemyDefinition` assume something else will call them.
+- [ ] AI/behavior-tree layer — the actual decision-making that makes a bunny or enemy walk to a flank
+      spot, choose a target, fire an `AttackInstance`, react to `CombatHitResult`. This is the biggest
+      remaining piece and the one most likely to need real NPCBunny state-machine surgery.
+- [ ] Bunny "fainting" — `ICombatant.OnDefeated` fires correctly when a bunny's HP hits 0, but nothing
+      listens. No design exists yet for what happens next (removed from room? recovers after time?
+      population impact?).
+- [ ] Author CombatSpots (6/room) and EnemySpots (3/room) via the Spot/Path auto-populator — the
+      `[SpotNamePrefix]` field exists (`RoomBase.enemySpots`, `GuardRoom.combatSpots`), but no actual
+      prefab has spot children placed yet.
+- [ ] Guard Room deploy logic (single-unit-per-room lock, nearest/picker UX) — still just the room shell.
+- [ ] Exact melee standing distance (`CombatBalanceConfig.meleeStandingDistance` exists as a flagged
+      placeholder, not a confirmed number).
+- [ ] Run `EnemyDataGenerator` in-Editor to create the actual Slime asset (script-ready since last
+      session, just never executed).

@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eaf6b6f4f404bd74688c5b5ceedb12bf, type: 3}
+  m_Name: CombatBalanceConfig
+  m_EditorClassIdentifier: Assembly-CSharp::CombatBalanceConfig
+  critBaseChance: 0.0625
+  critChancePerLuckPoint: 0.0005
+  maxCritChance: 0.5
+  critDamageMultiplier: 2
+  randomVarianceMinPercent: 80
+  randomVarianceMaxPercent: 100
+  stabMultiplier: 1.5
+  hitChanceBase: 0.9
+  hitChancePerSpeedDifference: 0.0005
+  minHitChance: 0.5
+  maxHitChance: 0.95
+  statusChanceOnHit: 0.2
+  burnDotFractionOfMaxHP: 0.0625
+  burnDurationSeconds: 4
+  burnAttackDebuff: 0.25
+  poisonDotFractionOfMaxHP: 0.03125
+  poisonDurationSeconds: 8
+  poisonDefenseDebuff: 0.25
+  chillSpeedStatDebuff: 0.35
+  chillDurationSeconds: 6
+  paralyzeMovementSpeedDebuff: 0.25
+  paralyzeAttackSpeedDebuff: 0.25
+  paralyzeDurationSeconds: 6
+  sleepDurationSeconds: 3
+  rangedMaxRange: 12
+  meleeStandingDistance: 0.5
+  maxFlankersPerTarget: 2
+  levelRampStartPopulation: 10
+  levelRampCapPopulation: 200
+  levelRampStartMinLevel: 1
+  levelRampStartMaxLevel: 3
+  levelRampCapMinLevel: 45
+  levelRampCapMaxLevel: 50

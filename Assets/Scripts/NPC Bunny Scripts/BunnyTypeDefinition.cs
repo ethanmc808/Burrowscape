@@ -30,6 +30,10 @@ public class BunnyTypeDefinition : ScriptableObject
     [Header("Combat")]
     [Tooltip("Every type has exactly one signature attack; its Base Power scales with level via CombatMath.GetBasePower, not authored here. Empty until this type's attack is designed — enemies of this type (see EnemyDefinition.attackSource) reuse this same identity/animation/VFX rather than getting their own.")]
     public string attackName;
+    [Tooltip("Ranged (false) can fire from a distance (see CombatBalanceConfig.rangedMaxRange); melee (true) must stand adjacent, per-type, not a fixed roster. Neutral/Melee are melee; most other types are ranged. Assign whenever this type's attack actually gets designed.")]
+    public bool isMelee;
+    [Tooltip("The particle-effect AttackInstance prefab for this type's signature attack — layered on top of the existing Attack animation, not a replacement for it. Null until this type's VFX is authored.")]
+    public GameObject attackVFXPrefab;
 
     [Header("Unlock")]
     [Tooltip("Organizational only (matches the design groupings) — actual gating is populationThreshold.")]
