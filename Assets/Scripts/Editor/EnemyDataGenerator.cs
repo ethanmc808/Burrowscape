@@ -28,16 +28,17 @@ public static class EnemyDataGenerator
 
         // Slime: baseline/tutorial pest, weakest thing in the invasion roster. Toxic type so it exercises
         // the type chart (resists Plant, a starter type). Reuses the Toxic bunny's "Sludge Hurl" attack
-        // identity instead of getting bespoke art. Base Power 20 matches tier 1 (levels 1-9) of
-        // CombatMath.GetBasePower, kept flat since enemies don't level.
-        GenerateEnemy("Slime", BunnyType.Toxic, hp: 40, attack: 25, defense: 15, speed: 15, luck: 10, basePower: 20, ref created);
+        // identity instead of getting bespoke art. No basePower here — enemies level like bunnies now, so
+        // Sludge Hurl's Base Power comes from CombatMath.GetBasePower(instanceLevel) at runtime, same as
+        // any bunny's attack.
+        GenerateEnemy("Slime", BunnyType.Toxic, hp: 40, attack: 25, defense: 15, speed: 15, luck: 10, ref created);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Debug.Log($"EnemyDataGenerator: created {created} new EnemyDefinition asset(s).");
     }
 
-    private static void GenerateEnemy(string displayName, BunnyType type, int hp, int attack, int defense, int speed, int luck, int basePower, ref int created)
+    private static void GenerateEnemy(string displayName, BunnyType type, int hp, int attack, int defense, int speed, int luck, ref int created)
     {
         EnemyDefinition existing = LoadAllDefinitions().FirstOrDefault(d => d != null && d.displayName == displayName);
         if (existing != null) return;
@@ -50,7 +51,6 @@ public static class EnemyDataGenerator
         def.baseDefense = defense;
         def.baseSpeed = speed;
         def.baseLuck = luck;
-        def.basePower = basePower;
         def.attackSource = FindBunnyTypeDefinition(type);
 
         string assetPath = AssetDatabase.GenerateUniqueAssetPath($"{EnemiesFolder}/{displayName}.asset");

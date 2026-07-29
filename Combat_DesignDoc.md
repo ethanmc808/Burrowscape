@@ -91,16 +91,19 @@ per-type — a pure function of level):
 | 30-39 | 80 |
 | 40+ | 100 |
 
-Implemented as `CombatMath.GetBasePower(level)`. Enemies don't use this function — they get a flat
-`basePower` int on `EnemyDefinition` instead, set to one of the same 5 values for consistency (Slime
-uses 20, i.e. tier 1).
+Implemented as `CombatMath.GetBasePower(level)`. **Enemies use this exact same function now** — since
+enemies level too (see "Enemy leveling by population" below), a level-50 Slime's Sludge Hurl hits at
+100 BP just like a level-50 bunny's would. `EnemyDefinition` has no `basePower` field (removed — it's
+resolved from whatever level the spawned instance actually has, at runtime, not stored per-definition).
 
 **Melee vs. ranged is a per-type data flag, not a fixed roster.** Most types use actual projectiles;
 Neutral and Melee are melee-style (more types may be added to this list later, as-yet undesignated). The
 flag lives alongside `attackName` on `BunnyTypeDefinition`, defaulting to ranged/false, assignable
 whenever that type's attack actually gets designed — not decided for all 20 types upfront. **Melee is not
-a separate code path** — it's the same spawned-hitbox travel-then-hit pipeline as a projectile, just with
-travel time/distance near zero and a swipe animation instead of a thrown-object prefab.
+a separate code path** — it's the same spawned-hitbox pipeline as a projectile, just short-range and
+stationary: the particle effect plays essentially in place at the target rather than travelling any real
+distance (the attacker is already standing adjacent, per the flanking rule below). See "Attack visuals"
+below for how melee's particle differs from a projectile's.
 
 ## Damage formula
 
@@ -116,8 +119,8 @@ equivalent systems exist; Burn is instead its own status effect, see below.)
 
 - **Level** — attacker's level (bunnies level normally; enemies now level too, see "Enemy leveling"
   below — this replaces an earlier draft where enemies were flat/non-leveling).
-- **Power** — the attacker's Base Power for its level (bunnies: `CombatMath.GetBasePower`; enemies:
-  flat `EnemyDefinition.basePower`).
+- **Power** — the attacker's Base Power for its level, `CombatMath.GetBasePower(level)` — same function
+  for bunnies and enemies alike, since both now level.
 - **A / D** — attacker's resolved Attack stat / defender's resolved Defense stat.
 - **Critical** — 2x if the crit-chance roll (above) succeeds, else 1x.
 - **random** — integer **80–100** divided by 100 (wider variance than Pokémon's 85–100, deliberate).
@@ -162,12 +165,20 @@ Resolution order once a hitbox is spawned:
 3. **Hit/miss roll** (the Speed-based formula above) — only now, at actual arrival.
 4. **If hit**: crit roll → damage formula → status-effect chance roll (below).
 
-### Attack visuals: particle effects, not sprite animation
+### Attack visuals: particle effects layered on the existing Attack animation
 
-All attack visuals are **Particle Systems**, not sprite-based animation — chosen purely for visual
-quality. Structure: a single "AttackInstance" prefab whose root transform carries a `Collider` (kept for
-possible future use — e.g. an AOE-splash query via `Physics.OverlapSphere` at arrival — but not what
-gameplay trusts, see below) plus one or more child `ParticleSystem`s (a "core" particle for the
+**Clarification: "attacks are particle effects" does NOT replace character animation.** There's already
+a generic "Attack" Animator state built into the bunny rig controllers (confirmed present in
+`NPC_Rabbit_Neutral_Controller.controller`/`Rabbit_Neutral_Controller.controller`, just not yet wired to
+any code trigger since no combat system calls it). That existing attack animation still plays on the
+attacker as normal. The **type-specific magical effect itself** — the fireball, the sludge glob, the
+lightning bolt — is a Particle System, not hand-drawn sprite animation, layered on top of / timed to that
+existing animation (e.g. via an animation event), rather than replacing it. This is purely a decision
+about how the *effect* is rendered; the *character* still visibly performs its built-in Attack animation.
+
+Structure for ranged attacks: a single "AttackInstance" prefab whose root transform carries a `Collider`
+(kept for possible future use — e.g. an AOE-splash query via `Physics.OverlapSphere` at arrival — but not
+what gameplay trusts, see below) plus one or more child `ParticleSystem`s (a "core" particle for the
 projectile body, optionally a trailing particle system for a streak effect). The whole root moves
 together — VFX and hitbox always occupy the same place.
 
@@ -180,9 +191,12 @@ is the root transform reaching within a small distance of the target's live posi
 elapsing) — reliable regardless of speed. The Collider is present on the prefab but isn't gameplay-
 authoritative.
 
-**Melee reuses this exact same prefab shape** — same root-with-collider-and-particles structure, just
-with travel time/distance near zero and a different particle look (an impact/slash burst at flank range
-instead of a travelling projectile), per "melee is not a separate code path" above.
+**Melee attacks are short-range, stationary particle effects — not a travelling hitbox at all.** Rather
+than spawning near the attacker and homing across distance like a projectile, a melee attack's particle
+effect plays essentially in place at/around the target, since the attacker is already standing adjacent
+(per the flanking rule above) — there's no meaningful distance to travel. Still the same underlying
+AttackInstance concept (root + Collider + ParticleSystem), just with travel effectively skipped rather
+than merely shortened.
 
 **Data hookup**: `BunnyTypeDefinition` will need an `attackVFXPrefab` field alongside `attackName`/the
 melee flag — null until that type's VFX is authored, same "null until content exists" convention as
@@ -215,8 +229,9 @@ catalog type mirroring `BunnyTypeDefinition`'s one-asset-per-entry pattern, but 
 IV/EV/Nature/traits, since pests aren't individual characters. Fields: `displayName`, `type` (BunnyType),
 `prefab`, `baseHP/Attack/Defense/Speed/Luck`, `attackSource` (direct reference to the matching
 `BunnyTypeDefinition`, reusing its attack name/animation/VFX instead of bespoke enemy art — "reuse
-animations/particle effects as much as possible" was an explicit ask), and `basePower` (flat, one of the
-5 tier values).
+animations/particle effects as much as possible" was an explicit ask). **No `basePower` field** — enemies
+level like bunnies (below), so their attack's Base Power comes from `CombatMath.GetBasePower(level)` at
+runtime using whatever level the spawned instance has, exactly like a bunny.
 
 **Note**: `EnemyDefinition` as currently coded does NOT yet have a level field — it was written before
 "enemy leveling by population" (below) was decided. It'll need updating to add a level range (or the
@@ -237,7 +252,9 @@ projectile prefab/animation doesn't exist yet, only the data linkage.
 | Defense | 15 |
 | Speed | 15 |
 | Luck | 10 |
-| Base Power | 20 (tier 1) |
+
+(No Base Power row — computed from whatever level the spawned instance has, via
+`CombatMath.GetBasePower(level)`, same as a bunny.)
 
 Future scaling idea floated, not committed: Small/Medium/Large Slime variants reusing the same rig at
 different scale/tier, as cheap invasion-roster breadth without new art.
