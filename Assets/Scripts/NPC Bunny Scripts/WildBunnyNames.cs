@@ -1,11 +1,66 @@
 using UnityEngine;
+using System.Collections.Generic;
+
+// One name pool per bunny type, authored by Ethan (see TYPE NAMES LIST.txt at the project root).
+// Male names stay masculine/neutral; female names have more leeway to be masculine/neutral/feminine,
+// same as real-world naming conventions.
+[System.Serializable]
+public class TypeNamePool
+{
+    public BunnyType type;
+    public string[] maleNames;
+    public string[] femaleNames;
+}
 
 public class WildBunnyNames : MonoBehaviour
 {
     public static WildBunnyNames Instance { get; private set; }
 
-    [SerializeField] private string[] maleNames = { "Clover", "Thistle", "Bramble", "Fern", "Pip", "Sprout", "Acorn", "Twig", "Nibbles", "Buttons", "Waffle", "Biscuit", "Pancake", "Pebble", "Muffin", "Cricket", "Dash", "Scout", "Buddy", "Peanut", "Chip", "Cocoa", "Toffee", "Bingo", "Jasper", "Rusty", "Copper", "Oakley", "Basil", "Sage", "Reed", "Birch", "Cedar", "Pumpkin", "Marshmallow", "Gizmo", "Buster", "Nugget", "Pretzel", "Waffles", "Snickers", "Doodle", "Squiggle", "Puddle", "Marbles", "Fuzzball", "Snuggles", "Wiggles", "Bouncer", "Sprocket", "Tumbles", "Speckle", "Dumpling", "Noodle", "Cobbler", "Sherbet", "Bramblet", "Fudge", "Pistachio", "Marzipan", "Sir Hops-a-Lot", "Duke Dandelion", "Baron Fluffington", "Professor Nibbles", "Captain Carrot", "General Fuzz", "Doctor Floppy", "Mayor McHopper", "King Cottontail", "Private Pellet", "Buckminster", "Thumperton", "Hopscotch", "Bunsen", "Furlong", "Whiskerton", "Nibblesworth", "Buckshot", "Hopalot", "Bunbury", "Hareold", "Buckaroo", "Hoptimist", "Fernando", "Radish Rex", "Salad Dodger", "Cabbage Bandit", "Lettuce Leaper", "Carrot Cruncher", "Chewy McChewface", "Fluffernutter", "Sir Reginald Hops", "Earl Grey", "Count Fuzzula", "Sir Loin", "Baron Von Floof", "Duke of Dandelion", "Marquis de Carrot", "Viscount Veggie", "Admiral Cottontail", "Fang", "Venom", "Shadow", "Blade", "Reaper", "Ravage", "Havoc", "Bane", "Talon", "Vex", "Grim", "Rex", "Rogue", "Ash", "Chaos", "Diesel", "Ripper", "Slasher", "Maverick", "Skulk", "Bruiser", "Renegade", "Viper", "Cobra", "Zero", "Nitro", "Kane", "Onyx", "Skull", "Toxic", "Menace", "Riot", "Wraith", "Savage", "Brawler", "Switchblade", "Executioner", "Doom", "Grimwood", "Vandal", "Outlaw", "Ghoul", "Feral", "Anarchy", "Vortex", "Sinister", "Malice", "Reckless", "Berserk", "Corvus", "Thorne", "Draven", "Orin", "Fenwick", "Corwin", "Alderic", "Galahad", "Merlin", "Percival", "Tristan", "Kael", "Doran", "Aldric", "Emrys", "Faelan", "Griffin", "Thane", "Orsino", "Caspian", "Bramwell", "Lysander", "Osric", "Ronan", "Fenrir", "Aldous", "Cormac", "Dorian", "Evander", "Faelor", "Garrick", "Halric", "Ithran", "Joran", "Kellan", "Loric", "Maddox", "Nyx", "Osgood", "Perrin", "Quill", "Roderick", "Silas", "Thoron", "Ulric", "Varin", "Wystan", "Xanther", "Yorick", "Zephyrin", "Aramis" };
-    [SerializeField] private string[] femaleNames = { "Poppy", "Willow", "Dandelion", "Briar", "Juniper", "Daisy", "Petal", "Marigold", "Blossom", "Honey", "Buttercup", "Clementine", "Cupcake", "Sprinkle", "Cookie", "Sugar", "Ginger", "Cinnamon", "Hazelnut", "Pudding", "Tulip", "Rosie", "Lily", "Iris", "Violet", "Sunny", "Star", "Twinkle", "Sparkle", "Bubbles", "Fluffy", "Cottonball", "Snowball", "Marshmallow", "Peaches", "Berry", "Plum", "Apricot", "Cherry", "Mochi", "Dumplin", "Biscotti", "Praline", "Nougat", "Caramel", "Butterscotch", "Meringue", "Frosting", "Glimmer", "Twirl", "Giggles", "Bounce", "Puddles", "Freckle", "Speckles", "Snuggle", "Nibblet", "Pipsqueak", "Tumble", "Flopsy", "Lady Hops-a-Lot", "Duchess Dandelion", "Baroness Fluffington", "Professor Whiskers", "Countess Cottontail", "Queen of Clover", "Miss Nibbles", "Madame Floof", "Dame Fuzzalot", "Lieutenant Lettuce", "Princess Pellet", "Bunnyetta", "Harelequin", "Fuzzlequin", "Hoparella", "Buttercream", "Radishette", "Salad Sprite", "Carrotina", "Thumperella", "Fernanda", "Cabbage Rose", "Bunbury Belle", "Whiskerella", "Chewbella", "Fluffington", "Hare-iet", "Bunapple", "Cottontina", "Nibblesina", "Baroness Von Floof", "Duchess of Dandelion", "Marchioness Marigold", "Viscountess Violet", "Lady Buttercup", "Countess Clover", "Empress Ember", "Sultana Sage", "Contessa Cotton", "Vixenella", "Raven", "Vixen", "Shade", "Vesper", "Nyxie", "Onyxette", "Huntress", "Reaperine", "Venomina", "Feral", "Riot", "Vex", "Rebel", "Havoc", "Wraithe", "Banshee", "Talon", "Blade", "Chaos", "Savage", "Maverick", "Nitro", "Vandal", "Ghoul", "Toxic", "Menace", "Sinister", "Malice", "Bruiser", "Switchblade", "Fury", "Vengeance", "Grim", "Diesel", "Cobra", "Viper", "Zero", "Sable", "Onyx", "Skulk", "Anarchy", "Vortex", "Reckless", "Berserka", "Requiem", "Nemesis", "Ravena", "Doom", "Morrigan", "Corvina", "Aeliana", "Isolde", "Rhiannon", "Elowen", "Seraphina", "Guinevere", "Freya", "Elysia", "Ravenna", "Odessa", "Calla", "Thalia", "Nerissa", "Wren", "Selene", "Lyra", "Ondine", "Faelynn", "Briallen", "Ithlyn", "Sorrel", "Maren", "Ysolde", "Aurelia", "Cressida", "Delphine", "Evangeline", "Fiora", "Galanthe", "Hespera", "Ilyana", "Junia", "Kyrie", "Liora", "Meliora", "Nyssa", "Oriana", "Persephone", "Quilla", "Rosalind", "Solenne", "Thessaly", "Umbriel", "Valeska", "Wisteria", "Xanthe", "Yseult", "Zinnia", "Amoret", "Branwen" };
+    // Only the 5 types with art today (see BunnyType's Group 1 comment in NPCBunny.cs) have pools.
+    // Add a new entry here when a future type gets its own — GetPool falls back to null (-> "Unnamed")
+    // until it does.
+    [SerializeField]
+    private List<TypeNamePool> namePools = new List<TypeNamePool>
+    {
+        new TypeNamePool
+        {
+            type = BunnyType.Neutral,
+            maleNames = new[] { "Buck", "Jack", "Hopper", "Bounder", "Skip", "Leaper", "Dash", "Scamper", "Pip", "Jumper", "Nibbler", "Whiskers", "Twitch", "Flick", "Zoom", "Speedy", "Kit", "Springer", "Warren", "Lop", "Hippity", "Boing", "Stomper", "Cony", "Hutch", "Buttons", "Biscuit", "Chip", "Buster" },
+            femaleNames = new[] { "Bunny", "Cottontail", "Hoppy", "Doe", "Fluff", "Bounce", "Pounce", "Nibbles", "Twitchy", "Floppy", "Skippy", "Wiggle", "Powderpuff", "Fluffle", "Marshmallow", "Puff", "Dashie", "Zippy", "Springy", "Jumpette", "Ricochet", "Velvet", "Honeybun", "Bunbun", "Hopscotch", "Twirl", "Tumbles", "Peaches", "Mochi" }
+        },
+        new TypeNamePool
+        {
+            type = BunnyType.Fire,
+            maleNames = new[] { "Ash", "Blaze", "Ember", "Cinder", "Scorch", "Flint", "Ignis", "Pyro", "Smolder", "Char", "Kindle", "Wildfire", "Sear", "Vulcan", "Torch", "Magma", "Griff", "Zippo", "Brick", "Burn", "Redd", "Furnace", "Brimstone", "Smoky", "Kiln" },
+            femaleNames = new[] { "Crimson", "Pyra", "Pele", "Scarlet", "Sienna", "Flare", "Cherry", "Ignatia", "Solstice", "Asher", "Phoenix", "Cayenne", "Wildflame", "Salsa", "Vesta", "Cindra", "Brenna", "Sunburst", "Firefly", "Torrid", "Inferna", "Sunny", "Amber", "Combusta", "Ruby" }
+        },
+        new TypeNamePool
+        {
+            type = BunnyType.Water,
+            maleNames = new[] { "Marlin", "Finn", "Torrent", "Reef", "Kelp", "Wade", "Brook", "Cove", "Drake", "Riptide", "Squall", "Ripple", "Stingray", "Undertow", "Kai", "Pirate", "Barnacle", "Skiff", "Eel", "Deluge", "Fathom", "Puddle", "Splash", "Abyss", "Whirlpool" },
+            femaleNames = new[] { "Marina", "Coral", "Delta", "Misty", "Pearl", "Brooke", "Harbor", "Lagoon", "Wave", "Dew", "Ocean", "Bubbles", "Kelpie", "Siren", "Rain", "Cascade", "Aqua", "Lorelei", "Dory", "Shelly", "River", "Sea", "Dewdrop", "Bayou", "Foam" }
+        },
+        new TypeNamePool
+        {
+            type = BunnyType.Plant,
+            maleNames = new[] { "Thorne", "Basil", "Bramble", "Cedar", "Oakley", "Sprout", "Moss", "Root", "Bur", "Nettle", "Clover", "Nightshade", "Fern", "Birch", "Thistle", "Cactus", "Ragweed", "Hemlock", "Bramblewood", "Grove", "Sage", "Bracken", "Elm", "Pollen", "Vine" },
+            femaleNames = new[] { "Rosette", "Poppy", "Ivy", "Willow", "Marigold", "Blossom", "Petunia", "Dahlia", "Fennel", "Zinnia", "Clementine", "Hazel", "Briar", "Lily", "Saffron", "Peony", "Wisteria", "Sequoia", "Petal", "Meadow", "Foxglove", "Aster", "Juniper", "Bellflower", "Sorrel" }
+        },
+        new TypeNamePool
+        {
+            type = BunnyType.Shock,
+            maleNames = new[] { "Volt", "Bolt", "Spark", "Ampere", "Ohm", "Watt", "Jolt", "Static", "Surge", "Flash", "Lightning", "Zap", "Storm", "Thunder", "Fuse", "Coil", "Circuit", "Arc", "Ion", "Blitz", "Neon", "Gauge", "Ray", "Shock", "Zeus" },
+            femaleNames = new[] { "Electra", "Beam", "Sparkle", "Nova", "Livewire", "Flicker", "Photon", "Bright", "Dazzle", "Galvan", "Glow", "Aurora", "Sizzle", "Tesla", "Corona", "Fusion", "Xenia", "Volta", "Kirlian", "Faraday", "Voltage", "Crackle", "Luma", "Wired", "Shimmer" }
+        },
+    };
+
+    // Names already handed out this session, per (type, gender) pool — once a pool's remaining names
+    // run out, its used-set is cleared and it starts drawing from the full pool again (duplicates
+    // allowed again from that point). In-memory only for now since the project has no save system yet;
+    // Export/ImportUsedNames below exist so a future save system can persist this without touching the
+    // draw logic itself.
+    private readonly Dictionary<(BunnyType, BunnyGender), HashSet<string>> usedNames =
+        new Dictionary<(BunnyType, BunnyGender), HashSet<string>>();
 
     private void Awake()
     {
@@ -18,10 +73,81 @@ public class WildBunnyNames : MonoBehaviour
         return Random.value < 0.5f ? BunnyGender.Male : BunnyGender.Female;
     }
 
-    public string GetRandomName(BunnyGender gender)
+    public string GetRandomName(BunnyType type, BunnyGender gender)
     {
-        string[] pool = gender == BunnyGender.Male ? maleNames : femaleNames;
+        string[] pool = GetPool(type, gender);
         if (pool == null || pool.Length == 0) return "Unnamed";
-        return pool[Random.Range(0, pool.Length)];
+
+        var key = (type, gender);
+        if (!usedNames.TryGetValue(key, out HashSet<string> used))
+        {
+            used = new HashSet<string>();
+            usedNames[key] = used;
+        }
+
+        List<string> remaining = new List<string>();
+        foreach (string name in pool)
+        {
+            if (!used.Contains(name)) remaining.Add(name);
+        }
+
+        // Pool exhausted this session -> start a fresh cycle (duplicates now allowed again).
+        if (remaining.Count == 0)
+        {
+            used.Clear();
+            remaining.AddRange(pool);
+        }
+
+        string chosen = remaining[Random.Range(0, remaining.Count)];
+        used.Add(chosen);
+        return chosen;
+    }
+
+    private string[] GetPool(BunnyType type, BunnyGender gender)
+    {
+        foreach (TypeNamePool entry in namePools)
+        {
+            if (entry.type != type) continue;
+            return gender == BunnyGender.Male ? entry.maleNames : entry.femaleNames;
+        }
+        return null;
+    }
+
+    // --- Save-system scaffolding ---------------------------------------------------------------
+    // No save system exists in this project yet. Once one does, call ExportUsedNames() when writing
+    // a save and ImportUsedNames() right after Awake() on load, so reloading a save doesn't
+    // un-exhaust a pool that was already drawn dry.
+    [System.Serializable]
+    public struct UsedNameEntry
+    {
+        public BunnyType type;
+        public BunnyGender gender;
+        public List<string> names;
+    }
+
+    public List<UsedNameEntry> ExportUsedNames()
+    {
+        List<UsedNameEntry> export = new List<UsedNameEntry>();
+        foreach (var kvp in usedNames)
+        {
+            export.Add(new UsedNameEntry
+            {
+                type = kvp.Key.Item1,
+                gender = kvp.Key.Item2,
+                names = new List<string>(kvp.Value)
+            });
+        }
+        return export;
+    }
+
+    public void ImportUsedNames(List<UsedNameEntry> entries)
+    {
+        usedNames.Clear();
+        if (entries == null) return;
+
+        foreach (UsedNameEntry entry in entries)
+        {
+            usedNames[(entry.type, entry.gender)] = new HashSet<string>(entry.names);
+        }
     }
 }

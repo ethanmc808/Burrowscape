@@ -14848,408 +14848,281 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bfa27d9c81556b4e88f3d683cfb64cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WildBunnyNames
-  maleNames:
-  - Clover
-  - Thistle
-  - Bramble
-  - Fern
-  - Pip
-  - Sprout
-  - Acorn
-  - Twig
-  - Nibbles
-  - Buttons
-  - Waffle
-  - Biscuit
-  - Pancake
-  - Pebble
-  - Muffin
-  - Cricket
-  - Dash
-  - Scout
-  - Buddy
-  - Peanut
-  - Chip
-  - Cocoa
-  - Toffee
-  - Bingo
-  - Jasper
-  - Rusty
-  - Copper
-  - Oakley
-  - Basil
-  - Sage
-  - Reed
-  - Birch
-  - Cedar
-  - Pumpkin
-  - Marshmallow
-  - Gizmo
-  - Buster
-  - Nugget
-  - Pretzel
-  - Waffles
-  - Snickers
-  - Doodle
-  - Squiggle
-  - Puddle
-  - Marbles
-  - Fuzzball
-  - Snuggles
-  - Wiggles
-  - Bouncer
-  - Sprocket
-  - Tumbles
-  - Speckle
-  - Dumpling
-  - Noodle
-  - Cobbler
-  - Sherbet
-  - Bramblet
-  - Fudge
-  - Pistachio
-  - Marzipan
-  - Sir Hops-a-Lot
-  - Duke Dandelion
-  - Baron Fluffington
-  - Professor Nibbles
-  - Captain Carrot
-  - General Fuzz
-  - Doctor Floppy
-  - Mayor McHopper
-  - King Cottontail
-  - Private Pellet
-  - Buckminster
-  - Thumperton
-  - Hopscotch
-  - Bunsen
-  - Furlong
-  - Whiskerton
-  - Nibblesworth
-  - Buckshot
-  - Hopalot
-  - Bunbury
-  - Hareold
-  - Buckaroo
-  - Hoptimist
-  - Fernando
-  - Radish Rex
-  - Salad Dodger
-  - Cabbage Bandit
-  - Lettuce Leaper
-  - Carrot Cruncher
-  - Chewy McChewface
-  - Fluffernutter
-  - Sir Reginald Hops
-  - Earl Grey
-  - Count Fuzzula
-  - Sir Loin
-  - Baron Von Floof
-  - Duke of Dandelion
-  - Marquis de Carrot
-  - Viscount Veggie
-  - Admiral Cottontail
-  - Fang
-  - Venom
-  - Shadow
-  - Blade
-  - Reaper
-  - Ravage
-  - Havoc
-  - Bane
-  - Talon
-  - Vex
-  - Grim
-  - Rex
-  - Rogue
-  - Ash
-  - Chaos
-  - Diesel
-  - Ripper
-  - Slasher
-  - Maverick
-  - Skulk
-  - Bruiser
-  - Renegade
-  - Viper
-  - Cobra
-  - Zero
-  - Nitro
-  - Kane
-  - Onyx
-  - Skull
-  - Toxic
-  - Menace
-  - Riot
-  - Wraith
-  - Savage
-  - Brawler
-  - Switchblade
-  - Executioner
-  - Doom
-  - Grimwood
-  - Vandal
-  - Outlaw
-  - Ghoul
-  - Feral
-  - Anarchy
-  - Vortex
-  - Sinister
-  - Malice
-  - Reckless
-  - Berserk
-  - Corvus
-  - Thorne
-  - Draven
-  - Orin
-  - Fenwick
-  - Corwin
-  - Alderic
-  - Galahad
-  - Merlin
-  - Percival
-  - Tristan
-  - Kael
-  - Doran
-  - Aldric
-  - Emrys
-  - Faelan
-  - Griffin
-  - Thane
-  - Orsino
-  - Caspian
-  - Bramwell
-  - Lysander
-  - Osric
-  - Ronan
-  - Fenrir
-  - Aldous
-  - Cormac
-  - Dorian
-  - Evander
-  - Faelor
-  - Garrick
-  - Halric
-  - Ithran
-  - Joran
-  - Kellan
-  - Loric
-  - Maddox
-  - Nyx
-  - Osgood
-  - Perrin
-  - Quill
-  - Roderick
-  - Silas
-  - Thoron
-  - Ulric
-  - Varin
-  - Wystan
-  - Xanther
-  - Yorick
-  - Zephyrin
-  - Aramis
-  femaleNames:
-  - Poppy
-  - Willow
-  - Dandelion
-  - Briar
-  - Juniper
-  - Daisy
-  - Petal
-  - Marigold
-  - Blossom
-  - Honey
-  - Buttercup
-  - Clementine
-  - Cupcake
-  - Sprinkle
-  - Cookie
-  - Sugar
-  - Ginger
-  - Cinnamon
-  - Hazelnut
-  - Pudding
-  - Tulip
-  - Rosie
-  - Lily
-  - Iris
-  - Violet
-  - Sunny
-  - Star
-  - Twinkle
-  - Sparkle
-  - Bubbles
-  - Fluffy
-  - Cottonball
-  - Snowball
-  - Marshmallow
-  - Peaches
-  - Berry
-  - Plum
-  - Apricot
-  - Cherry
-  - Mochi
-  - Dumplin
-  - Biscotti
-  - Praline
-  - Nougat
-  - Caramel
-  - Butterscotch
-  - Meringue
-  - Frosting
-  - Glimmer
-  - Twirl
-  - Giggles
-  - Bounce
-  - Puddles
-  - Freckle
-  - Speckles
-  - Snuggle
-  - Nibblet
-  - Pipsqueak
-  - Tumble
-  - Flopsy
-  - Lady Hops-a-Lot
-  - Duchess Dandelion
-  - Baroness Fluffington
-  - Professor Whiskers
-  - Countess Cottontail
-  - Queen of Clover
-  - Miss Nibbles
-  - Madame Floof
-  - Dame Fuzzalot
-  - Lieutenant Lettuce
-  - Princess Pellet
-  - Bunnyetta
-  - Harelequin
-  - Fuzzlequin
-  - Hoparella
-  - Buttercream
-  - Radishette
-  - Salad Sprite
-  - Carrotina
-  - Thumperella
-  - Fernanda
-  - Cabbage Rose
-  - Bunbury Belle
-  - Whiskerella
-  - Chewbella
-  - Fluffington
-  - Hare-iet
-  - Bunapple
-  - Cottontina
-  - Nibblesina
-  - Baroness Von Floof
-  - Duchess of Dandelion
-  - Marchioness Marigold
-  - Viscountess Violet
-  - Lady Buttercup
-  - Countess Clover
-  - Empress Ember
-  - Sultana Sage
-  - Contessa Cotton
-  - Vixenella
-  - Raven
-  - Vixen
-  - Shade
-  - Vesper
-  - Nyxie
-  - Onyxette
-  - Huntress
-  - Reaperine
-  - Venomina
-  - Feral
-  - Riot
-  - Vex
-  - Rebel
-  - Havoc
-  - Wraithe
-  - Banshee
-  - Talon
-  - Blade
-  - Chaos
-  - Savage
-  - Maverick
-  - Nitro
-  - Vandal
-  - Ghoul
-  - Toxic
-  - Menace
-  - Sinister
-  - Malice
-  - Bruiser
-  - Switchblade
-  - Fury
-  - Vengeance
-  - Grim
-  - Diesel
-  - Cobra
-  - Viper
-  - Zero
-  - Sable
-  - Onyx
-  - Skulk
-  - Anarchy
-  - Vortex
-  - Reckless
-  - Berserka
-  - Requiem
-  - Nemesis
-  - Ravena
-  - Doom
-  - Morrigan
-  - Corvina
-  - Aeliana
-  - Isolde
-  - Rhiannon
-  - Elowen
-  - Seraphina
-  - Guinevere
-  - Freya
-  - Elysia
-  - Ravenna
-  - Odessa
-  - Calla
-  - Thalia
-  - Nerissa
-  - Wren
-  - Selene
-  - Lyra
-  - Ondine
-  - Faelynn
-  - Briallen
-  - Ithlyn
-  - Sorrel
-  - Maren
-  - Ysolde
-  - Aurelia
-  - Cressida
-  - Delphine
-  - Evangeline
-  - Fiora
-  - Galanthe
-  - Hespera
-  - Ilyana
-  - Junia
-  - Kyrie
-  - Liora
-  - Meliora
-  - Nyssa
-  - Oriana
-  - Persephone
-  - Quilla
-  - Rosalind
-  - Solenne
-  - Thessaly
-  - Umbriel
-  - Valeska
-  - Wisteria
-  - Xanthe
-  - Yseult
-  - Zinnia
-  - Amoret
-  - Branwen
+  namePools:
+  - type: 0
+    maleNames:
+    - Buck
+    - Jack
+    - Hopper
+    - Bounder
+    - Skip
+    - Leaper
+    - Dash
+    - Scamper
+    - Pip
+    - Jumper
+    - Nibbler
+    - Whiskers
+    - Twitch
+    - Flick
+    - Zoom
+    - Speedy
+    - Kit
+    - Springer
+    - Warren
+    - Lop
+    - Hippity
+    - Boing
+    - Stomper
+    - Cony
+    - Hutch
+    - Buttons
+    - Biscuit
+    - Chip
+    - Buster
+    femaleNames:
+    - Bunny
+    - Cottontail
+    - Hoppy
+    - Doe
+    - Fluff
+    - Bounce
+    - Pounce
+    - Nibbles
+    - Twitchy
+    - Floppy
+    - Skippy
+    - Wiggle
+    - Powderpuff
+    - Fluffle
+    - Marshmallow
+    - Puff
+    - Dashie
+    - Zippy
+    - Springy
+    - Jumpette
+    - Ricochet
+    - Velvet
+    - Honeybun
+    - Bunbun
+    - Hopscotch
+    - Twirl
+    - Tumbles
+    - Peaches
+    - Mochi
+  - type: 1
+    maleNames:
+    - Ash
+    - Blaze
+    - Ember
+    - Cinder
+    - Scorch
+    - Flint
+    - Ignis
+    - Pyro
+    - Smolder
+    - Char
+    - Kindle
+    - Wildfire
+    - Sear
+    - Vulcan
+    - Torch
+    - Magma
+    - Griff
+    - Zippo
+    - Brick
+    - Burn
+    - Redd
+    - Furnace
+    - Brimstone
+    - Smoky
+    - Kiln
+    - Sizzle
+    femaleNames:
+    - Crimson
+    - Pyra
+    - Pele
+    - Scarlet
+    - Sienna
+    - Flare
+    - Cherry
+    - Ignatia
+    - Solstice
+    - Asher
+    - Phoenix
+    - Cayenne
+    - Wildflame
+    - Salsa
+    - Vesta
+    - Cindra
+    - Brenna
+    - Sunburst
+    - Firefly
+    - Torrid
+    - Inferna
+    - Sunny
+    - Amber
+    - Combusta
+    - Ruby
+  - type: 2
+    maleNames:
+    - Marlin
+    - Finn
+    - Torrent
+    - Reef
+    - Kelp
+    - Wade
+    - Brook
+    - Cove
+    - Drake
+    - Riptide
+    - Squall
+    - Ripple
+    - Stingray
+    - Undertow
+    - Kai
+    - Pirate
+    - Barnacle
+    - Skiff
+    - Eel
+    - Deluge
+    - Fathom
+    - Puddle
+    - Splash
+    - Abyss
+    - Whirlpool
+    femaleNames:
+    - Marina
+    - Coral
+    - Delta
+    - Misty
+    - Pearl
+    - Brooke
+    - Harbor
+    - Lagoon
+    - Wave
+    - Dew
+    - Ocean
+    - Bubbles
+    - Kelpie
+    - Siren
+    - Rain
+    - Cascade
+    - Aqua
+    - Lorelei
+    - Dory
+    - Shelly
+    - River
+    - Sea
+    - Dewdrop
+    - Bayou
+    - Foam
+  - type: 3
+    maleNames:
+    - Thorne
+    - Basil
+    - Bramble
+    - Cedar
+    - Oakley
+    - Sprout
+    - Moss
+    - Root
+    - Bur
+    - Nettle
+    - Clover
+    - Nightshade
+    - Fern
+    - Birch
+    - Thistle
+    - Cactus
+    - Ragweed
+    - Hemlock
+    - Bramblewood
+    - Grove
+    - Sage
+    - Bracken
+    - Elm
+    - Pollen
+    - Vine
+    femaleNames:
+    - Rosette
+    - Poppy
+    - Ivy
+    - Willow
+    - Marigold
+    - Blossom
+    - Petunia
+    - Dahlia
+    - Fennel
+    - Zinnia
+    - Clementine
+    - Hazel
+    - Briar
+    - Lily
+    - Saffron
+    - Peony
+    - Wisteria
+    - Sequoia
+    - Petal
+    - Meadow
+    - Foxglove
+    - Aster
+    - Juniper
+    - Bellflower
+    - Sorrel
+  - type: 4
+    maleNames:
+    - Volt
+    - Bolt
+    - Spark
+    - Ampere
+    - Ohm
+    - Watt
+    - Jolt
+    - Static
+    - Surge
+    - Flash
+    - Lightning
+    - Zap
+    - Storm
+    - Thunder
+    - Fuse
+    - Coil
+    - Circuit
+    - Arc
+    - Ion
+    - Blitz
+    - Neon
+    - Gauge
+    - Ray
+    - Shock
+    - Zeus
+    femaleNames:
+    - Electra
+    - Beam
+    - Sparkle
+    - Nova
+    - Livewire
+    - Flicker
+    - Photon
+    - Bright
+    - Dazzle
+    - Galvan
+    - Glow
+    - Aurora
+    - Yellow
+    - Tesla
+    - Corona
+    - Fusion
+    - Xenia
+    - Volta
+    - Kirlian
+    - Faraday
+    - Voltage
+    - Crackle
+    - Luma
+    - Wired
+    - Shimmer
 --- !u!4 &1233478486
 Transform:
   m_ObjectHideFlags: 0

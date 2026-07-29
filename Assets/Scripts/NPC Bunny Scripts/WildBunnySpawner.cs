@@ -225,7 +225,7 @@ public class WildBunnySpawner : MonoBehaviour
         newBunny.SetArrivalType(BunnyArrivalType.Wild);
 
         BunnyGender gender = WildBunnyNames.Instance.GetRandomGender();
-        string chosenName = WildBunnyNames.Instance.GetRandomName(gender);
+        string chosenName = WildBunnyNames.Instance.GetRandomName(chosenType.type, gender);
         newBunny.SetIdentity(gender, chosenName);
 
         int level = RollSpawnLevel();

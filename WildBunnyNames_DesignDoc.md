@@ -1,6 +1,7 @@
 # Wild Bunny Name Pools — Design Doc
 
-**Status: design only, 2026-07-28. Nothing coded yet.**
+**Status: implemented 2026-07-28.** Name lists supplied by Ethan (`TYPE NAMES LIST.txt`) and baked
+into `WildBunnyNames.cs`'s per-type pools.
 
 ## Goal
 
@@ -28,8 +29,12 @@ handed out and excluding them from the draw until the whole pool is exhausted.
 
 1. **Per-type pools.** Each of the 5 types gets its own male/female name arrays, authored by Ethan
    (pasted in via a separate Claude chat, then hand-reviewed for fit) — no code-side name generation
-   or theming needed.
-2. **Pool size target: ~40-50 names per type per gender.**
+   or theming needed. Final lists delivered in `TYPE NAMES LIST.txt` and baked directly into
+   `WildBunnyNames.cs`: 25 names per gender for Plant/Water/Shock/Fire, 29 per gender for Neutral
+   (Ethan's list ran a few over the 25 target there; kept as-is rather than trimmed).
+2. **Pool size target: ~40-50 names per type per gender.** (Delivered lists came in at 25-29 per
+   gender — smaller than the original target, but Ethan's call to ship with what was authored rather
+   than block on writing more; pools just cycle/reset sooner, which is the designed fallback anyway.)
 3. **No-repeat-until-exhausted mechanic.** When picking a name for a given (type, gender), exclude
    names already used this session for that exact (type, gender) pair. Once every name in that pool
    has been used, clear the used-set for that pair and start drawing from the full pool again
