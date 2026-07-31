@@ -21,7 +21,9 @@ MonoBehaviour:
   baseDefense: 90
   baseSpeed: 60
   baseLuck: 20
+  attackName: Sludge Hurl
+  isMelee: 0
+  attackVFXPrefab: {fileID: 2292186409548564509, guid: ec03ef5fbe3c3d9439e8db437730c97b, type: 3}
   group: 2
   populationThreshold: 25
   passives: []
-  attackName: Sludge Hurl
