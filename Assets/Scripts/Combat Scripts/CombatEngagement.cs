@@ -97,27 +97,14 @@ public static class CombatEngagement
     // "just doesn't fire" tolerance TryBeginAttack itself already has, not an error state.
     public static void ReleaseAttack(ICombatant attacker, ICombatant target)
     {
-        if (target == null || target.CombatGameObject == null || !target.IsAlive)
-        {
-            Debug.Log($"[VFXDEBUG] ReleaseAttack bailed: target null-or-dead (target={(target == null ? "null" : target.CombatGameObject == null ? "GameObject null" : "not alive")})");
-            return;
-        }
+        if (target == null || target.CombatGameObject == null || !target.IsAlive) return;
 
         BunnyTypeDefinition attackSource = attacker.AttackSource;
-        if (attackSource == null || attackSource.attackVFXPrefab == null)
-        {
-            Debug.Log($"[VFXDEBUG] ReleaseAttack bailed: attackSource={(attackSource == null ? "null" : "has no attackVFXPrefab")}");
-            return;
-        }
+        if (attackSource == null || attackSource.attackVFXPrefab == null) return;
 
         float distance = Vector3.Distance(attacker.CombatTransform.position, target.CombatTransform.position);
-        if (distance > CombatBalanceConfig.Instance.rangedMaxRange)
-        {
-            Debug.Log($"[VFXDEBUG] ReleaseAttack bailed: distance {distance} > rangedMaxRange {CombatBalanceConfig.Instance.rangedMaxRange}");
-            return;
-        }
+        if (distance > CombatBalanceConfig.Instance.rangedMaxRange) return;
 
-        Debug.Log($"[VFXDEBUG] ReleaseAttack spawning {attackSource.attackVFXPrefab.name} at {attacker.AttackOrigin}");
         GameObject vfxObject = Object.Instantiate(attackSource.attackVFXPrefab, attacker.AttackOrigin, Quaternion.identity);
         AttackInstance instance = vfxObject.GetComponent<AttackInstance>();
         if (instance == null)

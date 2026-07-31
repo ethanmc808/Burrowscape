@@ -2904,7 +2904,6 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // may have passed since TryBeginAttack snapshotted it.
     public void ReleasePendingAttack()
     {
-        Debug.Log($"[VFXDEBUG] {name}.ReleasePendingAttack fired, pendingAttackTarget={(pendingAttackTarget != null ? "set" : "NULL")}");
         if (pendingAttackTarget == null) return;
         CombatEngagement.ReleaseAttack(this, pendingAttackTarget);
         pendingAttackTarget = null;
