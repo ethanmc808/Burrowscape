@@ -82,6 +82,15 @@ public class AttackInstance : MonoBehaviour
     public Transform AttackerTransform => attacker?.CombatTransform;
     public Transform TargetTransform => target?.CombatTransform;
 
+    // Live endpoints for anything drawing a line/bolt between the two combatants (LightningBoltFlash,
+    // LineAttackRenderer) instead of floor-to-floor via CombatTransform. Deliberately asymmetric: the
+    // attacker end uses AttackOrigin (a hand-tuned per-type spawn point, e.g. this bunny's own mouth/ear
+    // height — not every type wants the bolt literally leaving from its body center), while the target
+    // end uses VisualCenter (auto-computed from live sprite bounds, see ICombatant.VisualCenter) so the
+    // bolt always lands center-of-body on whatever it hits, with no per-enemy tuning needed.
+    public Vector3 AttackerOrigin => attacker != null ? attacker.AttackOrigin : transform.position;
+    public Vector3 TargetOrigin => target != null ? target.VisualCenter : transform.position;
+
     // Fires once Launch() has actually assigned attacker/target — child VFX components (e.g.
     // LightningBoltFlash) that need AttackerTransform/TargetTransform should hook their positioning logic
     // here instead of Awake/OnEnable, since those run at Instantiate() time, before Launch() is called.
@@ -96,16 +105,16 @@ public class AttackInstance : MonoBehaviour
         this.target = target;
         this.isStationary = isStationary;
 
-        if (isStationary && target.CombatTransform != null)
-            transform.position = target.CombatTransform.position;
-        else if (reverseDirection && target.CombatTransform != null)
-            transform.position = target.CombatTransform.position;
+        if (isStationary)
+            transform.position = target.VisualCenter;
+        else if (reverseDirection)
+            transform.position = target.VisualCenter;
 
         basePosition = transform.position;
         positionHistory.Clear();
         positionHistory.Add(transform.position);
-        Transform homingTarget = reverseDirection ? attacker.CombatTransform : target.CombatTransform;
-        totalTravelDistance = homingTarget != null ? Vector3.Distance(basePosition, homingTarget.position) : 0f;
+        Vector3 homingPos = reverseDirection ? attacker.VisualCenter : target.VisualCenter;
+        totalTravelDistance = Vector3.Distance(basePosition, homingPos);
 
         if (launchSFX != null)
             AudioManager.EnsureInstance().PlaySFXAtPosition(launchSFX, transform.position);
@@ -134,8 +143,7 @@ public class AttackInstance : MonoBehaviour
         }
 
         // Reversed carriers home toward the attacker instead of the target (see reverseDirection above).
-        Transform homingTarget = reverseDirection ? attacker.CombatTransform : target.CombatTransform;
-        Vector3 targetPos = homingTarget.position;
+        Vector3 targetPos = reverseDirection ? attacker.VisualCenter : target.VisualCenter;
 
         basePosition = Vector3.MoveTowards(basePosition, targetPos, travelSpeed * Time.deltaTime);
 

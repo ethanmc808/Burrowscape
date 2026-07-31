@@ -22,6 +22,19 @@ public interface ICombatant
     Transform CombatTransform { get; }
     GameObject CombatGameObject { get; }
 
+    // Where attack VFX prefabs spawn from — CombatTransform.position plus each combatant's own
+    // per-instance offset, so a projectile can leave from mouth height instead of the root pivot
+    // (floor level) without disturbing CombatTransform itself, which targeting/distance math elsewhere
+    // still relies on being the root.
+    Vector3 AttackOrigin { get; }
+
+    // The actual visual midpoint of this combatant's sprite(s) right now — computed from live renderer
+    // bounds (see CombatEngagement.ComputeVisualCenter), not a hand-tuned offset like AttackOrigin. Used
+    // as the arrival/homing point for attacks (AttackInstance) so a projectile lands center-of-body
+    // regardless of whether CombatTransform's root pivot happens to sit at floor level, chest height, etc.
+    // on any given prefab.
+    Vector3 VisualCenter { get; }
+
     // Reduces HP, can reach 0 (unlike NPCBunny.ApplyForagingDamage's floor-at-1 — that method is a
     // separate, deliberately-non-lethal Foraging placeholder, not reused here). Implementers fire
     // OnDefeated exactly once, the moment CurrentHP first reaches 0.

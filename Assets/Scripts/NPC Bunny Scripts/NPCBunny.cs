@@ -154,6 +154,8 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
     [Header("Facing Direction")]
     [SerializeField] private Transform bunnyScaleRoot;
+    [Tooltip("Local offset from this bunny's root added to CombatTransform.position when spawning attack VFX, so the attack can leave from mouth height instead of the floor. Author X assuming this bunny faces RIGHT — it's automatically mirrored when facing left.")]
+    [SerializeField] private Vector3 attackOriginOffset = new Vector3(0f, 1f, 0f);
     [SerializeField] private bool bunnyFacesLeftByDefault = true;
 
     [Header("Idle Pacing (fallback when no Living Room spot is available anywhere on the base)")]
@@ -291,6 +293,10 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // a separate, not-yet-built concern and doesn't touch this field).
     private ICombatant currentCombatTarget;
     private float attackCooldownRemaining;
+    // Snapshotted by HandleDefending when a wind-up starts, consumed by ReleasePendingAttack (called via
+    // an Animation Event on this type's Attacking clip, at its "release" frame) — see CombatEngagement's
+    // own comment for why firing is split into these two phases instead of instant-on-cooldown.
+    private ICombatant pendingAttackTarget;
 
     // Which room (if any) this bunny currently holds a proximity-ambient ref count against, per need —
     // see SyncProximityAmbient. Tracked separately from cafeteriaBeingUsed/waterRoomBeingUsed/
@@ -335,10 +341,17 @@ public class NPCBunny : MonoBehaviour, ICombatant
     private bool hasInitializedFacing;
     private bool? pendingFacingOverride;
 
+    // Cached once here rather than re-queried by VisualCenter every frame an attack homes toward this
+    // bunny — GetComponentsInChildren allocates, and the set of renderers a rig has never changes at
+    // runtime (see the bunny outline rework's multi-part body/face-overlay setup).
+    private Renderer[] visualRenderers;
+
     private void Awake()
     {
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
+
+        visualRenderers = GetComponentsInChildren<Renderer>();
 
         SetFacing(!bunnyFacesLeftByDefault);
     }
@@ -1285,6 +1298,24 @@ public class NPCBunny : MonoBehaviour, ICombatant
     BunnyTypeDefinition ICombatant.AttackSource => typeDefinition;
     Transform ICombatant.CombatTransform => transform;
     GameObject ICombatant.CombatGameObject => gameObject;
+    // attackOriginOffset is authored assuming the bunny faces right (see the field's tooltip) — X must
+    // mirror whenever the bunny is actually facing/oriented the other way, or the offset point stays on
+    // the sprite's original-facing side and ends up behind its head once it turns. Reads the LIVE visual
+    // state directly (bunnyScaleRoot's own scale sign, plus this transform's actual rotation) rather than
+    // the separately-tracked facingRight flag — facingRight only updates through SetFacing's normal
+    // scale-flip path, so it wouldn't reflect e.g. manually rotating this GameObject's Y in the Inspector
+    // to preview the other facing, which transform.rotation picks up automatically.
+    Vector3 ICombatant.AttackOrigin
+    {
+        get
+        {
+            Vector3 offset = attackOriginOffset;
+            if (bunnyScaleRoot != null && bunnyScaleRoot.localScale.x < 0f)
+                offset.x = -offset.x;
+            return transform.position + transform.rotation * offset;
+        }
+    }
+    Vector3 ICombatant.VisualCenter => CombatEngagement.ComputeVisualCenter(visualRenderers, transform.position);
 
     public event System.Action OnDefeated;
 
@@ -2849,17 +2880,61 @@ public class NPCBunny : MonoBehaviour, ICombatant
     }
 
     // Ticked every frame while CurrentState == Defending — targets whichever enemy in defendingRoom is
-    // closest and fires this bunny's own attack once engaged, via the shared CombatEngagement utility
-    // (also used by EnemyInstance, so both sides of an invasion use identical targeting/cooldown logic).
+    // closest and starts this bunny's own attack wind-up once engaged, via the shared CombatEngagement
+    // utility (also used by EnemyInstance, so both sides of an invasion use identical targeting/cooldown
+    // logic). The actual AttackInstance doesn't spawn here — see ReleasePendingAttack below.
     private void HandleDefending()
     {
         if (InvasionManager.Instance == null || defendingRoom == null) return;
 
         IEnumerable<ICombatant> candidatePool = InvasionManager.Instance.GetEnemiesInRoom(defendingRoom).Cast<ICombatant>();
-        bool fired = CombatEngagement.Tick(this, ref currentCombatTarget, ref attackCooldownRemaining, candidatePool);
+        bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentCombatTarget, ref attackCooldownRemaining, candidatePool, out ICombatant attackTarget);
 
-        if (fired && animator != null)
+        if (!startedWindUp) return;
+
+        pendingAttackTarget = attackTarget;
+        if (animator != null)
             animator.SetTrigger(isAttackingParam);
+    }
+
+    // Animation Event receiver — place this on this type's Attacking clip (via its Animator Override
+    // Controller) at the frame the attack visually "releases" (e.g. the moment a cast/throw completes),
+    // so the AttackInstance VFX spawns in sync with the animation instead of instantly on cooldown.
+    // Re-validates the target itself (see CombatEngagement.ReleaseAttack) since a few frames of wind-up
+    // may have passed since TryBeginAttack snapshotted it.
+    public void ReleasePendingAttack()
+    {
+        Debug.Log($"[VFXDEBUG] {name}.ReleasePendingAttack fired, pendingAttackTarget={(pendingAttackTarget != null ? "set" : "NULL")}");
+        if (pendingAttackTarget == null) return;
+        CombatEngagement.ReleaseAttack(this, pendingAttackTarget);
+        pendingAttackTarget = null;
+    }
+
+    // Test-only hook for VFXPreviewHarness — triggers the same wind-up animation HandleDefending does
+    // (skipping its InvasionManager/cooldown gating, which the isolated preview scene has no reason to
+    // set up), so the Attacking clip's existing Animation Event still fires ReleasePendingAttack above at
+    // the real "release" frame, the same path actual combat uses.
+    public void TestFireAttack(ICombatant target)
+    {
+        pendingAttackTarget = target;
+        if (animator != null)
+            animator.SetTrigger(isAttackingParam);
+    }
+
+    // Test-only hook for VFXPreviewHarness — a bunny just placed in a test scene never goes through
+    // WildBunnySpawner's SetTypeAndProgression (see that method's own comment), so typeDefinition/Stats/
+    // currentHP are all still null/zero, which silently made ICombatant.AttackSource null and
+    // CombatEngagement.ReleaseAttack bail with nothing to spawn. Mirrors just enough of
+    // SetTypeAndProgression to make this bunny a valid attacker/target for VFX preview — no-ops if this
+    // bunny already has real progression (don't clobber a bunny that WAS spawned normally), and skips
+    // traits/passives since VFX timing doesn't depend on them.
+    public void TestInitializeForPreview(BunnyTypeDefinition def)
+    {
+        if (def == null || typeDefinition != null) return;
+        typeDefinition = def;
+        Type = def.type;
+        Stats = BunnyStatCalculator.Resolve(def, Level, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        if (currentHP <= 0) currentHP = Stats.HP;
     }
 
     // Called once an invasion clears in defendingRoom (InvasionManager.OnInvasionCleared). Releases the

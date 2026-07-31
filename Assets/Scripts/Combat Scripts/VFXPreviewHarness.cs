@@ -1,33 +1,34 @@
 using UnityEngine;
 
-// Disposable test harness for previewing AttackInstance VFX prefabs in Play mode, without needing the
-// real combat AI/trigger layer (which doesn't exist yet — nothing else in the codebase calls Launch()).
-// Drop this on any empty GameObject in a test scene, assign Attacker Point / Target Point (two placeholder
-// Transforms — e.g. simple cubes/spheres positioned apart) and an Attack Prefab, then press Play and hit
-// the Fire Key (or enable Auto Repeat) to watch the VFX run start-to-finish repeatedly.
+// Disposable test harness for previewing attack VFX in Play mode through the SAME path real combat
+// uses, without needing the real combat AI/trigger layer (which doesn't exist yet) or InvasionManager/
+// room setup. Drop this on any empty GameObject in a test scene, assign Attacker Object / Target Object
+// to real NPCBunny or EnemyInstance GameObjects already placed in the scene, then press Play and hit the
+// Fire Key (or enable Auto Repeat). Fire() calls the attacker's TestFireAttack, which triggers its actual
+// Attacking animation via its real Animator param — the Attacking clip's existing Animation Event then
+// calls ReleasePendingAttack -> CombatEngagement.ReleaseAttack, spawning the VFX at the animation's real
+// "release" frame exactly like true combat, not a scripted instant-spawn. Swap which GameObject is
+// assigned to either field mid-Play-mode to compare bunnies/enemies without restarting — resolved fresh
+// every Fire(), not cached at Awake.
 //
 // NOT part of the shipped combat system. Delete this once all attack VFX prefabs are built and wired the
-// real way via BunnyTypeDefinition/EnemyDefinition.attackSource + whatever the eventual combat AI is.
+// real way via the eventual combat AI triggering NPCBunny.HandleDefending/EnemyInstance.Update normally.
 public class VFXPreviewHarness : MonoBehaviour
 {
-    [SerializeField] private Transform attackerPoint;
-    [SerializeField] private Transform targetPoint;
-    [SerializeField] private GameObject attackPrefab;
-    [SerializeField] private bool isStationary;
+    [Tooltip("A real NPCBunny or EnemyInstance GameObject placed in the scene to act as the attacker.")]
+    [SerializeField] private GameObject attackerObject;
+    [Tooltip("Only needed if Attacker Object is an NPCBunny placed directly in the scene (never spawned via WildBunnySpawner, so it has no type/stats yet) — assign the matching Bunny Types asset, e.g. Water.asset. Ignored if the bunny already has real progression, or if Attacker Object is an EnemyInstance.")]
+    [SerializeField] private BunnyTypeDefinition attackerTypeOverride;
+    [Tooltip("A real NPCBunny or EnemyInstance GameObject placed in the scene to act as the target.")]
+    [SerializeField] private GameObject targetObject;
+    [Tooltip("Same as Attacker Type Override, but for Target Object.")]
+    [SerializeField] private BunnyTypeDefinition targetTypeOverride;
 
     [SerializeField] private KeyCode fireKey = KeyCode.Space;
     [SerializeField] private bool autoRepeat;
     [SerializeField] private float autoRepeatInterval = 1.5f;
 
-    private DummyCombatant attackerCombatant;
-    private DummyCombatant targetCombatant;
     private float autoRepeatTimer;
-
-    private void Awake()
-    {
-        attackerCombatant = new DummyCombatant(attackerPoint);
-        targetCombatant = new DummyCombatant(targetPoint);
-    }
 
     private void Update()
     {
@@ -47,40 +48,60 @@ public class VFXPreviewHarness : MonoBehaviour
 
     private void Fire()
     {
-        if (attackPrefab == null || attackerPoint == null || targetPoint == null)
+        // Resolved for its auto-init side effect (see ResolveCombatant) even though attacker is then
+        // re-fetched as a concrete type below — TestFireAttack isn't part of ICombatant (it's a test-only
+        // hook, deliberately kept off the shared production interface), so it needs the concrete
+        // NPCBunny/EnemyInstance component to call, not just the ICombatant surface.
+        ICombatant attacker = ResolveCombatant(attackerObject, attackerTypeOverride);
+        ICombatant target = ResolveCombatant(targetObject, targetTypeOverride);
+        if (attacker == null || target == null)
         {
-            Debug.LogWarning("VFXPreviewHarness: assign Attacker Point, Target Point, and Attack Prefab before firing.");
+            Debug.LogWarning("VFXPreviewHarness: assign Attacker Object and Target Object (each needs an NPCBunny or EnemyInstance component) before firing.");
             return;
         }
 
-        GameObject instance = Instantiate(attackPrefab, attackerPoint.position, Quaternion.identity);
-        AttackInstance attack = instance.GetComponent<AttackInstance>();
-        if (attack == null)
-        {
-            Debug.LogWarning($"VFXPreviewHarness: '{attackPrefab.name}' has no AttackInstance component on its root.");
-            return;
-        }
-
-        attack.Launch(attackerCombatant, targetCombatant, isStationary);
+        if (attackerObject.TryGetComponent(out NPCBunny bunny))
+            bunny.TestFireAttack(target);
+        else if (attackerObject.TryGetComponent(out EnemyInstance enemy))
+            enemy.TestFireAttack(target);
     }
 
-    // Minimal stand-in ICombatant — just enough surface for AttackInstance/CombatResolver to run against
-    // with fixed placeholder stats. Not meant to model real damage/defeat, only to exercise VFX timing.
-    private class DummyCombatant : ICombatant
+    // Resolves the real ICombatant on a dropped-in GameObject every call (not cached) so reassigning
+    // Attacker Object/Target Object mid-Play-mode takes effect on the very next Fire(). Auto-initializes
+    // whichever real progression step this GameObject would otherwise only get from its normal spawner —
+    // EnemyInstance.Initialize (currentHP starts at 0 = dead until then) or NPCBunny.TestInitializeForPreview
+    // (typeDefinition starts null, so AttackSource would silently be null) — either of which would
+    // otherwise just silently no-op the attack with no visible VFX and no error.
+    private ICombatant ResolveCombatant(GameObject obj, BunnyTypeDefinition typeOverride)
     {
-        private readonly Transform pointTransform;
+        if (obj == null) return null;
 
-        public DummyCombatant(Transform pointTransform) { this.pointTransform = pointTransform; }
+        ICombatant combatant = obj.GetComponent<ICombatant>();
+        if (combatant == null)
+        {
+            Debug.LogWarning($"VFXPreviewHarness: '{obj.name}' has no NPCBunny or EnemyInstance component.");
+            return null;
+        }
 
-        public BunnyType Type => BunnyType.Neutral;
-        public int Level => 5;
-        public BunnyStats Stats => new BunnyStats { HP = 20, Attack = 10, Defense = 10, Speed = 10, Luck = 10 };
-        public int CurrentHP => 20;
-        public bool IsAlive => true;
-        public BunnyTypeDefinition AttackSource => null;
-        public Transform CombatTransform => pointTransform;
-        public GameObject CombatGameObject => pointTransform != null ? pointTransform.gameObject : null;
-        public void TakeCombatDamage(int amount) { }
-        public event System.Action OnDefeated { add { } remove { } }
+        if (combatant is EnemyInstance enemy && !combatant.IsAlive)
+        {
+            if (enemy.Definition == null)
+            {
+                Debug.LogWarning($"VFXPreviewHarness: '{obj.name}' is an uninitialized EnemyInstance with no Definition assigned to auto-init from.");
+                return null;
+            }
+            enemy.Initialize(enemy.Definition, null);
+        }
+        else if (combatant is NPCBunny bunny && bunny.TypeDefinition == null)
+        {
+            if (typeOverride == null)
+            {
+                Debug.LogWarning($"VFXPreviewHarness: '{obj.name}' is an NPCBunny with no type set yet — assign its matching Bunny Types asset to the Type Override field.");
+                return null;
+            }
+            bunny.TestInitializeForPreview(typeOverride);
+        }
+
+        return combatant;
     }
 }

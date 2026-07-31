@@ -19,6 +19,8 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     [SerializeField] private Animator animator;
     [Tooltip("How long the Dying clip needs to finish playing before this GameObject is destroyed. Tune to match the actual clip length.")]
     [SerializeField] private float deathAnimationSeconds = 1f;
+    [Tooltip("Local offset from this enemy's root added to CombatTransform.position when spawning attack VFX, so the attack can leave from mouth height instead of the floor.")]
+    [SerializeField] private Vector3 attackOriginOffset = new Vector3(0f, 1f, 0f);
 
     public EnemyDefinition Definition => definition;
     public BunnyType Type { get; private set; }
@@ -28,17 +30,33 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     private int currentHP;
     private RoomBase room;
 
+    // Cached once here rather than re-queried by VisualCenter every frame an attack homes toward this
+    // enemy — GetComponentsInChildren allocates, and the set of renderers a rig has never changes at
+    // runtime.
+    private Renderer[] visualRenderers;
+
+    private void Awake()
+    {
+        visualRenderers = GetComponentsInChildren<Renderer>();
+    }
+
     // Combat AI (see CombatEngagement) — always targets whichever Defending bunny in `room` is closest,
     // per Ethan's design (a future quest system will let the player override this via clicking a target;
     // that's a separate, not-yet-built concern and doesn't touch this field).
     private ICombatant currentTarget;
     private float attackCooldownRemaining;
+    // Snapshotted by Update when a wind-up starts, consumed by ReleasePendingAttack (called via an
+    // Animation Event on this enemy's Attacking clip, at its "release" frame) — see CombatEngagement's
+    // own comment for why firing is split into these two phases instead of instant-on-cooldown.
+    private ICombatant pendingAttackTarget;
 
     int ICombatant.CurrentHP => currentHP;
     bool ICombatant.IsAlive => currentHP > 0;
     BunnyTypeDefinition ICombatant.AttackSource => definition != null ? definition.attackSource : null;
     Transform ICombatant.CombatTransform => transform;
     GameObject ICombatant.CombatGameObject => gameObject;
+    Vector3 ICombatant.AttackOrigin => transform.position + attackOriginOffset;
+    Vector3 ICombatant.VisualCenter => CombatEngagement.ComputeVisualCenter(visualRenderers, transform.position);
 
     public event System.Action OnDefeated;
 
@@ -74,11 +92,36 @@ public class EnemyInstance : MonoBehaviour, ICombatant
             .Where(b => b.CurrentState == BunnyState.Defending)
             .Cast<ICombatant>();
 
-        bool fired = CombatEngagement.Tick(this, ref currentTarget, ref attackCooldownRemaining, candidatePool);
+        bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, candidatePool, out ICombatant attackTarget);
+        if (!startedWindUp) return;
 
-        // Same one-shot trigger shape as "Die" above — Any State -> Attacking (Has Exit Time off),
+        pendingAttackTarget = attackTarget;
+
+        // Same one-shot trigger shape as "Die" below — Any State -> Attacking (Has Exit Time off),
         // Attacking -> Idle (Has Exit Time on) once wired in this enemy's own Animator Controller.
-        if (fired && animator != null)
+        if (animator != null)
+            animator.SetTrigger("Attack");
+    }
+
+    // Animation Event receiver — place this on this enemy's Attacking clip at the frame the attack
+    // visually "releases", so the AttackInstance VFX spawns in sync with the animation instead of
+    // instantly on cooldown. Re-validates the target itself (see CombatEngagement.ReleaseAttack) since a
+    // few frames of wind-up may have passed since TryBeginAttack snapshotted it.
+    public void ReleasePendingAttack()
+    {
+        if (pendingAttackTarget == null) return;
+        CombatEngagement.ReleaseAttack(this, pendingAttackTarget);
+        pendingAttackTarget = null;
+    }
+
+    // Test-only hook for VFXPreviewHarness — triggers the same wind-up animation Update does (skipping
+    // its DwellerRoster/room/cooldown gating, which the isolated preview scene has no reason to set up),
+    // so the Attacking clip's existing Animation Event still fires ReleasePendingAttack above at the real
+    // "release" frame, the same path actual combat uses.
+    public void TestFireAttack(ICombatant target)
+    {
+        pendingAttackTarget = target;
+        if (animator != null)
             animator.SetTrigger("Attack");
     }
 

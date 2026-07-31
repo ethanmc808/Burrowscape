@@ -43,8 +43,8 @@ public class LineAttackRenderer : MonoBehaviour
     {
         if (ownerAttack != null)
         {
-            if (ownerAttack.AttackerTransform != null) fromPoint = ownerAttack.AttackerTransform.position;
-            if (ownerAttack.TargetTransform != null) toPoint = ownerAttack.TargetTransform.position;
+            fromPoint = ownerAttack.AttackerOrigin;
+            toPoint = ownerAttack.TargetOrigin;
         }
 
         timer += Time.deltaTime;
