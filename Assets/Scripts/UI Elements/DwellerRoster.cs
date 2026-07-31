@@ -54,10 +54,19 @@ public class DwellerRoster : MonoBehaviour
     // so those states are deliberately excluded here, unlike GetBunniesAssignedTo which is claim-based.
     public List<NPCBunny> GetBunniesCurrentlyInRoom(RoomBase room)
     {
-        return allBunnies.Where(b =>
+        List<NPCBunny> matches = allBunnies.Where(b =>
             (b.CurrentState == BunnyState.Working && b.AssignedJobRoom is RoomBase workRoom && workRoom == room) ||
             (b.CurrentState == BunnyState.Relaxing && b.ClaimedRelaxRoom == room)
         ).ToList();
+
+        // TEMP — chasing "second invasion doesn't recruit defenders" bug. Dumps every bunny's state/room
+        // so we can see exactly why a bunny that looks "in the room" doesn't match this filter. Remove
+        // once root-caused.
+        Debug.Log($"[VFXDEBUG] GetBunniesCurrentlyInRoom({room.name}) matched {matches.Count}: {string.Join(", ", matches.Select(b => b.name))}");
+        foreach (NPCBunny b in allBunnies)
+            Debug.Log($"[VFXDEBUG]   {b.name}: state={b.CurrentState}, jobRoom={(b.AssignedJobRoom as RoomBase)?.name ?? "null"}, relaxRoom={(b.ClaimedRelaxRoom as RoomBase)?.name ?? "null"}");
+
+        return matches;
     }
 
     // Every bunny currently posted at `room`'s CombatSpots — auto-defenders and deployed guards alike

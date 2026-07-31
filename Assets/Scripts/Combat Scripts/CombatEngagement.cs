@@ -105,6 +105,9 @@ public static class CombatEngagement
         float distance = Vector3.Distance(attacker.CombatTransform.position, target.CombatTransform.position);
         if (distance > CombatBalanceConfig.Instance.rangedMaxRange) return;
 
+        // TEMP — chasing "enemy attackOriginOffset appears mirrored" bug.
+        Debug.Log($"[VFXDEBUG] ReleaseAttack({attacker.CombatGameObject?.name}): attackerPos={attacker.CombatTransform.position} attackerRot={attacker.CombatTransform.rotation.eulerAngles} attackOrigin={attacker.AttackOrigin}");
+
         GameObject vfxObject = Object.Instantiate(attackSource.attackVFXPrefab, attacker.AttackOrigin, Quaternion.identity);
         AttackInstance instance = vfxObject.GetComponent<AttackInstance>();
         if (instance == null)

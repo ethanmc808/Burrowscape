@@ -1297,7 +1297,10 @@ public class NPCBunny : MonoBehaviour, ICombatant
     bool ICombatant.IsAlive => currentHP > 0;
     BunnyTypeDefinition ICombatant.AttackSource => typeDefinition;
     Transform ICombatant.CombatTransform => transform;
-    GameObject ICombatant.CombatGameObject => gameObject;
+    // `this == null` (Unity's real destroyed-object check) rather than unconditionally dereferencing
+    // gameObject — see EnemyInstance's identical fix for why the naive version throws instead of
+    // returning the "fake null" every caller checking CombatGameObject == null expects.
+    GameObject ICombatant.CombatGameObject => this == null ? null : gameObject;
     // attackOriginOffset is authored assuming the bunny faces right (see the field's tooltip) — X must
     // mirror whenever the bunny is actually facing/oriented the other way, or the offset point stays on
     // the sprite's original-facing side and ends up behind its head once it turns. Reads the LIVE visual
@@ -2887,8 +2890,12 @@ public class NPCBunny : MonoBehaviour, ICombatant
     {
         if (InvasionManager.Instance == null || defendingRoom == null) return;
 
-        IEnumerable<ICombatant> candidatePool = InvasionManager.Instance.GetEnemiesInRoom(defendingRoom).Cast<ICombatant>();
-        bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentCombatTarget, ref attackCooldownRemaining, candidatePool, out ICombatant attackTarget);
+        List<ICombatant> candidatePoolList = InvasionManager.Instance.GetEnemiesInRoom(defendingRoom).Cast<ICombatant>().ToList();
+        bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentCombatTarget, ref attackCooldownRemaining, candidatePoolList, out ICombatant attackTarget);
+
+        // TEMP — chasing "second invasion, bunny reaches CombatSpot but never attacks" bug.
+        if (Time.frameCount % 30 == 0 || startedWindUp)
+            Debug.Log($"[VFXDEBUG] HandleDefending({name}): pool={candidatePoolList.Count} target={(currentCombatTarget != null ? currentCombatTarget.CombatGameObject?.name : "NULL")} cooldown={attackCooldownRemaining:F2} attackSource={((ICombatant)this).AttackSource?.displayName ?? "NULL"} startedWindUp={startedWindUp} animator={(animator != null ? "set" : "NULL")}");
 
         if (!startedWindUp) return;
 
@@ -2904,6 +2911,9 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // may have passed since TryBeginAttack snapshotted it.
     public void ReleasePendingAttack()
     {
+        // TEMP — chasing "second invasion, bunny reaches CombatSpot but never attacks" bug. Confirms
+        // whether the Animation Event even fires on the second engagement.
+        Debug.Log($"[VFXDEBUG] ReleasePendingAttack({name}): pendingAttackTarget={(pendingAttackTarget != null ? pendingAttackTarget.CombatGameObject?.name : "NULL")}");
         if (pendingAttackTarget == null) return;
         CombatEngagement.ReleaseAttack(this, pendingAttackTarget);
         pendingAttackTarget = null;

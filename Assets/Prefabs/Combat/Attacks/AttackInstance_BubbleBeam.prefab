@@ -14553,8 +14553,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d9384af22e42be489b6c65c45d184b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AttackInstance
-  travelSpeed: 2
+  travelSpeed: 2.5
   arrivalThreshold: 0.1
+  travelDelaySeconds: 0
   useArcMotion: 0
   arcHeight: 2
   trailFollower: {fileID: 1912753366139250970}

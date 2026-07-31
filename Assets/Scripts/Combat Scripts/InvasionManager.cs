@@ -151,6 +151,7 @@ public class InvasionManager : MonoBehaviour
         foreach (NPCBunny bunny in DwellerRoster.Instance.GetBunniesCurrentlyInRoom(room))
         {
             RoomSpot spot = room.ClaimCombatSpot(bunny);
+            Debug.Log($"[VFXDEBUG] TriggerAutoDefend({room.name}): {bunny.name} ClaimCombatSpot -> {(spot != null ? spot.name : "NULL")}");
             if (spot == null) break; // room's CombatSpots are full — remainder stay put
 
             bunny.BeginDefending(spot, room);

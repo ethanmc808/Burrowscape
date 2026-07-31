@@ -104,32 +104,10 @@ ScriptedImporter:
     rect:
       serializedVersion: 2
       x: 4
-      y: 1078
-      width: 524
-      height: 340
-    spriteID: 8598fb99f68d3f54abc26fc620f6ab44
-    spriteBone: []
-    spriteOutline: []
-    vertices: []
-    spritePhysicsOutline: []
-    indices: 
-    edges: []
-    tessellationDetail: 0
-    uvTransform: {x: 4, y: 1078}
-    spritePosition: {x: 0, y: 10}
-  - name: BoltFlash2
-    originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
-    border: {x: 0, y: 0, z: 0, w: 0}
-    customData: 
-    rect:
-      serializedVersion: 2
-      x: 4
       y: 4
       width: 525
       height: 350
-    spriteID: 3e283584860f6a54595c30b9bcc4c381
+    spriteID: 8598fb99f68d3f54abc26fc620f6ab44
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -139,7 +117,7 @@ ScriptedImporter:
     tessellationDetail: 0
     uvTransform: {x: 4, y: 4}
     spritePosition: {x: 0, y: 0}
-  - name: BoltFlash3
+  - name: BoltFlash2
     originalName: 
     pivot: {x: 0.5, y: 0.5}
     alignment: 0
@@ -151,7 +129,7 @@ ScriptedImporter:
       y: 362
       width: 525
       height: 350
-    spriteID: 4e9eed427ce0f214aae43e15d2322653
+    spriteID: 3e283584860f6a54595c30b9bcc4c381
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -161,7 +139,7 @@ ScriptedImporter:
     tessellationDetail: 0
     uvTransform: {x: 4, y: 362}
     spritePosition: {x: 0, y: 0}
-  - name: BoltFlash4
+  - name: BoltFlash3
     originalName: 
     pivot: {x: 0.5, y: 0.5}
     alignment: 0
@@ -173,7 +151,7 @@ ScriptedImporter:
       y: 720
       width: 525
       height: 350
-    spriteID: a6acd33543a820e498398a25c5c59d23
+    spriteID: 4e9eed427ce0f214aae43e15d2322653
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -182,6 +160,28 @@ ScriptedImporter:
     edges: []
     tessellationDetail: 0
     uvTransform: {x: 4, y: 720}
+    spritePosition: {x: 0, y: 0}
+  - name: BoltFlash4
+    originalName: 
+    pivot: {x: 0.5, y: 0.5}
+    alignment: 0
+    border: {x: 0, y: 0, z: 0, w: 0}
+    customData: 
+    rect:
+      serializedVersion: 2
+      x: 4
+      y: 1078
+      width: 525
+      height: 350
+    spriteID: a6acd33543a820e498398a25c5c59d23
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 4, y: 1078}
     spritePosition: {x: 0, y: 0}
   spriteImportData: []
   rigSpriteImportData: []
@@ -272,7 +272,7 @@ ScriptedImporter:
     parentIndex: -1
     spriteID: 8598fb99f68d3f54abc26fc620f6ab44
     layerID: 6
-    mosaicPosition: {x: 4, y: 1078}
+    mosaicPosition: {x: 4, y: 4}
     flatten: 0
     isImported: 1
     isVisible: 1
@@ -282,7 +282,7 @@ ScriptedImporter:
     parentIndex: -1
     spriteID: 3e283584860f6a54595c30b9bcc4c381
     layerID: 5
-    mosaicPosition: {x: 4, y: 4}
+    mosaicPosition: {x: 4, y: 362}
     flatten: 0
     isImported: 1
     isVisible: 1
@@ -292,7 +292,7 @@ ScriptedImporter:
     parentIndex: -1
     spriteID: 4e9eed427ce0f214aae43e15d2322653
     layerID: 10
-    mosaicPosition: {x: 4, y: 362}
+    mosaicPosition: {x: 4, y: 720}
     flatten: 0
     isImported: 1
     isVisible: 1
@@ -302,7 +302,7 @@ ScriptedImporter:
     parentIndex: -1
     spriteID: a6acd33543a820e498398a25c5c59d23
     layerID: 16
-    mosaicPosition: {x: 4, y: 720}
+    mosaicPosition: {x: 4, y: 1078}
     flatten: 0
     isImported: 1
     isVisible: 1

@@ -433,7 +433,7 @@ ScriptedImporter:
     - {x: 26, y: 27}
     tessellationDetail: 0
     uvTransform: {x: 2614, y: 4}
-    spritePosition: {x: 523, y: 906}
+    spritePosition: {x: 1290, y: 906}
   - name: Body
     originalName: 
     pivot: {x: 0.5, y: 0.5}

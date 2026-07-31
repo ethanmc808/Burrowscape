@@ -19,6 +19,13 @@ public class AttackInstance : MonoBehaviour
     [SerializeField] private float travelSpeed = 10f; // units/second, irrelevant when stationary
     [SerializeField] private float arrivalThreshold = 0.1f;
 
+    // "Charge-up" look (e.g. Giga Drain) — the carrier holds at its spawn position for this many seconds
+    // before it starts actually traveling, instead of homing the instant it's launched. Purely a delay on
+    // the MoveTowards step below; irrelevant when stationary. Defaults to 0 (no behavior change) for every
+    // existing AttackInstance prefab.
+    [SerializeField] private float travelDelaySeconds;
+    private float elapsedSinceLaunch;
+
     // Lobbed-projectile look (e.g. Sludge Hurl) instead of a flat line to the target. Purely a visual
     // offset layered on top of the normal MoveTowards path — basePosition (below) tracks the actual
     // ground-path progress so the arc height doesn't get baked into next frame's distance math.
@@ -113,8 +120,9 @@ public class AttackInstance : MonoBehaviour
         basePosition = transform.position;
         positionHistory.Clear();
         positionHistory.Add(transform.position);
-        Vector3 homingPos = reverseDirection ? attacker.VisualCenter : target.VisualCenter;
+        Vector3 homingPos = reverseDirection ? attacker.AttackOrigin : target.VisualCenter;
         totalTravelDistance = Vector3.Distance(basePosition, homingPos);
+        elapsedSinceLaunch = 0f;
 
         if (launchSFX != null)
             AudioManager.EnsureInstance().PlaySFXAtPosition(launchSFX, transform.position);
@@ -142,8 +150,24 @@ public class AttackInstance : MonoBehaviour
             return;
         }
 
-        // Reversed carriers home toward the attacker instead of the target (see reverseDirection above).
-        Vector3 targetPos = reverseDirection ? attacker.VisualCenter : target.VisualCenter;
+        // Holds at the spawn position until travelDelaySeconds has elapsed — the "charge-up" look, e.g.
+        // Giga Drain's orb pulling from the target before it actually starts flying toward the attacker.
+        // Still records into positionHistory so a trailFollower just sits in place with it instead of
+        // being left behind once real travel starts.
+        elapsedSinceLaunch += Time.deltaTime;
+        if (elapsedSinceLaunch < travelDelaySeconds)
+        {
+            positionHistory.Add(transform.position);
+            TrimPositionHistory();
+            if (trailFollower != null)
+                trailFollower.position = GetLaggedPosition(trailLagDistance);
+            return;
+        }
+
+        // Reversed carriers home toward the attacker instead of the target (see reverseDirection above) —
+        // AttackOrigin (this bunny's own tunable point, e.g. hands/mouth), not VisualCenter, so where the
+        // orb is "caught" is as tunable as where a normal attack's projectile spawns from.
+        Vector3 targetPos = reverseDirection ? attacker.AttackOrigin : target.VisualCenter;
 
         basePosition = Vector3.MoveTowards(basePosition, targetPos, travelSpeed * Time.deltaTime);
 

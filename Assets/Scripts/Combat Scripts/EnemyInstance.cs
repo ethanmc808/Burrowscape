@@ -54,8 +54,18 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     bool ICombatant.IsAlive => currentHP > 0;
     BunnyTypeDefinition ICombatant.AttackSource => definition != null ? definition.attackSource : null;
     Transform ICombatant.CombatTransform => transform;
-    GameObject ICombatant.CombatGameObject => gameObject;
-    Vector3 ICombatant.AttackOrigin => transform.position + attackOriginOffset;
+    // `this == null` (Unity's real destroyed-object check) rather than unconditionally dereferencing
+    // gameObject — Component.gameObject throws MissingReferenceException once this instance has been
+    // Destroy()'d, instead of the "fake null" every caller checking CombatGameObject == null expects.
+    GameObject ICombatant.CombatGameObject => this == null ? null : gameObject;
+    // X negated unconditionally, unlike NPCBunny.AttackOrigin's live-facing check. Bunnies self-correct
+    // offset.x dynamically because NPCBunny actually flips bunnyScaleRoot at runtime as it turns to face
+    // different directions; enemies never flip at runtime (spawned once, stationary, never re-faced), so
+    // there's no live state to check here — this negation is just the fixed correction that matches this
+    // enemy rig's spawn orientation against this project's inverted X-axis (increasing world X = screen-
+    // LEFT), verified empirically against actual Play-mode attack spawns. Revisit if an enemy type ever
+    // needs runtime facing flips (would need a ScaleRoot-based live check like NPCBunny's instead).
+    Vector3 ICombatant.AttackOrigin => transform.position + new Vector3(-attackOriginOffset.x, attackOriginOffset.y, attackOriginOffset.z);
     Vector3 ICombatant.VisualCenter => CombatEngagement.ComputeVisualCenter(visualRenderers, transform.position);
 
     public event System.Action OnDefeated;

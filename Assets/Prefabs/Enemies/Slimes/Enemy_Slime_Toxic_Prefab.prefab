@@ -260,6 +260,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyInstance
   definition: {fileID: 11400000, guid: d7d9d733ddfafe449a217769f187d0db, type: 2}
+  animator: {fileID: 0}
+  deathAnimationSeconds: 1
+  attackOriginOffset: {x: 0.3, y: 0.5, z: 0}
 --- !u!1001 &3222271145176706030
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -337,6 +340,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8653719598885068355, guid: 087f907a0aae12b4a846d295ba168845, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5790550567240124008}
+    - targetCorrespondingSourceObject: {fileID: -8653719598885068355, guid: 087f907a0aae12b4a846d295ba168845, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7317726419384756123}
   m_SourcePrefab: {fileID: 4843985084834002234, guid: 087f907a0aae12b4a846d295ba168845, type: 3}
 --- !u!1 &3120996015086307923 stripped
 GameObject:
@@ -365,6 +371,18 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &7317726419384756123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3120996015086307923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aba957c07a118aa43a25b9ea02a63159, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAnimationEvents
 --- !u!4 &4294209199311311408 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -7552582706839291426, guid: 087f907a0aae12b4a846d295ba168845, type: 3}
