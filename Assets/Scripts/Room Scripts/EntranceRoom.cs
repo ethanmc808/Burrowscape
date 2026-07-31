@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 public class EntranceRoom : RoomBase, IJobRoom
 {
+    [SpotNamePrefix("GuardSpot")]
     [SerializeField] private List<RoomSpot> guardSpots;
 
     // No per-bunny production coroutine exists here (unlike Garden/Water/Coal) since guarding has no

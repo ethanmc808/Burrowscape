@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public enum BunnyState
@@ -138,6 +139,10 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // transition duration) so it falls back into whatever IsWorking/IsEating/etc. already say once the
     // clip finishes, with no code ever touching CurrentState.
     [SerializeField] private string isCheeringParam = "IsCheering";
+    // Same one-shot TRIGGER shape as isCheeringParam above (Any State -> Attacking, Has Exit Time off;
+    // Attacking -> Idle, Has Exit Time on) — fired once per landed attack from HandleDefending, never tied
+    // to CurrentState (which stays Defending throughout).
+    [SerializeField] private string isAttackingParam = "IsAttacking";
 
     [Header("Level-Up SFX (see AudioManager)")]
     [SerializeField] private AudioClip levelUpClip;
@@ -281,6 +286,12 @@ public class NPCBunny : MonoBehaviour, ICombatant
     public bool IsDefending => defendingRoom != null;
     public RoomBase DefendingRoom => defendingRoom;
 
+    // Combat AI (see CombatEngagement) — always targets whichever enemy in defendingRoom is closest, per
+    // Ethan's design (a future quest system will let the player override this by clicking a target; that's
+    // a separate, not-yet-built concern and doesn't touch this field).
+    private ICombatant currentCombatTarget;
+    private float attackCooldownRemaining;
+
     // Which room (if any) this bunny currently holds a proximity-ambient ref count against, per need —
     // see SyncProximityAmbient. Tracked separately from cafeteriaBeingUsed/waterRoomBeingUsed/
     // claimedSleepRoom because those stay set across an interrupt-chain (e.g. woken early from Sleeping
@@ -394,6 +405,10 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
             case BunnyState.Working:
                 HandleNeedsCheckWhileWorking();
+                break;
+
+            case BunnyState.Defending:
+                HandleDefending();
                 break;
 
             case BunnyState.Relaxing:
@@ -2831,6 +2846,20 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
         List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, room, spot, currentFloorIndex);
         MoveAlongPath(path, spot, BunnyState.Defending);
+    }
+
+    // Ticked every frame while CurrentState == Defending — targets whichever enemy in defendingRoom is
+    // closest and fires this bunny's own attack once engaged, via the shared CombatEngagement utility
+    // (also used by EnemyInstance, so both sides of an invasion use identical targeting/cooldown logic).
+    private void HandleDefending()
+    {
+        if (InvasionManager.Instance == null || defendingRoom == null) return;
+
+        IEnumerable<ICombatant> candidatePool = InvasionManager.Instance.GetEnemiesInRoom(defendingRoom).Cast<ICombatant>();
+        bool fired = CombatEngagement.Tick(this, ref currentCombatTarget, ref attackCooldownRemaining, candidatePool);
+
+        if (fired && animator != null)
+            animator.SetTrigger(isAttackingParam);
     }
 
     // Called once an invasion clears in defendingRoom (InvasionManager.OnInvasionCleared). Releases the

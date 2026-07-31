@@ -34,6 +34,8 @@ public class BunnyTypeDefinition : ScriptableObject
     public bool isMelee;
     [Tooltip("The particle-effect AttackInstance prefab for this type's signature attack — layered on top of the existing Attack animation, not a replacement for it. Null until this type's VFX is authored.")]
     public GameObject attackVFXPrefab;
+    [Tooltip("How often this type can fire its attack once engaged, in seconds — per-type rather than a shared global value, since attack animations run different lengths (Fire Ball is much quicker than Giga Drain). Speed does NOT affect this — Speed only affects hit/evasion chance (see CombatMath.GetHitChance); this is purely the animation-driven cadence.")]
+    public float attackIntervalSeconds = 2f;
 
     [Header("Unlock")]
     [Tooltip("Organizational only (matches the design groupings) — actual gating is populationThreshold.")]

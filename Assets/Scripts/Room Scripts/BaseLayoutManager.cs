@@ -327,19 +327,23 @@ public class BaseLayoutManager : MonoBehaviour
 
         if (startRoom == targetRoom)
         {
-            if (startSpot == null && startWanderPoint != null)
-            {
-                // Try the room's authored entrance-to-spot path first, so a same-room assignment
-                // doesn't cut a straight line through walls/scenery the path was specifically routed
-                // around. Falls back to a straight line (with a warning) if no RoomPath's entrance
-                // matches wherever the bunny currently is.
-                return startRoom.GetPathBetweenEntranceAndSpot(targetSpot, startWanderPoint);
-            }
-
             // Prefer a known RoomSpot, then a remembered wander point, and only fall back to the
             // room's own root Transform (its grid-alignment pivot, NOT a walkable point) as a last resort.
-            Transform startPoint = startSpot != null ? startSpot.transform : (startWanderPoint != null ? startWanderPoint : startRoom.transform);
-            fullPath.Add(startPoint);
+            Transform startPoint = startSpot != null ? startSpot.transform : startWanderPoint;
+
+            if (startPoint != null)
+            {
+                // Try the room's authored path first — entrance-to-spot, OR spot-to-spot (e.g. a
+                // Defending reroute from a claimed job/relax/guard spot to a CombatSpot, see
+                // RoomSpotPathAutoPopulator) — so a same-room move doesn't cut a straight line through
+                // walls/scenery the path was specifically routed around. GetPathBetweenEntranceAndSpot
+                // matches RoomPath.entrance by reference, and that field isn't actually restricted to a
+                // real room entrance — any Transform (including another RoomSpot's) works. Falls back to
+                // a straight line (with a warning) if no RoomPath's entrance matches startPoint.
+                return startRoom.GetPathBetweenEntranceAndSpot(targetSpot, startPoint);
+            }
+
+            fullPath.Add(startRoom.transform);
             fullPath.Add(targetSpot.transform);
             return fullPath;
         }

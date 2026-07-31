@@ -11,8 +11,8 @@ using System.Linq;
 //
 // Also drives the room-defense auto-interrupt (Combat_DesignDoc.md's Guard Room section, revised): any
 // bunny already Working/Relaxing in the targeted room gets routed to a CombatSpot via NPCBunny.
-// BeginDefending. Positioning only — nothing here picks targets or fires an AttackInstance, that's the
-// AI/decision-logic layer, not built yet.
+// BeginDefending. Positioning only — actual targeting/firing is CombatEngagement's job, ticked by
+// NPCBunny (while Defending) and EnemyInstance (via GetEnemiesInRoom below) independently.
 public class InvasionManager : MonoBehaviour
 {
     public static InvasionManager Instance { get; private set; }
@@ -57,6 +57,13 @@ public class InvasionManager : MonoBehaviour
         return activeInvasions.ContainsKey(room);
     }
 
+    // Query used by EnemyInstance's own combat tick (see CombatEngagement) — every currently-active enemy
+    // in `room`, so an enemy only ever considers targets that share its actual room, not the whole base.
+    public IReadOnlyList<EnemyInstance> GetEnemiesInRoom(RoomBase room)
+    {
+        return activeInvasions.TryGetValue(room, out List<EnemyInstance> group) ? group : Array.Empty<EnemyInstance>();
+    }
+
     [ContextMenu("Force Invasion")]
     public void TrySpawnInvasion()
     {
@@ -98,7 +105,7 @@ public class InvasionManager : MonoBehaviour
             }
 
             spot.TryClaim(enemy);
-            enemy.Initialize(chosenType);
+            enemy.Initialize(chosenType, targetRoom);
 
             RoomBase room = targetRoom;
             RoomSpot claimedSpot = spot;
@@ -152,8 +159,9 @@ public class InvasionManager : MonoBehaviour
 
     private void HandleEnemyDefeated(RoomBase room, EnemyInstance enemy, RoomSpot spot)
     {
+        // Gameplay bookkeeping (spot release, invasion tracking) happens immediately — EnemyInstance
+        // itself handles the delayed self-destruct so its Dying animation has time to play out.
         spot.Release(enemy);
-        Destroy(enemy.gameObject);
 
         if (!activeInvasions.TryGetValue(room, out List<EnemyInstance> group)) return;
 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyDefinition
   displayName: Slime
   type: 9
-  prefab: {fileID: 0}
+  prefab: {fileID: 3794836812984047467, guid: 60ee000e6714d5944832e892f63126ef, type: 3}
   baseHP: 40
   baseAttack: 25
   baseDefense: 15

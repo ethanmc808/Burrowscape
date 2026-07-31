@@ -31,6 +31,51 @@ Transform:
   m_Children: []
   m_Father: {fileID: 399445776876835591}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1047943504122138559
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1512452906622871484}
+  - component: {fileID: 7549766905273159535}
+  m_Layer: 0
+  m_Name: CombatSpot_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1512452906622871484
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1047943504122138559}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: 1.514, y: -0.894, z: 1.817}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 399445776876835591}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7549766905273159535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1047943504122138559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 1
 --- !u!1 &1049587378401596825
 GameObject:
   m_ObjectHideFlags: 0
@@ -333,6 +378,51 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
   facesRight: 0
+--- !u!1 &3021368579246412787
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2007511217819550930}
+  - component: {fileID: 2737403815051912387}
+  m_Layer: 0
+  m_Name: EnemySpot_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2007511217819550930
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3021368579246412787}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: -1.116, y: -0.894, z: 1.817}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 399445776876835591}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2737403815051912387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3021368579246412787}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 1
 --- !u!1 &3104813913501034110
 GameObject:
   m_ObjectHideFlags: 0
@@ -375,6 +465,11 @@ Transform:
   - {fileID: 3186962060287734298}
   - {fileID: 7577375625950615007}
   - {fileID: 4201845982539062840}
+  - {fileID: 1428085638357863389}
+  - {fileID: 1512452906622871484}
+  - {fileID: 2956419841386807537}
+  - {fileID: 2007511217819550930}
+  - {fileID: 627829817530345503}
   - {fileID: 4662241099832073635}
   - {fileID: 7045471705470254009}
   - {fileID: 2354981106535409420}
@@ -443,9 +538,70 @@ MonoBehaviour:
     waypoints:
     - {fileID: 7045471705470254009}
     - {fileID: 2354981106535409420}
+  - entrance: {fileID: 9213148216188798901}
+    targetSpot: {fileID: 6691056212024716922}
+    waypoints: []
+  - entrance: {fileID: 9213148216188798901}
+    targetSpot: {fileID: 7549766905273159535}
+    waypoints: []
+  - entrance: {fileID: 4489546531400349566}
+    targetSpot: {fileID: 6691056212024716922}
+    waypoints: []
+  - entrance: {fileID: 4489546531400349566}
+    targetSpot: {fileID: 7549766905273159535}
+    waypoints: []
+  - entrance: {fileID: 9213148216188798901}
+    targetSpot: {fileID: 8736120831475429350}
+    waypoints: []
+  - entrance: {fileID: 9213148216188798901}
+    targetSpot: {fileID: 2737403815051912387}
+    waypoints: []
+  - entrance: {fileID: 9213148216188798901}
+    targetSpot: {fileID: 4172381385955780012}
+    waypoints: []
+  - entrance: {fileID: 4489546531400349566}
+    targetSpot: {fileID: 8736120831475429350}
+    waypoints: []
+  - entrance: {fileID: 4489546531400349566}
+    targetSpot: {fileID: 2737403815051912387}
+    waypoints: []
+  - entrance: {fileID: 4489546531400349566}
+    targetSpot: {fileID: 4172381385955780012}
+    waypoints: []
+  - entrance: {fileID: 7577375625950615007}
+    targetSpot: {fileID: 6691056212024716922}
+    waypoints:
+    - {fileID: 2354981106535409420}
+    - {fileID: 7045471705470254009}
+  - entrance: {fileID: 7577375625950615007}
+    targetSpot: {fileID: 7549766905273159535}
+    waypoints:
+    - {fileID: 2354981106535409420}
+    - {fileID: 7045471705470254009}
+  - entrance: {fileID: 4201845982539062840}
+    targetSpot: {fileID: 6691056212024716922}
+    waypoints:
+    - {fileID: 2354981106535409420}
+    - {fileID: 7045471705470254009}
+  - entrance: {fileID: 4201845982539062840}
+    targetSpot: {fileID: 7549766905273159535}
+    waypoints:
+    - {fileID: 2354981106535409420}
+    - {fileID: 7045471705470254009}
+  enemySpots:
+  - {fileID: 8736120831475429350}
+  - {fileID: 2737403815051912387}
+  - {fileID: 4172381385955780012}
+  combatSpots:
+  - {fileID: 6691056212024716922}
+  - {fileID: 7549766905273159535}
   footprintWidth: 4
   grade: 1
   gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: EntranceRoom
   guardSpots:
   - {fileID: 4979276418371817488}
@@ -509,6 +665,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomLightFlicker
   flickerDuration: 0.4
   flickerToggleCount: 5
+--- !u!1 &3144346360702241688
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 627829817530345503}
+  - component: {fileID: 4172381385955780012}
+  m_Layer: 0
+  m_Name: EnemySpot_03
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &627829817530345503
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3144346360702241688}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: -1.688, y: -0.894, z: 1.817}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 399445776876835591}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4172381385955780012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3144346360702241688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 1
 --- !u!1 &3301114632728859887
 GameObject:
   m_ObjectHideFlags: 0
@@ -588,6 +789,96 @@ Transform:
   - {fileID: 2726935314317063871}
   m_Father: {fileID: 399445776876835591}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3906512914417218609
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1428085638357863389}
+  - component: {fileID: 6691056212024716922}
+  m_Layer: 0
+  m_Name: CombatSpot_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1428085638357863389
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3906512914417218609}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: 0.868, y: -0.894, z: 1.817}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 399445776876835591}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6691056212024716922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3906512914417218609}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 0
+--- !u!1 &4128283111888546566
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2956419841386807537}
+  - component: {fileID: 8736120831475429350}
+  m_Layer: 0
+  m_Name: EnemySpot_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2956419841386807537
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4128283111888546566}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
+  m_LocalPosition: {x: -0.417, y: -0.894, z: 1.817}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 399445776876835591}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8736120831475429350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4128283111888546566}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
+  facesRight: 0
 --- !u!1 &4231062441222991519
 GameObject:
   m_ObjectHideFlags: 0

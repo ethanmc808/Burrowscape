@@ -466,6 +466,23 @@ public class RoomBase : MonoBehaviour
         List<Transform> match = FindMatchingPath(spot, fromEntrance);
         if (match != null) return match;
 
+        // No path authored in this exact direction. If fromEntrance is itself a RoomSpot (e.g. routing
+        // FROM a CombatSpot back TO a GuardSpot after StopDefendingAndReturn), try the path authored the
+        // OTHER way (GuardSpot -> CombatSpot, which RoomSpotPathAutoPopulator generates automatically for
+        // every occupancy-spot/CombatSpot pairing) and walk it backward — same "reuse the forward path in
+        // reverse" trick GetPathFromSpotToEntrance already uses for entrance-bound trips, just generalized
+        // to any spot-to-spot pairing so only one direction ever needs authoring.
+        RoomSpot fromSpot = fromEntrance.GetComponent<RoomSpot>();
+        if (fromSpot != null)
+        {
+            List<Transform> reverseMatch = FindMatchingPath(fromSpot, spot.transform);
+            if (reverseMatch != null)
+            {
+                reverseMatch.Reverse();
+                return reverseMatch;
+            }
+        }
+
         // Fallback if no exact path defined — shouldn't normally happen once paths are set up
         Debug.LogWarning($"No RoomPath found from {fromEntrance.name} to {spot.name} on {name}.");
         return new List<Transform> { fromEntrance, spot.transform };
