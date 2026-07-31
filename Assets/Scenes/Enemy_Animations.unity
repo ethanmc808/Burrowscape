@@ -368,8 +368,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VFXPreviewHarness
   attackerPoint: {fileID: 522122592}
   targetPoint: {fileID: 2058839242}
-  attackPrefab: {fileID: 65765615186785171, guid: 252ab7147e878464ab2aa17432af4ce9, type: 3}
-  isStationary: 1
+  attackPrefab: {fileID: 1994567230048242050, guid: 684fec9792fa1574aa223733f7f7deba, type: 3}
+  isStationary: 0
   fireKey: 32
   autoRepeat: 0
   autoRepeatInterval: 1.5

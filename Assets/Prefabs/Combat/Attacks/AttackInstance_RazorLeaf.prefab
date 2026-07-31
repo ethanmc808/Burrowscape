@@ -116,7 +116,7 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 5
+      scalar: 0.5
       minScalar: 5
       maxCurve:
         serializedVersion: 2
@@ -4952,7 +4952,7 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 5
+      scalar: 0.5
       minScalar: 5
       maxCurve:
         serializedVersion: 2
@@ -9721,8 +9721,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AttackInstance
   travelSpeed: 1
   arrivalThreshold: 0.1
+  useArcMotion: 0
+  arcHeight: 2
+  trailFollower: {fileID: 0}
+  trailLagDistance: 0.4
+  reverseDirection: 0
   impactVFX: {fileID: 6612043944622663812}
   impactLingerSeconds: 1
+  clearInstantlyOnResolve: []
+  launchSFX: {fileID: 0}
+  impactSFX: {fileID: 0}
 --- !u!1 &8024021606942197748
 GameObject:
   m_ObjectHideFlags: 0
@@ -9773,7 +9781,7 @@ ParticleSystem:
   emitterVelocityMode: 1
   looping: 1
   prewarm: 0
-  playOnAwake: 1
+  playOnAwake: 0
   useUnscaledTime: 0
   autoRandomSeed: 0
   startDelay:
