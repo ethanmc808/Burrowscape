@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -117,6 +118,37 @@ public class RoomBase : MonoBehaviour
     [SpotNamePrefix("EnemySpot")]
     [SerializeField] protected List<RoomSpot> enemySpots;
     public List<RoomSpot> EnemySpots => enemySpots;
+
+    // Defender posting spots (see Combat_DesignDoc.md, later revised away from a flat 6/room — bunnies
+    // have no line-of-sight sense and would shoot through walls from an arbitrary position, so spots are
+    // instead hand-authored per room type to match that room's own job-spot count, e.g. Garden's 4 farm
+    // spots -> 4 CombatSpots). Lives on RoomBase (not just GuardRoom) since any room's own workers can be
+    // auto-interrupted to defend where they stand, and a deployed Guard Room bunny can be sent to any
+    // room's CombatSpots too. Same auto-populator convention as every other spot list.
+    [SpotNamePrefix("CombatSpot")]
+    [SerializeField] protected List<RoomSpot> combatSpots;
+    public List<RoomSpot> CombatSpots => combatSpots;
+
+    public RoomSpot ClaimCombatSpot(NPCBunny bunny)
+    {
+        if (combatSpots == null) return null;
+        foreach (RoomSpot spot in combatSpots)
+        {
+            if (spot.TryClaim(bunny))
+                return spot;
+        }
+        return null;
+    }
+
+    public void ReleaseCombatSpot(RoomSpot spot, NPCBunny bunny)
+    {
+        spot.Release(bunny);
+    }
+
+    public bool HasAvailableCombatSpot()
+    {
+        return combatSpots != null && combatSpots.Any(s => !s.IsOccupied);
+    }
 
     public Transform LeftEntrance => leftEntrance;
     public Transform RightEntrance => rightEntrance;

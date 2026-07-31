@@ -10,10 +10,10 @@ public class BaseManager : MonoBehaviour
     private List<LivingRoom> livingRooms = new List<LivingRoom>();
     private List<WaterRoom> waterRooms = new List<WaterRoom>();
     private List<Bedroom> bedrooms = new List<Bedroom>();
-    // Combat scaffolding only (see Combat_DesignDoc.md) — registered the same way as every other room
-    // type here so the future deploy-UX "nearest Guard Room" lookup has this list ready to use; no such
-    // lookup exists yet, deploy logic itself isn't designed.
+    // Registered the same way as every other room type here so GuardDeployUI can enumerate every Guard
+    // Room's roster when populating the one-at-a-time deploy list (see Combat_DesignDoc.md).
     private List<GuardRoom> guardRooms = new List<GuardRoom>();
+    public IReadOnlyList<GuardRoom> GuardRooms => guardRooms;
 
     private void Awake()
     {

@@ -109,23 +109,54 @@ public class CombatBalanceConfig : ScriptableObject
     public int levelRampCapMinLevel = 45;
     public int levelRampCapMaxLevel = 50;
 
-    // Same ramp shape as WildBunnySpawner's GetPopulationRampT/RollSpawnLevel, applied to this config's
-    // own separate population/level knobs above — kept as an independent duplicate rather than sharing
-    // code with WildBunnySpawner, since the two are separately-tunable systems (bunnies vs. enemies) per
-    // the design doc, and WildBunnySpawner is an already-confirmed-working system not worth touching for
-    // this. Rolled once per spawned enemy and never changes afterward, same "spawn-time-only level" rule
-    // as a wild bunny's.
-    public int RollEnemyLevel()
+    [Header("Invasion Pacing By Population")]
+    [Tooltip("Reuses levelRampStartPopulation/levelRampCapPopulation above for the same difficulty curve — no separate population thresholds.")]
+    public float invasionStartMinWaitMinutes = 3f;
+    public float invasionStartMaxWaitMinutes = 6f;
+    public float invasionCapMinWaitMinutes = 20f;
+    public float invasionCapMaxWaitMinutes = 30f;
+    public int invasionGroupSizeStartMin = 1;
+    public int invasionGroupSizeStartMax = 1;
+    public int invasionGroupSizeCapMin = 2;
+    public int invasionGroupSizeCapMax = 3;
+
+    // Shared by RollEnemyLevel, GetInvasionWaitRangeSeconds, and RollInvasionGroupSize — all three ramp
+    // off the same population/difficulty curve (levelRampStartPopulation/levelRampCapPopulation), just
+    // applied to different output ranges. Same ramp shape as WildBunnySpawner.GetPopulationRampT, kept as
+    // an independent implementation rather than sharing code with it since bunnies/enemies are separately-
+    // tunable systems per the design doc.
+    private float GetPopulationRampT()
     {
         int population = PopulationManager.Instance != null ? PopulationManager.Instance.TotalResidents : 0;
 
         float denominator = levelRampCapPopulation - levelRampStartPopulation;
-        float t = denominator > 0f
+        return denominator > 0f
             ? Mathf.Clamp01((population - levelRampStartPopulation) / denominator)
             : (population >= levelRampCapPopulation ? 1f : 0f);
+    }
 
+    // Rolled once per spawned enemy and never changes afterward, same "spawn-time-only level" rule as a
+    // wild bunny's.
+    public int RollEnemyLevel()
+    {
+        float t = GetPopulationRampT();
         int minLevel = Mathf.RoundToInt(Mathf.Lerp(levelRampStartMinLevel, levelRampCapMinLevel, t));
         int maxLevel = Mathf.RoundToInt(Mathf.Lerp(levelRampStartMaxLevel, levelRampCapMaxLevel, t));
         return Mathf.Clamp(Random.Range(minLevel, maxLevel + 1), 1, 50);
+    }
+
+    public void GetInvasionWaitRangeSeconds(out float minSeconds, out float maxSeconds)
+    {
+        float t = GetPopulationRampT();
+        minSeconds = Mathf.Lerp(invasionStartMinWaitMinutes, invasionCapMinWaitMinutes, t) * 60f;
+        maxSeconds = Mathf.Lerp(invasionStartMaxWaitMinutes, invasionCapMaxWaitMinutes, t) * 60f;
+    }
+
+    public int RollInvasionGroupSize()
+    {
+        float t = GetPopulationRampT();
+        int minSize = Mathf.RoundToInt(Mathf.Lerp(invasionGroupSizeStartMin, invasionGroupSizeCapMin, t));
+        int maxSize = Mathf.RoundToInt(Mathf.Lerp(invasionGroupSizeStartMax, invasionGroupSizeCapMax, t));
+        return Mathf.Clamp(Random.Range(minSize, maxSize + 1), 1, 8);
     }
 }

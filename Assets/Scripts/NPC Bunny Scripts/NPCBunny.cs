@@ -25,6 +25,11 @@ public enum BunnyState
     // Persistent state a bunny sits in for the whole length of a Foraging trip — parked offscreen at the
     // staging point, alive and simulated (see ForagingManager), not despawned. See Foraging_DesignDoc.md.
     Foraging,
+    // Posted at a room's CombatSpot during an active invasion — either a resident auto-interrupted from
+    // Working/Relaxing in that same room, or a Guard Room bunny manually deployed there. Positioning only
+    // for now (see BeginDefending/StopDefendingAndReturn) — target-picking and actually attacking is the
+    // AI/decision-logic layer, not built yet.
+    Defending,
 }
 public enum BunnyArrivalType
 {
@@ -173,6 +178,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
     public int HPValue => currentHP;
     public bool IsAssignedToJob => assignedJobRoom != null;
     public IJobRoom AssignedJobRoom => assignedJobRoom;
+    public LivingRoom ClaimedRelaxRoom => claimedRelaxRoom;
     // True once the bunny has actually passed through the entrance gate (set in EnterBaseAndWander,
     // which only ever runs from OnArrivedAtGateExit). False while spawned-but-queued or still awaiting
     // approval — a bunny in that state has no currentRoom yet, so routing it to a job would build a
@@ -264,6 +270,16 @@ public class NPCBunny : MonoBehaviour, ICombatant
     private LivingRoom claimedRelaxRoom; // which room claimedRelaxSpot belongs to
     private RoomSpot claimedSleepSpot; // Bedroom spot reserved/occupied while sleeping; mirrors claimedRelaxSpot
     private Bedroom claimedSleepRoom; // which room claimedSleepSpot belongs to
+
+    // Room-defense posting — set by BeginDefending, cleared by StopDefendingAndReturn. Deliberately does
+    // NOT touch claimedWorkSpot/assignedJobRoom/claimedRelaxSpot (same "pause without releasing claim"
+    // shape as ForceIdleDueToRoomShutdown/LeaveWorkForCafeteria), so ReturnToPreviousActivity already
+    // knows how to send the bunny back to whatever it was doing — a resident resumes its own claim, a
+    // deployed Guard Room bunny's claimedWorkSpot/assignedJobRoom already point at its Guard Room post.
+    private RoomSpot defendingSpot;
+    private RoomBase defendingRoom;
+    public bool IsDefending => defendingRoom != null;
+    public RoomBase DefendingRoom => defendingRoom;
 
     // Which room (if any) this bunny currently holds a proximity-ambient ref count against, per need —
     // see SyncProximityAmbient. Tracked separately from cafeteriaBeingUsed/waterRoomBeingUsed/
@@ -1664,6 +1680,8 @@ public class NPCBunny : MonoBehaviour, ICombatant
                 OnArrivedAtDisembarkLanding();
             else if (pendingStateOnArrival == BunnyState.Idle)
                 OnArrivedIdleAfterCancelledTrip();
+            else if (pendingStateOnArrival == BunnyState.Defending)
+                OnArrivedAtDefendingSpot();
 
             return;
         }
@@ -1772,6 +1790,14 @@ public class NPCBunny : MonoBehaviour, ICombatant
         currentWanderPoint = null;
         currentFloorIndex = currentRoom.FloorIndex;
         assignedJobRoom.NotifyBunnyReadyToWork(this);
+    }
+
+    private void OnArrivedAtDefendingSpot()
+    {
+        currentRoom = defendingRoom;
+        currentSpot = defendingSpot;
+        currentWanderPoint = null;
+        currentFloorIndex = defendingRoom.FloorIndex;
     }
 
     private void OnArrivedAtEatingSpot()
@@ -2778,6 +2804,46 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
         claimedSleepSpot = null;
         claimedSleepRoom = null;
+
+        ReturnToPreviousActivity();
+    }
+
+    // Called by InvasionManager (auto-defend, for a resident already Working/Relaxing in the invaded
+    // room) or GuardDeployUI (manual deploy, for a Guard Room bunny being sent to reinforce elsewhere).
+    // The caller has already claimed `spot` via room.ClaimCombatSpot before calling this. Mirrors
+    // RequestNewJobSpot's routing shape but targets an arbitrary room/spot instead of assignedJobRoom.
+    public void BeginDefending(RoomSpot spot, RoomBase room)
+    {
+        defendingSpot = spot;
+        defendingRoom = room;
+
+        if (currentFloorIndex != room.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(room, spot, BunnyState.Defending))
+            {
+                // No lift connects these floors — don't leave the spot reserved for an unreachable bunny.
+                room.ReleaseCombatSpot(spot, this);
+                defendingSpot = null;
+                defendingRoom = null;
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, room, spot, currentFloorIndex);
+        MoveAlongPath(path, spot, BunnyState.Defending);
+    }
+
+    // Called once an invasion clears in defendingRoom (InvasionManager.OnInvasionCleared). Releases the
+    // CombatSpot and hands off to ReturnToPreviousActivity — already knows how to walk a resident back to
+    // its own claimedWorkSpot/claimedRelaxSpot, or a deployed Guard bunny back to its Guard Room post
+    // (assignedJobRoom/claimedWorkSpot there, untouched by BeginDefending), with no special-case needed.
+    public void StopDefendingAndReturn()
+    {
+        if (defendingRoom == null || defendingSpot == null) return;
+
+        defendingRoom.ReleaseCombatSpot(defendingSpot, this);
+        defendingSpot = null;
+        defendingRoom = null;
 
         ReturnToPreviousActivity();
     }

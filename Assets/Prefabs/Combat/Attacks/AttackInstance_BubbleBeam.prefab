@@ -9841,7 +9841,7 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 1.2
+      scalar: 1
       minScalar: 1.2
       maxCurve:
         serializedVersion: 2
@@ -9959,8 +9959,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.35
-      minScalar: 0.15
+      scalar: 0.025
+      minScalar: 0.05
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -10283,7 +10283,7 @@ ParticleSystem:
     gravityModifier:
       serializedVersion: 2
       minMaxState: 0
-      scalar: -0.1
+      scalar: 0.3
       minScalar: -0.1
       maxCurve:
         serializedVersion: 2
@@ -10423,7 +10423,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 0.1
+      value: 0.3
       mode: 0
       spread: 0
       speed:
@@ -10542,7 +10542,7 @@ ParticleSystem:
     rateOverTime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 150
+      scalar: 600
       minScalar: 150
       maxCurve:
         serializedVersion: 2
@@ -10595,7 +10595,7 @@ ParticleSystem:
     rateOverDistance:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0
+      scalar: 150
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -10659,22 +10659,22 @@ ParticleSystem:
         m_Curve:
         - serializedVersion: 3
           time: 0
-          value: 0
-          inSlope: 0
-          outSlope: 1
-          tangentMode: 0
+          value: 1
+          inSlope: -1
+          outSlope: -1
+          tangentMode: 34
           weightedMode: 0
-          inWeight: 0.33333334
-          outWeight: 0.33333334
+          inWeight: 0
+          outWeight: 0
         - serializedVersion: 3
           time: 1
-          value: 1
-          inSlope: 1
-          outSlope: 0
-          tangentMode: 0
+          value: 0
+          inSlope: -1
+          outSlope: -1
+          tangentMode: 34
           weightedMode: 0
-          inWeight: 0.33333334
-          outWeight: 0.33333334
+          inWeight: 0
+          outWeight: 0
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
@@ -14560,10 +14560,10 @@ MonoBehaviour:
   useArcMotion: 0
   arcHeight: 2
   trailFollower: {fileID: 1912753366139250970}
-  trailLagDistance: 0.4
+  trailLagDistance: 0.2
   reverseDirection: 0
   impactVFX: {fileID: 5440117823833553928}
-  impactLingerSeconds: 1
+  impactLingerSeconds: 0.35
   clearInstantlyOnResolve: []
   launchSFX: {fileID: 0}
   impactSFX: {fileID: 0}

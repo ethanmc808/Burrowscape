@@ -8,22 +8,24 @@ public class RoomSpot : MonoBehaviour
     [SerializeField] private bool facesRight = true;
     public bool FacesRight => facesRight;
     public bool IsOccupied { get; private set; }
-    private NPCBunny occupant;
+    private Component occupant;
 
-    public bool TryClaim(NPCBunny bunny)
+    // Component rather than NPCBunny so EnemySpots can hold an EnemyInstance occupant too — every
+    // existing call site passes an NPCBunny, which upcasts implicitly, so nothing else needed to change.
+    public bool TryClaim(Component occupant)
     {
         if (IsOccupied) return false;
         IsOccupied = true;
-        occupant = bunny;
+        this.occupant = occupant;
         return true;
     }
 
-    public void Release(NPCBunny bunny)
+    public void Release(Component occupant)
     {
-        if (occupant == bunny)
+        if (this.occupant == occupant)
         {
             IsOccupied = false;
-            occupant = null;
+            this.occupant = null;
         }
     }
 

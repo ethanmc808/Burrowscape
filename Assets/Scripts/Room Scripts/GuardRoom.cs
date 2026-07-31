@@ -1,15 +1,16 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-// Scaffolding only — see Combat_DesignDoc.md's "Guard Room" section for what's actually designed
-// (passive per-room defense, manual deploy to reinforce another room, single-guard-unit-per-room lock)
-// and what's still open (deploy UX default, whether the enemy-side flank cap is truly symmetric). None
-// of that behavior is implemented here yet; this is just the room shell + roster capacity, mirroring
-// Bedroom/LivingRoom's shape (a room whose whole job is "up to N bunnies station here").
-public class GuardRoom : RoomBase
+// A Guard-job bunny's "work spot" is its combat post — RequestSpot/ReleaseSpot/HasAvailableSpot are thin
+// wrappers around RoomBase's inherited CombatSpots (see RoomBase.ClaimCombatSpot), the same list used by
+// auto-defending residents and manually-deployed guards in any other room. No production of its own (see
+// GardenRoom for that shape) — a posted guard just stands there until InvasionManager sends them into
+// combat via NPCBunny.BeginDefending, same as any other room's defenders.
+public class GuardRoom : RoomBase, IJobRoom
 {
-    [SpotNamePrefix("CombatSpot")]
-    [SerializeField] private List<RoomSpot> combatSpots;
+    // Bunnies idled because this room lost Power/Water while posted — resumed automatically by
+    // OnRoomRestored, same shape as GardenRoom's idledByShutdown.
+    private List<NPCBunny> idledByShutdown = new List<NPCBunny>();
 
     protected override void OnEnable()
     {
@@ -27,28 +28,44 @@ public class GuardRoom : RoomBase
             BaseManager.Instance.UnregisterGuardRoom(this);
     }
 
-    public RoomSpot RequestSpot(NPCBunny bunny)
-    {
-        foreach (RoomSpot spot in combatSpots)
-        {
-            if (spot.TryClaim(bunny))
-                return spot;
-        }
-        return null;
-    }
+    public RoomSpot RequestSpot(NPCBunny bunny) => ClaimCombatSpot(bunny);
 
-    public void ReleaseSpot(RoomSpot spot, NPCBunny bunny)
-    {
-        spot.Release(bunny);
-    }
+    public void ReleaseSpot(RoomSpot spot, NPCBunny bunny) => ReleaseCombatSpot(spot, bunny);
 
     public bool HasAvailableSpot()
     {
-        foreach (RoomSpot spot in combatSpots)
+        if (CombatSpots == null) return false;
+        foreach (RoomSpot spot in CombatSpots)
         {
             if (!spot.IsOccupied)
                 return true;
         }
         return false;
+    }
+
+    // No production routine to pause — a posted guard just stands at its spot until deployed.
+    public void NotifyBunnyLeavingToEat(NPCBunny bunny) { }
+
+    public void NotifyBunnyReadyToWork(NPCBunny bunny)
+    {
+        if (!IsOperational)
+        {
+            if (!idledByShutdown.Contains(bunny))
+                idledByShutdown.Add(bunny);
+            bunny.ForceIdleDueToRoomShutdown();
+        }
+    }
+
+    public void OnRoomShutdown()
+    {
+        // Nothing actively running to stop (no production coroutines) — idling happens the next time a
+        // bunny would otherwise arrive/resume via NotifyBunnyReadyToWork's own IsOperational check.
+    }
+
+    public void OnRoomRestored()
+    {
+        foreach (NPCBunny bunny in idledByShutdown)
+            bunny.ResumeWorkAfterRoomRestored();
+        idledByShutdown.Clear();
     }
 }

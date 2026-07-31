@@ -49,6 +49,24 @@ public class DwellerRoster : MonoBehaviour
         return allBunnies.Where(b => b.AssignedJobRoom == room).ToList();
     }
 
+    // Bunnies physically working or relaxing in `room` right now — the auto-defend trigger set for
+    // InvasionManager. Eating/Drinking/Sleeping happen in a different room (Cafeteria/WaterRoom/Bedroom),
+    // so those states are deliberately excluded here, unlike GetBunniesAssignedTo which is claim-based.
+    public List<NPCBunny> GetBunniesCurrentlyInRoom(RoomBase room)
+    {
+        return allBunnies.Where(b =>
+            (b.CurrentState == BunnyState.Working && b.AssignedJobRoom is RoomBase workRoom && workRoom == room) ||
+            (b.CurrentState == BunnyState.Relaxing && b.ClaimedRelaxRoom == room)
+        ).ToList();
+    }
+
+    // Every bunny currently posted at `room`'s CombatSpots — auto-defenders and deployed guards alike
+    // (see NPCBunny.BeginDefending). Used by InvasionManager to recall everyone once a room's invasion clears.
+    public List<NPCBunny> GetBunniesDefendingRoom(RoomBase room)
+    {
+        return allBunnies.Where(b => b.DefendingRoom == room).ToList();
+    }
+
     // Used by RoomTransitionService's Evacuate step to gather everyone tied to any of the rooms being
     // replaced by a merge/upgrade — reuses the same per-bunny check RoomBase.CanBeDeleted relies on
     // (via IsRoomOccupied, below), just collecting names instead of only checking "any at all."
