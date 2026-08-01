@@ -27,6 +27,11 @@ public class RoomClickHandler : MonoBehaviour
         // GuardDeployUI.OpenForRoom) — shows up "alongside" AssignmentUI automatically, only when relevant.
         if (roomBase != null && GuardDeployUI.Instance != null)
             GuardDeployUI.Instance.OpenForRoom(roomBase, RoomDisplayName());
+
+        // Same "no-ops unless relevant" shape as GuardDeployUI above — only actually opens for a
+        // HospitalRoom, positioned next to AssignmentUI (which the nurse WorkSpot still uses normally).
+        if (roomBase != null && PatientUI.Instance != null)
+            PatientUI.Instance.OpenForRoom(roomBase, RoomDisplayName());
     }
 
     // Falls back to the GameObject's own name (e.g. "Garden_4x2x6_Grade1") if the room's RoomDefinition

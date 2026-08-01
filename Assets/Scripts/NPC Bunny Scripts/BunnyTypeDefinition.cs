@@ -48,6 +48,16 @@ public class BunnyTypeDefinition : ScriptableObject
     public List<BunnyPassiveDefinition> passives = new List<BunnyPassiveDefinition>();
 }
 
+// First entry with an actual effect hook is Plant's "Regrowth" (HPRegenMultiplier) — see
+// NPCBunny.GetPassiveHPRegenMultiplier. Deliberately separate from TraitEffectType/BunnyTraitDefinition:
+// a Passive is universal to every bunny of a given TYPE (authored here, on BunnyTypeDefinition), whereas
+// a Trait is a per-individual roll. Add new cases here as more passives get built.
+public enum PassiveEffectType
+{
+    None,
+    HPRegenMultiplier,
+}
+
 [System.Serializable]
 public class BunnyPassiveDefinition
 {
@@ -55,5 +65,6 @@ public class BunnyPassiveDefinition
     public string displayName;
     [TextArea] public string description;
     public int unlockLevel = 1;
-    // No effect/behavior hook yet — that gameplay system doesn't exist. This is a pure data tag today.
+    public PassiveEffectType effectType;
+    public float effectMultiplier = 1f;
 }

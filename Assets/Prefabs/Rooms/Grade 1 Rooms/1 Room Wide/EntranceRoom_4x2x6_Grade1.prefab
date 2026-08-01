@@ -75,7 +75,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b796e2bba2baef84cb74df7335dcae8c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomSpot
-  facesRight: 1
+  facesRight: 0
 --- !u!1 &1049587378401596825
 GameObject:
   m_ObjectHideFlags: 0

@@ -31,6 +31,17 @@ public enum BunnyState
     // for now (see BeginDefending/StopDefendingAndReturn) — target-picking and actually attacking is the
     // AI/decision-logic layer, not built yet.
     Defending,
+    // Reached 0 HP while Defending (see TakeCombatDamage). Sits at its CombatSpot doing nothing — not a
+    // valid attack target (ICombatant.IsAlive is false) and HandleFainted is a no-op, so it also can't
+    // attack back. defendingRoom/defendingSpot are deliberately left set so InvasionManager's existing
+    // OnInvasionCleared recall (via StopDefendingAndReturn) still reaches it once the fight ends, at which
+    // point it revives to 1 HP and walks back to its previous activity like any other defender.
+    Fainted,
+    // Occupying a Hospital BedSpot (see HospitalRoom, assigned via the Patient UI — a separate concept
+    // from a job assignment, so this doesn't route through IJobRoom at all). HealPatientsRoutine on
+    // HospitalRoom itself raises currentHP each tick; HandleRecovering just watches for full HP and walks
+    // the bunny back out via ReturnFromHospital once it's healed.
+    Recovering,
 }
 public enum BunnyArrivalType
 {
@@ -109,11 +120,13 @@ public class NPCBunny : MonoBehaviour, ICombatant
     [SerializeField] private float energyThresholdLow = 35f;
     [SerializeField] private float energyGainPerSecondSleeping = 5f; // regen only goes up to 100, never past
 
-    [Header("HP (Foraging is the first system that spends this — see Foraging_DesignDoc.md)")]
-    [Tooltip("Current HP. Initialized to Stats.HP whenever Stats changes (spawn, LevelUp) and never exceeds it. Foraging's placeholder encounter resolver is the only thing that reduces this today, and it floors at 1 — nothing in this game ever reduces a bunny to 0 HP.")]
+    [Header("HP (Foraging's encounter resolver and base-defense combat both spend this — see Foraging_DesignDoc.md / Combat_DesignDoc.md)")]
+    [Tooltip("Current HP. Initialized to Stats.HP whenever Stats changes (spawn, LevelUp) and never exceeds it. Foraging's placeholder encounter resolver floors at 1 and never reduces this to 0; base-defense combat (TakeCombatDamage) is the only thing that can, at which point the bunny faints (BunnyState.Fainted) until revived to 1 HP once the invasion clears.")]
     [SerializeField] private int currentHP = 1;
-    [Tooltip("Passive regen while Sleeping only, mirroring energyGainPerSecondSleeping's Bedroom.GradeMultiplier scaling.")]
-    [SerializeField] private float hpGainPerSecondSleeping = 1f;
+    [Tooltip("Sleeping's HP regen is derived from actual energy gained, not a flat per-second rate — this is the fraction of max HP restored per point of energy gained (0.005 = 0.5%, i.e. 2 energy restored = 1% max HP, so a full 0->100 energy night heals 50% of max HP). Automatically inherits Bedroom.GradeMultiplier scaling since it's driven off the energy gain, which is already scaled.")]
+    [SerializeField] private float hpPercentOfMaxPerEnergyRestored = 0.005f;
+    [Tooltip("Slow always-on passive regen (ticks in every state except Sleeping, which uses the formula above instead, and Fainted, which must stay at 0 until StopDefendingAndReturn's battle-end revive). 0.005 = 0.5% max HP/sec, i.e. 1% every 2 seconds. Multiplied by any active Regrowth-style HPRegenMultiplier passive (see GetPassiveHPRegenMultiplier).")]
+    [SerializeField] private float hpPassiveRegenPercentPerSecond = 0.005f;
     private float hpRegenRemainder; // fractional carry-over so a slow regen rate isn't rounded away to 0 every frame
 
     [Header("Mood")]
@@ -143,6 +156,16 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // Attacking -> Idle, Has Exit Time on) — fired once per landed attack from HandleDefending, never tied
     // to CurrentState (which stays Defending throughout).
     [SerializeField] private string isAttackingParam = "IsAttacking";
+    // A persistent BOOL synced every frame in UpdateAnimator (like isWorkingParam/isSleepingParam above),
+    // deliberately NOT a one-shot Trigger like isAttackingParam/isCheeringParam — Fainted can last an
+    // unpredictable, indefinite length of time (until StopDefendingAndReturn's battle-end revive), so
+    // there's no fixed clip length to key a Has-Exit-Time auto-return off of the way Attacking/Cheering
+    // do. Animator wiring must mirror this rig's existing IsWorking/IsSleeping pairwise-transition
+    // convention, NOT Attacking/Cheering's Any-State-in/Has-Exit-Time-out shape: e.g. Idle -> Fainted (if
+    // this bool), Fainted -> Idle (if NOT this bool) — an "Any State -> Fainted" entry is fine (safer,
+    // catches any current animator state), but Fainted's own outgoing transition back out is required,
+    // since Any-State transitions only handle entry, never exit.
+    [SerializeField] private string isFaintedParam = "IsFainted";
 
     [Header("Level-Up SFX (see AudioManager)")]
     [SerializeField] private AudioClip levelUpClip;
@@ -288,6 +311,14 @@ public class NPCBunny : MonoBehaviour, ICombatant
     public bool IsDefending => defendingRoom != null;
     public RoomBase DefendingRoom => defendingRoom;
 
+    // Hospital bed claim — set by AssignToHospitalBed (Patient UI), cleared by ReturnFromHospital. Mirrors
+    // defendingSpot/defendingRoom's shape exactly; kept as its own pair rather than reusing
+    // defendingSpot/defendingRoom since a bunny could in principle be recalled from Recovering while
+    // totally unrelated to any invasion.
+    private RoomSpot claimedHospitalBedSpot;
+    private HospitalRoom claimedHospitalRoom;
+    public bool IsHospitalized => claimedHospitalRoom != null;
+
     // Combat AI (see CombatEngagement) — always targets whichever enemy in defendingRoom is closest, per
     // Ethan's design (a future quest system will let the player override this by clicking a target; that's
     // a separate, not-yet-built concern and doesn't touch this field).
@@ -394,8 +425,9 @@ public class NPCBunny : MonoBehaviour, ICombatant
             if (CurrentState == BunnyState.Sleeping)
             {
                 float bedroomMultiplier = (claimedSleepRoom != null) ? claimedSleepRoom.GradeMultiplier : 1f;
+                float energyBeforeGain = energy;
                 energy = Mathf.Min(100f, energy + energyGainPerSecondSleeping * bedroomMultiplier * Time.deltaTime);
-                RegenerateHPWhileSleeping(bedroomMultiplier);
+                RegenerateHPFromEnergyRestored(energy - energyBeforeGain);
             }
             else if (foragingNeedsFrozen && IsForagingReturnCountdownActive)
             {
@@ -404,6 +436,12 @@ public class NPCBunny : MonoBehaviour, ICombatant
             }
             else
                 energy = Mathf.Max(0f, energy - GetEnergyDecayRate() * Time.deltaTime);
+
+            // Slow always-on regen — see hpPassiveRegenPercentPerSecond's own comment for why Sleeping
+            // (has its own stronger formula above) and Fainted (must stay at 0 until the battle-end
+            // revive) are excluded.
+            if (CurrentState != BunnyState.Sleeping && CurrentState != BunnyState.Fainted)
+                RegeneratePassiveHP();
         }
 
         switch (CurrentState)
@@ -422,6 +460,15 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
             case BunnyState.Defending:
                 HandleDefending();
+                break;
+
+            // No-op — see BunnyState.Fainted's own comment. The bunny just sits at its CombatSpot until
+            // StopDefendingAndReturn revives and recalls it once the invasion clears.
+            case BunnyState.Fainted:
+                break;
+
+            case BunnyState.Recovering:
+                HandleRecovering();
                 break;
 
             case BunnyState.Relaxing:
@@ -1256,20 +1303,57 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
     // ---------- HP (spent by Foraging's placeholder encounter resolver — see ForagingManager) ----------
 
-    // Fractional remainder carried across frames (hpRegenRemainder) so a sub-1-HP/sec regen rate still
-    // eventually grants whole HP once enough has accumulated, instead of Mathf.RoundToInt silently
-    // discarding it every frame — energy/mood don't need this since they're floats themselves, but HP is
-    // deliberately an int (matches BunnyStats.HP, which nothing has ever needed as a float).
-    private void RegenerateHPWhileSleeping(float bedroomMultiplier)
+    // energyRestored is the ACTUAL delta this frame (post the 100-cap clamp at the Sleeping call site),
+    // not the nominal rate — matters near the top of the energy bar where the nominal rate would overstate
+    // how much was really gained. hpPercentOfMaxPerEnergyRestored already folds in Bedroom.GradeMultiplier
+    // by virtue of being derived from the (already-scaled) energy delta.
+    private void RegenerateHPFromEnergyRestored(float energyRestored)
+    {
+        if (energyRestored <= 0f || currentHP >= Stats.HP) return;
+        AccumulateHPRegen(energyRestored * hpPercentOfMaxPerEnergyRestored * Stats.HP);
+    }
+
+    // Slow always-on regen — see hpPassiveRegenPercentPerSecond's own comment for exclusions. Multiplied
+    // by GetPassiveHPRegenMultiplier() so a type's Regrowth-style passive (see BunnyPassiveDefinition)
+    // scales this without needing its own separate regen path.
+    private void RegeneratePassiveHP()
     {
         if (currentHP >= Stats.HP) return;
+        AccumulateHPRegen(hpPassiveRegenPercentPerSecond * Stats.HP * GetPassiveHPRegenMultiplier() * Time.deltaTime);
+    }
 
-        hpRegenRemainder += hpGainPerSecondSleeping * bedroomMultiplier * Time.deltaTime;
+    // Shared fractional remainder carry-over (hpRegenRemainder) so a sub-1-HP/sec regen rate still
+    // eventually grants whole HP once enough has accumulated, instead of Mathf.RoundToInt silently
+    // discarding it every frame — energy/mood don't need this since they're floats themselves, but HP is
+    // deliberately an int (matches BunnyStats.HP, which nothing has ever needed as a float). Shared by
+    // both regen sources above since only one of them ever runs in a given frame (Sleeping vs. not).
+    private void AccumulateHPRegen(float amount)
+    {
+        hpRegenRemainder += amount;
         int wholeHP = Mathf.FloorToInt(hpRegenRemainder);
         if (wholeHP <= 0) return;
 
         hpRegenRemainder -= wholeHP;
         currentHP = Mathf.Min(Stats.HP, currentHP + wholeHP);
+    }
+
+    // Aggregates every currently-unlocked (Level >= unlockLevel) HPRegenMultiplier passive on this
+    // bunny's type — e.g. Plant's "Regrowth" (3x, tunable on the BunnyPassiveDefinition asset itself, not
+    // hardcoded here). Passives are universal per-TYPE abilities (every bunny of that type has them),
+    // deliberately separate from the per-individual Trait system (see TraitEffectType/ApplyTraits) even
+    // though the shapes look similar. Multiple stacking passives would multiply together; none exist yet.
+    private float GetPassiveHPRegenMultiplier()
+    {
+        if (typeDefinition == null || typeDefinition.passives == null) return 1f;
+
+        float multiplier = 1f;
+        foreach (BunnyPassiveDefinition passive in typeDefinition.passives)
+        {
+            if (passive == null || passive.effectType != PassiveEffectType.HPRegenMultiplier) continue;
+            if (Level < passive.unlockLevel) continue;
+            multiplier *= passive.effectMultiplier;
+        }
+        return multiplier;
     }
 
     // Called by ForagingManager's placeholder encounter resolver on a loss. Floored at 1, never 0 — see
@@ -1281,18 +1365,23 @@ public class NPCBunny : MonoBehaviour, ICombatant
         currentHP = Mathf.Max(1, currentHP - Mathf.Max(0, amount));
     }
 
-    // Called by ForagingManager when a carried healing potion auto-uses.
+    // Called by ForagingManager when a carried healing potion auto-uses, and by the Bunny UI's potion
+    // button (see BunnyStatsUI). No-ops while Fainted — a fainted bunny only revives via
+    // StopDefendingAndReturn's battle-end flow, never mid-fight; otherwise a potion would push currentHP
+    // off 0 (clamped to 1 below) while CurrentState is still Fainted, an inconsistent state where the
+    // bunny reads as alive (ICombatant.IsAlive) and can be re-targeted, but still can't act back since
+    // nothing transitions it out of Fainted except the battle-end recall.
     public void HealHP(int amount)
     {
+        if (CurrentState == BunnyState.Fainted) return;
         currentHP = Mathf.Clamp(currentHP + Mathf.Max(0, amount), 1, Stats.HP);
     }
 
     // ---------- ICombatant (see Combat_DesignDoc.md) ----------
     // Deliberately separate from ApplyForagingDamage above — that method floors at 1 by design (Foraging
-    // never kills, per its own design doc), whereas real combat damage can and does reach 0. Nothing in
-    // NPCBunny's existing state machine reacts to OnDefeated yet (no "fainted" state exists) — that's a
-    // deliberate scope boundary for this pass, not an oversight; wiring an actual faint/recovery
-    // behavior into the state machine needs its own design pass plus in-Editor verification.
+    // never kills, per its own design doc), whereas real combat damage can and does reach 0. Fainting
+    // (BunnyState.Fainted) is the state-machine reaction to OnDefeated — see TakeCombatDamage/
+    // StopDefendingAndReturn.
     int ICombatant.CurrentHP => currentHP;
     bool ICombatant.IsAlive => currentHP > 0;
     BunnyTypeDefinition ICombatant.AttackSource => typeDefinition;
@@ -1324,9 +1413,12 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
     public void TakeCombatDamage(int amount)
     {
-        if (currentHP <= 0) return; // already defeated — no further hits matter until something revives it (not yet designed)
+        if (currentHP <= 0) return; // already fainted — no further hits matter until StopDefendingAndReturn revives it
         currentHP = Mathf.Max(0, currentHP - Mathf.Max(0, amount));
-        if (currentHP == 0) OnDefeated?.Invoke();
+        if (currentHP != 0) return;
+
+        OnDefeated?.Invoke();
+        CurrentState = BunnyState.Fainted; // UpdateAnimator's per-frame SetBool(isFaintedParam, ...) picks this up next frame
     }
 
     // Set by ForagingManager the instant a trip's return countdown begins (any of the four return
@@ -1731,6 +1823,8 @@ public class NPCBunny : MonoBehaviour, ICombatant
                 OnArrivedIdleAfterCancelledTrip();
             else if (pendingStateOnArrival == BunnyState.Defending)
                 OnArrivedAtDefendingSpot();
+            else if (pendingStateOnArrival == BunnyState.Recovering)
+                OnArrivedAtRecoveringSpot();
 
             return;
         }
@@ -1847,6 +1941,14 @@ public class NPCBunny : MonoBehaviour, ICombatant
         currentSpot = defendingSpot;
         currentWanderPoint = null;
         currentFloorIndex = defendingRoom.FloorIndex;
+    }
+
+    private void OnArrivedAtRecoveringSpot()
+    {
+        currentRoom = claimedHospitalRoom;
+        currentSpot = claimedHospitalBedSpot;
+        currentWanderPoint = null;
+        currentFloorIndex = claimedHospitalRoom.FloorIndex;
     }
 
     private void OnArrivedAtEatingSpot()
@@ -2950,13 +3052,65 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // CombatSpot and hands off to ReturnToPreviousActivity — already knows how to walk a resident back to
     // its own claimedWorkSpot/claimedRelaxSpot, or a deployed Guard bunny back to its Guard Room post
     // (assignedJobRoom/claimedWorkSpot there, untouched by BeginDefending), with no special-case needed.
+    // A Fainted bunny revives to 1 HP here rather than at any point mid-battle — see BunnyState.Fainted's
+    // comment — so it can walk itself to a job/relax spot (and, once built, the Hospital) afterward.
     public void StopDefendingAndReturn()
     {
         if (defendingRoom == null || defendingSpot == null) return;
 
+        if (CurrentState == BunnyState.Fainted) currentHP = 1;
+
         defendingRoom.ReleaseCombatSpot(defendingSpot, this);
         defendingSpot = null;
         defendingRoom = null;
+
+        ReturnToPreviousActivity();
+    }
+
+    // Called by PatientUI when the player assigns an injured bunny to a Hospital bed. The caller has
+    // already claimed `spot` via room.RequestBed before calling this — mirrors BeginDefending's shape
+    // exactly, just walking to a bed instead of a CombatSpot. HospitalRoom.HealPatientsRoutine (not this
+    // class) is what actually raises currentHP once the bunny arrives; HandleRecovering just watches for
+    // full HP.
+    public void AssignToHospitalBed(RoomSpot spot, HospitalRoom room)
+    {
+        claimedHospitalBedSpot = spot;
+        claimedHospitalRoom = room;
+
+        if (currentFloorIndex != room.FloorIndex)
+        {
+            if (!TryBeginCrossFloorTripToSpot(room, spot, BunnyState.Recovering))
+            {
+                // No lift connects these floors — don't leave the bed reserved for an unreachable bunny.
+                room.ReleaseBed(spot, this);
+                claimedHospitalBedSpot = null;
+                claimedHospitalRoom = null;
+            }
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, room, spot, currentFloorIndex);
+        MoveAlongPath(path, spot, BunnyState.Recovering);
+    }
+
+    // Ticked every frame while CurrentState == Recovering — HospitalRoom's own heal tick is what actually
+    // moves currentHP; this just recalls the bunny once it's back to full, the same "watch a condition,
+    // recall via ReturnToPreviousActivity" shape as Sleeping's own energy>=100 check in Update().
+    private void HandleRecovering()
+    {
+        if (currentHP >= Stats.HP)
+            ReturnFromHospital();
+    }
+
+    // Also callable directly (not just from HandleRecovering) so a future "manually pull a bunny out of
+    // the Hospital early" UI action has something to call.
+    public void ReturnFromHospital()
+    {
+        if (claimedHospitalRoom == null || claimedHospitalBedSpot == null) return;
+
+        claimedHospitalRoom.ReleaseBed(claimedHospitalBedSpot, this);
+        claimedHospitalBedSpot = null;
+        claimedHospitalRoom = null;
 
         ReturnToPreviousActivity();
     }
@@ -3059,6 +3213,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
         animator.SetBool(isEatingParam, CurrentState == BunnyState.Eating);
         animator.SetBool(isDrinkingParam, CurrentState == BunnyState.Drinking);
         animator.SetBool(isSleepingParam, CurrentState == BunnyState.Sleeping);
+        animator.SetBool(isFaintedParam, CurrentState == BunnyState.Fainted);
 
         bool isSlowWander = CurrentState == BunnyState.MovingToSpot && IsWanderPacedLeg();
         animator.speed = isSlowWander ? wanderSpeedMultiplier : 1f;

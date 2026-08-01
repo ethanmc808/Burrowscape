@@ -134,11 +134,18 @@ public class AttackInstance : MonoBehaviour
     {
         if (resolved) return;
 
-        // Fizzle: target's GameObject is gone, or it's already been defeated by something else. Checked
-        // via CombatGameObject (a real UnityEngine.Object) rather than `target == null` directly — a
-        // destroyed MonoBehaviour referenced through an interface doesn't trip Unity's overridden null
-        // check the way a direct Component/GameObject reference does.
-        if (target == null || target.CombatGameObject == null || !target.IsAlive)
+        // Fizzle: target's GameObject is gone, it's already been defeated by something else, or (bunny
+        // targets only) it's already been recalled out of combat entirely — closes a real race window
+        // where a bunny's killing blow on the last enemy clears the invasion and walks it back to its job
+        // (StopDefendingAndReturn, called from InvasionManager's recall loop) before this already-in-
+        // flight attack, fired moments earlier, actually arrives. Without this check the attack would still
+        // land and faint a bunny with no active invasion left to ever revive it — StopDefendingAndReturn's
+        // battle-end recall is the ONLY thing that ever un-faints anyone. Checked via CombatGameObject (a
+        // real UnityEngine.Object) rather than `target == null` directly — a destroyed MonoBehaviour
+        // referenced through an interface doesn't trip Unity's overridden null check the way a direct
+        // Component/GameObject reference does.
+        if (target == null || target.CombatGameObject == null || !target.IsAlive
+            || (target is NPCBunny bunny && !bunny.IsDefending))
         {
             Fizzle();
             return;

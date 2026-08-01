@@ -25,6 +25,22 @@ public class DwellerRoster : MonoBehaviour
         allBunnies.Remove(bunny);
     }
 
+    // Candidate pool for the Patient UI — any resident bunny below max HP, excluding ones not currently
+    // controllable: still queued/awaiting approval (mirrors GetUnassignedBunnies' HasEnteredBase guard),
+    // out Foraging (parked offscreen), already claimed by a Hospital bed, and Fainted (mid-battle, can't
+    // walk anywhere until StopDefendingAndReturn revives it — see NPCBunny.HealHP's own Fainted guard for
+    // why healing one directly isn't allowed either). Sorted ascending by HP percentage (lowest first) —
+    // PatientUI relies on this ordering rather than re-sorting itself.
+    public List<NPCBunny> GetInjuredBunnies()
+    {
+        return allBunnies
+            .Where(b => b.HasEnteredBase && b.CurrentState != BunnyState.Foraging
+                && b.CurrentState != BunnyState.Fainted && !b.IsHospitalized
+                && b.HPValue < b.Stats.HP)
+            .OrderBy(b => (float)b.HPValue / b.Stats.HP)
+            .ToList();
+    }
+
     public List<NPCBunny> GetUnassignedBunnies()
     {
         // Exclude bunnies still spawned-but-queued at the gate (or mid-approval) — they haven't

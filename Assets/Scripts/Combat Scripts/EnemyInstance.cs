@@ -97,10 +97,15 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     {
         if (currentHP <= 0 || DwellerRoster.Instance == null || room == null) return;
 
-        IEnumerable<ICombatant> candidatePool = DwellerRoster.Instance
-            .GetBunniesDefendingRoom(room)
+        List<NPCBunny> defendersInRoom = DwellerRoster.Instance.GetBunniesDefendingRoom(room);
+        List<ICombatant> candidatePool = defendersInRoom
             .Where(b => b.CurrentState == BunnyState.Defending)
-            .Cast<ICombatant>();
+            .Cast<ICombatant>()
+            .ToList();
+
+        // TEMP — chasing "enemy stops attacking entirely after fainting one of several defenders" bug.
+        if (Time.frameCount % 30 == 0)
+            Debug.Log($"[VFXDEBUG] EnemyInstance.Update({name}): defendersInRoom={string.Join(", ", defendersInRoom.Select(b => $"{b.name}:{b.CurrentState}"))} poolCount={candidatePool.Count} currentTarget={(currentTarget != null ? currentTarget.CombatGameObject?.name : "NULL")} cooldown={attackCooldownRemaining:F2}");
 
         bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, candidatePool, out ICombatant attackTarget);
         if (!startedWindUp) return;

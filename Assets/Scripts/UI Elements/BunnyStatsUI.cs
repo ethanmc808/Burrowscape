@@ -16,6 +16,15 @@ public class BunnyStatsUI : MonoBehaviour
     [SerializeField] private Image energyBar;
     [SerializeField] private Image moodBar;
 
+    [Header("HP")]
+    [SerializeField] private Image hpBar;
+    [SerializeField] private TextMeshProUGUI hpLabel;
+    // Consumes 1 potion from ForagingInventoryManager's stock and heals ForagingManager.PotionHealAmount
+    // — same flat amount Foraging's own auto-use potion path applies, just player-triggered instead of
+    // an encounter-loss auto-use.
+    [SerializeField] private Button usePotionButton;
+    [SerializeField] private TextMeshProUGUI potionButtonLabel;
+
     private NPCBunny currentBunny;
 
     private void Awake()
@@ -24,6 +33,19 @@ public class BunnyStatsUI : MonoBehaviour
         panelRoot.SetActive(false);
 
         closeButton.onClick.AddListener(Close);
+        usePotionButton.onClick.AddListener(UsePotionOnCurrentBunny);
+    }
+
+    private void OnEnable()
+    {
+        if (ForagingInventoryManager.Instance != null)
+            ForagingInventoryManager.Instance.OnInventoryChanged += RefreshPotionButton;
+    }
+
+    private void OnDisable()
+    {
+        if (ForagingInventoryManager.Instance != null)
+            ForagingInventoryManager.Instance.OnInventoryChanged -= RefreshPotionButton;
     }
 
     private void Update()
@@ -64,5 +86,34 @@ public class BunnyStatsUI : MonoBehaviour
         thirstBar.fillAmount = currentBunny.ThirstValue / 100f;
         energyBar.fillAmount = currentBunny.EnergyValue / 100f;
         moodBar.fillAmount = currentBunny.MoodValue / 100f;
+
+        int maxHP = currentBunny.Stats.HP;
+        hpBar.fillAmount = maxHP > 0 ? (float)currentBunny.HPValue / maxHP : 0f;
+        hpLabel.text = $"{currentBunny.HPValue}/{maxHP}";
+
+        RefreshPotionButton();
+    }
+
+    // Disabled while there's no potion stock, the bunny's already at full HP, or it's Fainted — see
+    // NPCBunny.HealHP's own no-op guard for why a fainted bunny can't be healed mid-battle.
+    private void RefreshPotionButton()
+    {
+        if (currentBunny == null) return;
+
+        int stock = ForagingInventoryManager.Instance != null ? ForagingInventoryManager.Instance.PotionStock : 0;
+        bool atFullHP = currentBunny.HPValue >= currentBunny.Stats.HP;
+        bool isFainted = currentBunny.CurrentState == BunnyState.Fainted;
+        usePotionButton.interactable = stock > 0 && !atFullHP && !isFainted;
+
+        if (potionButtonLabel != null) potionButtonLabel.text = $"Use Potion ({stock})";
+    }
+
+    private void UsePotionOnCurrentBunny()
+    {
+        if (currentBunny == null || ForagingInventoryManager.Instance == null || ForagingManager.Instance == null) return;
+        if (!ForagingInventoryManager.Instance.TryWithdrawPotions(1)) return;
+
+        currentBunny.HealHP(ForagingManager.Instance.PotionHealAmount);
+        RefreshBars();
     }
 }

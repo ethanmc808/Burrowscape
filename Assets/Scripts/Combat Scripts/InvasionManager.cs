@@ -116,7 +116,17 @@ public class InvasionManager : MonoBehaviour
 
         if (spawnedGroup.Count == 0) return;
 
-        activeInvasions[targetRoom] = spawnedGroup;
+        // Merge into any invasion already active in this room rather than replacing it — targetRoom can
+        // still have a free EnemySpot while an earlier wave's enemies are alive (PickTargetRoom only
+        // requires ANY unoccupied spot), so a straight overwrite would silently drop the earlier wave from
+        // tracking: still alive and still fighting, but invisible to GetEnemiesInRoom/HandleEnemyDefeated,
+        // which broke targeting (a bunny's currentCombatTarget stays locked on the now-untracked enemy,
+        // never re-evaluated since it never died) and premature recall (defeating just the tracked wave
+        // hit group.Count == 0 and recalled every defender while the untracked wave was still alive).
+        if (activeInvasions.TryGetValue(targetRoom, out List<EnemyInstance> existingGroup))
+            existingGroup.AddRange(spawnedGroup);
+        else
+            activeInvasions[targetRoom] = spawnedGroup;
         DebugLog.Log($"InvasionManager: spawned {spawnedGroup.Count} enemy(ies) into {targetRoom.name}.");
 
         TriggerAutoDefend(targetRoom);

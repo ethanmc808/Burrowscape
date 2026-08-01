@@ -63,19 +63,22 @@ public static class CombatEngagement
         return closest;
     }
 
-    // Re-acquires target if it's null/dead/gone, then — once cooldownRemaining reaches 0 and there's a
-    // melee-excluded ranged AttackSource with VFX authored — resets the cooldown and returns true with
-    // attackTarget set to whoever this wind-up should eventually fire at. The caller is responsible for
-    // triggering its own Animator on a true return (ICombatant deliberately has no Animator reference —
-    // animation is each concrete type's own concern, not shared targeting logic's) and remembering
-    // attackTarget until its Animation Event calls ReleaseAttack.
+    // Always re-acquires the closest alive candidate (Ethan's design — see this class's own header
+    // comment: "always targets whoever is closest," not sticky-until-death), then — once cooldownRemaining
+    // reaches 0 and there's a melee-excluded ranged AttackSource with VFX authored — resets the cooldown
+    // and returns true with attackTarget set to whoever this wind-up should eventually fire at. Re-running
+    // FindClosestAliveTarget every call keeps the existing target locked whenever it's genuinely still
+    // closest, and switches immediately once something closer becomes valid (e.g. a second bunny reaching
+    // a nearer CombatSpot) — a target already mid-wind-up isn't affected, since attackTarget is snapshotted
+    // into the caller's own pendingAttackTarget field at that point, decoupled from target's future changes.
+    // The caller is responsible for triggering its own Animator on a true return (ICombatant deliberately
+    // has no Animator reference — animation is each concrete type's own concern, not shared targeting
+    // logic's) and remembering attackTarget until its Animation Event calls ReleaseAttack.
     public static bool TryBeginAttack(ICombatant self, ref ICombatant target, ref float cooldownRemaining, IEnumerable<ICombatant> candidatePool, out ICombatant attackTarget)
     {
         attackTarget = null;
 
-        if (target == null || target.CombatGameObject == null || !target.IsAlive)
-            target = FindClosestAliveTarget(self.CombatTransform.position, candidatePool);
-
+        target = FindClosestAliveTarget(self.CombatTransform.position, candidatePool);
         if (target == null) return false;
 
         cooldownRemaining -= Time.deltaTime;
