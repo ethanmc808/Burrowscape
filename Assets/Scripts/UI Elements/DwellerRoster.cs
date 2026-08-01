@@ -41,6 +41,21 @@ public class DwellerRoster : MonoBehaviour
             .ToList();
     }
 
+    // Candidate pool for GuardDeployUI's manual-reinforcement panel — any resident bunny safely pullable
+    // mid-activity to go fight: Idle (holds no claim), Working, or Relaxing (both leave their claim
+    // intact when interrupted — see NPCBunny.BeginDefending's own comment — so ReturnToPreviousActivity
+    // walks them straight back once the invasion clears). Deliberately excludes Sleeping/Eating/Drinking:
+    // those are driven by their own room's coroutine, which has no idea CurrentState just changed out
+    // from under it (same caution CanDepartForForaging already documents for this exact class of state).
+    // Also excludes anyone already Defending/Fainted (already helping, or not fit to), Recovering
+    // (hospitalized), Foraging (away), or still queued/awaiting gate approval.
+    public List<NPCBunny> GetReinforceableBunnies()
+    {
+        return allBunnies.Where(b => b.HasEnteredBase &&
+            (b.CurrentState == BunnyState.Idle || b.CurrentState == BunnyState.Working || b.CurrentState == BunnyState.Relaxing)
+        ).ToList();
+    }
+
     public List<NPCBunny> GetUnassignedBunnies()
     {
         // Exclude bunnies still spawned-but-queued at the gate (or mid-approval) — they haven't

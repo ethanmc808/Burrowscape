@@ -80,6 +80,7 @@ GameObject:
   - component: {fileID: 2411426728429763008}
   - component: {fileID: 3142430252561249029}
   - component: {fileID: 2694520876626278954}
+  - component: {fileID: 576038825765663951}
   m_Layer: 0
   m_Name: NPC_Bunny_Fire_Default
   m_TagString: Untagged
@@ -220,7 +221,8 @@ MonoBehaviour:
   energyThresholdLow: 30
   energyGainPerSecondSleeping: 3
   currentHP: 1
-  hpGainPerSecondSleeping: 1
+  hpPercentOfMaxPerEnergyRestored: 0.005
+  hpPassiveRegenPercentPerSecond: 0.005
   mood: 100
   moodDecayPerSecondWorking: 0.05
   moodGainPerSecondRelaxing: 0.2
@@ -235,6 +237,10 @@ MonoBehaviour:
   isSleepingParam: IsSleeping
   isCheeringParam: IsCheering
   isAttackingParam: IsAttacking
+  isFaintedParam: IsFainted
+  faintFadeDelaySeconds: 0.6666667
+  faintFadeDurationSeconds: 0.3
+  faintFadeTargetAlpha: 0.5
   levelUpClip: {fileID: 8300000, guid: c07bf9444c47a1743a5c92bbf7499758, type: 3}
   eatingAmbientClip: {fileID: 0}
   drinkingAmbientClip: {fileID: 0}
@@ -257,6 +263,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7387d0e76d9d0384f9617955eeac6b40, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BunnyInfoClickHandler
+--- !u!114 &576038825765663951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601990158651218953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3390743a33e2ea34ea4dbf2a485b4138, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatHPIndicator
+  bunny: {fileID: 0}
+  indicatorPrefab: {fileID: 2253899879721663037, guid: 2096e2ca0d77c0543b60b4b4ea9d49af, type: 3}
+  worldCamera: {fileID: 0}
+  worldOffset: {x: 0, y: -0.5, z: 0}
 --- !u!1001 &9129296436803636544
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -2,13 +2,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
-using System.Linq;
 
-// One-at-a-time Guard Room deploy panel — structural sibling of AssignmentUI, but gated on invasion
+// One-at-a-time manual reinforcement panel — structural sibling of AssignmentUI, but gated on invasion
 // state: only actually shows while the clicked room has an active invasion (InvasionManager.
 // IsRoomInvaded), and unlike AssignmentUI's "assign, then close" flow, stays open after each deploy so
-// the player can send more guards (see Combat_DesignDoc.md's Guard Room section, revised away from a
-// whole-squad deploy in favor of one bunny per click).
+// the player can send more reinforcements (see Combat_DesignDoc.md's Guard Room section, revised away
+// from a whole-squad deploy in favor of one bunny per click). Originally scoped to Guard Room troops
+// only; broadened to any safely-interruptible resident bunny once the "fainted defenders permanently
+// deadlock the room" bug made clear that a Guard-Room-only pool left nobody to send in the common case.
 public class GuardDeployUI : MonoBehaviour
 {
     public static GuardDeployUI Instance { get; private set; }
@@ -19,7 +20,7 @@ public class GuardDeployUI : MonoBehaviour
     [Tooltip("Shown instead of the roster when the target room's CombatSpots are all occupied.")]
     [SerializeField] private TextMeshProUGUI statusLabel;
 
-    [Header("Deployable Guards (click to deploy)")]
+    [Header("Deployable Bunnies (click to deploy)")]
     [SerializeField] private Transform buttonContainer;
     [SerializeField] private GameObject bunnyButtonPrefab; // same simple Button + TextMeshProUGUI prefab as AssignmentUI
     [SerializeField] private GameObject typeIconPrefab;
@@ -91,7 +92,7 @@ public class GuardDeployUI : MonoBehaviour
 
         if (statusLabel != null) statusLabel.gameObject.SetActive(false);
 
-        foreach (NPCBunny bunny in GetDeployableGuards())
+        foreach (NPCBunny bunny in GetDeployableBunnies())
         {
             GameObject buttonObj = Instantiate(bunnyButtonPrefab, buttonContainer);
             TextMeshProUGUI nameLabel = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
@@ -103,20 +104,14 @@ public class GuardDeployUI : MonoBehaviour
         }
     }
 
-    // Every Guard Room's posted (CurrentState == Working, not already deployed elsewhere) roster, across
-    // every registered Guard Room — no "nearest Guard Room" picker, since deploy is now per-bunny rather
-    // than per-room.
-    private List<NPCBunny> GetDeployableGuards()
+    // Any resident bunny safely pullable to reinforce — not just designated Guard Room troops. See
+    // DwellerRoster.GetReinforceableBunnies for exactly which states are safe to interrupt this way.
+    // TODO: once the click-hold-drag "drop a bunny into a room" feature exists, this list-based deploy
+    // flow may be superseded by that for the common case — kept as-is for now.
+    private List<NPCBunny> GetDeployableBunnies()
     {
-        if (BaseManager.Instance == null || DwellerRoster.Instance == null) return new List<NPCBunny>();
-
-        List<NPCBunny> deployable = new List<NPCBunny>();
-        foreach (GuardRoom guardRoom in BaseManager.Instance.GuardRooms)
-        {
-            deployable.AddRange(DwellerRoster.Instance.GetBunniesAssignedTo(guardRoom)
-                .Where(b => b.CurrentState == BunnyState.Working && !b.IsDefending));
-        }
-        return deployable;
+        if (DwellerRoster.Instance == null) return new List<NPCBunny>();
+        return DwellerRoster.Instance.GetReinforceableBunnies();
     }
 
     private void DeployBunny(NPCBunny bunny)

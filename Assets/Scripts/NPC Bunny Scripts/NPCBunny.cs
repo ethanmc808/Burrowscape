@@ -167,6 +167,14 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // since Any-State transitions only handle entry, never exit.
     [SerializeField] private string isFaintedParam = "IsFainted";
 
+    [Header("Faint Fade (see TakeCombatDamage/FaintFadeRoutine)")]
+    [Tooltip("Seconds after fainting before the sprite starts fading — matches the Fainting animation clip's own collapse timing (frame 40 @ 60fps = 0.667s), not tied to the clip's actual playback since Fainted is a persistent state that may loop/hold indefinitely.")]
+    [SerializeField] private float faintFadeDelaySeconds = 40f / 60f;
+    [Tooltip("How long the fade itself takes once it starts.")]
+    [SerializeField] private float faintFadeDurationSeconds = 0.3f;
+    [Tooltip("Alpha the sprite settles at once fully faded. Restored to 1 immediately (no fade-in) the moment StopDefendingAndReturn revives this bunny.")]
+    [SerializeField, Range(0f, 1f)] private float faintFadeTargetAlpha = 0.5f;
+
     [Header("Level-Up SFX (see AudioManager)")]
     [SerializeField] private AudioClip levelUpClip;
 
@@ -376,6 +384,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // bunny — GetComponentsInChildren allocates, and the set of renderers a rig has never changes at
     // runtime (see the bunny outline rework's multi-part body/face-overlay setup).
     private Renderer[] visualRenderers;
+    // Separate from visualRenderers above (that one stays Renderer[] for ComputeVisualCenter's bounds
+    // calc) — this is specifically for FaintFadeRoutine's alpha fade, which needs .color, only present on
+    // SpriteRenderer, not the base Renderer type.
+    private SpriteRenderer[] spriteRenderers;
+    private Coroutine faintFadeRoutine;
 
     private void Awake()
     {
@@ -383,6 +396,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
             animator = GetComponentInChildren<Animator>();
 
         visualRenderers = GetComponentsInChildren<Renderer>();
+        spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
 
         SetFacing(!bunnyFacesLeftByDefault);
     }
@@ -1366,7 +1380,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
     }
 
     // Called by ForagingManager when a carried healing potion auto-uses, and by the Bunny UI's potion
-    // button (see BunnyStatsUI). No-ops while Fainted — a fainted bunny only revives via
+    // button (see BunnyInfoUI). No-ops while Fainted — a fainted bunny only revives via
     // StopDefendingAndReturn's battle-end flow, never mid-fight; otherwise a potion would push currentHP
     // off 0 (clamped to 1 below) while CurrentState is still Fainted, an inconsistent state where the
     // bunny reads as alive (ICombatant.IsAlive) and can be re-targeted, but still can't act back since
@@ -1419,6 +1433,52 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
         OnDefeated?.Invoke();
         CurrentState = BunnyState.Fainted; // UpdateAnimator's per-frame SetBool(isFaintedParam, ...) picks this up next frame
+
+        if (faintFadeRoutine != null) StopCoroutine(faintFadeRoutine);
+        faintFadeRoutine = StartCoroutine(FaintFadeRoutine());
+
+        // Release the CombatSpot claim immediately rather than waiting for the battle-end recall — a
+        // fainted body would otherwise hog a finite combat slot for the rest of the fight, and if every
+        // defender faints, the room deadlocks permanently (no free slot to send a reinforcement into, but
+        // nothing left alive to clear the invasion and free one up). defendingSpot/defendingRoom stay set
+        // on this bunny (deliberately NOT cleared here) so StopDefendingAndReturn/GetBunniesDefendingRoom
+        // still find and revive/recall it once the invasion clears, same as before this change.
+        if (defendingRoom != null && defendingSpot != null)
+            defendingRoom.ReleaseCombatSpot(defendingSpot, this);
+    }
+
+    // Fades this bunny's sprite to faintFadeTargetAlpha once it collapses — timed to start at
+    // faintFadeDelaySeconds (frame 40 of the Fainting clip @ 60fps by default) rather than tracking the
+    // Animator's actual clip time, since Fainted is a persistent Bool-driven state that may loop/hold
+    // indefinitely (see isFaintedParam's own comment) and a fade tied to a looping clip would repeat every
+    // loop instead of happening once. Cancelled and snapped back to full alpha the instant
+    // StopDefendingAndReturn revives this bunny — see its own faintFadeRoutine cleanup.
+    private IEnumerator FaintFadeRoutine()
+    {
+        yield return new WaitForSeconds(faintFadeDelaySeconds);
+
+        float elapsed = 0f;
+        while (elapsed < faintFadeDurationSeconds)
+        {
+            elapsed += Time.deltaTime;
+            SetSpriteAlpha(Mathf.Lerp(1f, faintFadeTargetAlpha, elapsed / faintFadeDurationSeconds));
+            yield return null;
+        }
+
+        SetSpriteAlpha(faintFadeTargetAlpha);
+        faintFadeRoutine = null;
+    }
+
+    private void SetSpriteAlpha(float alpha)
+    {
+        if (spriteRenderers == null) return;
+        foreach (SpriteRenderer sr in spriteRenderers)
+        {
+            if (sr == null) continue;
+            Color c = sr.color;
+            c.a = alpha;
+            sr.color = c;
+        }
     }
 
     // Set by ForagingManager the instant a trip's return countdown begins (any of the four return
@@ -3058,7 +3118,19 @@ public class NPCBunny : MonoBehaviour, ICombatant
     {
         if (defendingRoom == null || defendingSpot == null) return;
 
-        if (CurrentState == BunnyState.Fainted) currentHP = 1;
+        if (CurrentState == BunnyState.Fainted)
+        {
+            currentHP = 1;
+
+            // Cancel the faint fade and snap straight back to full opacity — no fade-in, this bunny should
+            // read as instantly back to normal the moment combat resolves.
+            if (faintFadeRoutine != null)
+            {
+                StopCoroutine(faintFadeRoutine);
+                faintFadeRoutine = null;
+            }
+            SetSpriteAlpha(1f);
+        }
 
         defendingRoom.ReleaseCombatSpot(defendingSpot, this);
         defendingSpot = null;

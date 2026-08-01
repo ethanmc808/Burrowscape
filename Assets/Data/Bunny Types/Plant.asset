@@ -27,4 +27,10 @@ MonoBehaviour:
   attackIntervalSeconds: 2
   group: 1
   populationThreshold: 0
-  passives: []
+  passives:
+  - id: regrowth
+    displayName: Regrowth
+    description: Heals HP at a faster rate than normal.
+    unlockLevel: 1
+    effectType: 1
+    effectMultiplier: 3

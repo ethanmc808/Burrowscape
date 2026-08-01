@@ -70,6 +70,9 @@ public class RoomSpotPathAutoPopulator : Editor
             ? new List<RoomPath>()
             : ((List<RoomPath>)pathsField.GetValue(room)) ?? new List<RoomPath>();
 
+        List<RoomSpot> combatSpots = room.CombatSpots ?? new List<RoomSpot>();
+        List<RoomSpot> enemySpots = room.EnemySpots ?? new List<RoomSpot>();
+
         List<Transform> entrances = new List<Transform> { room.LeftEntrance, room.RightEntrance };
         List<string> missingEntrances = new List<string>();
         if (room.LeftEntrance == null) missingEntrances.Add("Left Entrance");
@@ -78,10 +81,16 @@ public class RoomSpotPathAutoPopulator : Editor
         List<RoomPath> resultPaths = new List<RoomPath>(existingPaths);
         int addedCount = 0;
 
+        // EnemySpots never get an entrance path — enemies spawn straight onto their spot via
+        // InvasionManager.TrySpawnInvasion's Instantiate(prefab, spot.transform.position, ...), no gate
+        // walk-in built yet ("a documented future addition, not built here" per that method's own
+        // comment), so a RoomPath targeting one would just be dead data nothing ever reads.
+        List<RoomSpot> entrancePairableSpots = spotsUsedForPaths.Where(s => !enemySpots.Contains(s)).ToList();
+
         foreach (Transform entrance in entrances)
         {
             if (entrance == null) continue;
-            foreach (RoomSpot spot in spotsUsedForPaths)
+            foreach (RoomSpot spot in entrancePairableSpots)
             {
                 bool alreadyExists = resultPaths.Any(p => p.entrance == entrance && p.targetSpot == spot);
                 if (alreadyExists) continue;
@@ -102,8 +111,6 @@ public class RoomSpotPathAutoPopulator : Editor
         // from wherever a bunny was already standing doesn't cut a straight line through walls/furniture.
         // E.g. a room with 2 GuardSpots and 2 CombatSpots gets 4 of these. Enemy-only spots are excluded
         // since a bunny never starts a route from one.
-        List<RoomSpot> combatSpots = room.CombatSpots ?? new List<RoomSpot>();
-        List<RoomSpot> enemySpots = room.EnemySpots ?? new List<RoomSpot>();
         List<RoomSpot> occupancySpots = spotsUsedForPaths.Where(s => !combatSpots.Contains(s) && !enemySpots.Contains(s)).ToList();
         int addedCombatPathCount = 0;
 

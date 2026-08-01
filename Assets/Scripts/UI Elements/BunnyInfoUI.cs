@@ -14,13 +14,10 @@ using TMPro;
 // was (dropped per design call: didn't read well, and Fallout Shelter's equivalent panel stays fixed to
 // the side of the screen instead of floating over the dweller).
 //
-// CUTOVER STATUS: not yet wired into the live click path. BunnyApprovalClickHandler/
-// BunnyStatsClickHandler/BunnyClickPriority still point at the old BunnyApprovalUI/BunnyStatsUI panels
-// until this script's Canvas layout is built and its fields wired up in the Inspector — swapping the
-// click path over before then would NullReferenceException on every bunny click (Instance unset). Once
-// the panel exists: replace BunnyApprovalClickHandler/BunnyStatsClickHandler with BunnyInfoClickHandler
-// on every NPC Bunny Default prefab, repoint BunnyClickPriority.cs at BunnyInfoUI.Instance, then delete
-// BunnyApprovalUI.cs/BunnyStatsUI.cs and their scene panels.
+// CUTOVER COMPLETE: BunnyInfoClickHandler is on every NPC Bunny Default prefab and BunnyClickPriority
+// points at BunnyInfoUI.Instance. BunnyApprovalUI.cs/BunnyStatsUI.cs and their click handlers have been
+// deleted (dead — see git history for the HP bar/potion button BunnyStatsUI had, since ported into this
+// panel below).
 public class BunnyInfoUI : MonoBehaviour
 {
     public static BunnyInfoUI Instance { get; private set; }
@@ -48,6 +45,14 @@ public class BunnyInfoUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI defenseLabel;
     [SerializeField] private TextMeshProUGUI speedLabel;
     [SerializeField] private TextMeshProUGUI luckLabel;
+
+    [Header("HP Bar + Potion (Image.Type = Filled) — ported from the retired BunnyStatsUI")]
+    [SerializeField] private Image hpBar;
+    // Consumes 1 potion from ForagingInventoryManager's stock and heals ForagingManager.PotionHealAmount
+    // — same flat amount Foraging's own auto-use potion path applies, just player-triggered instead of
+    // an encounter-loss auto-use.
+    [SerializeField] private Button usePotionButton;
+    [SerializeField] private TextMeshProUGUI potionButtonLabel;
 
     [Header("Traits & Passives")]
     [Tooltip("Simple prefab: a single TextMeshProUGUI (no Button needed) — shared by both lists below, same instantiate-per-item pattern AssignmentUI uses for its bunny buttons.")]
@@ -103,6 +108,18 @@ public class BunnyInfoUI : MonoBehaviour
 
     private NPCBunny currentBunny;
 
+    private void OnEnable()
+    {
+        if (ForagingInventoryManager.Instance != null)
+            ForagingInventoryManager.Instance.OnInventoryChanged += RefreshPotionButton;
+    }
+
+    private void OnDisable()
+    {
+        if (ForagingInventoryManager.Instance != null)
+            ForagingInventoryManager.Instance.OnInventoryChanged -= RefreshPotionButton;
+    }
+
     private void Awake()
     {
         Instance = this;
@@ -111,6 +128,9 @@ public class BunnyInfoUI : MonoBehaviour
         closeButton.onClick.AddListener(Close);
         approveButton.onClick.AddListener(OnApproveClicked);
         rejectButton.onClick.AddListener(OnRejectClicked);
+
+        if (usePotionButton != null)
+            usePotionButton.onClick.AddListener(UsePotionOnCurrentBunny);
 
         if (sendForagingButton != null)
             sendForagingButton.onClick.AddListener(OnSendForagingClicked);
@@ -155,6 +175,7 @@ public class BunnyInfoUI : MonoBehaviour
 
         RefreshBars();
         RefreshStatLabels();
+        RefreshPotionButton();
         RefreshAccessorySlot();
         RefreshFeedFruitButton();
     }
@@ -192,6 +213,7 @@ public class BunnyInfoUI : MonoBehaviour
         panelRoot.SetActive(true);
         AudioManager.EnsureInstance().PlayUIOpen();
         RefreshBars();
+        RefreshPotionButton();
         if (accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
         RefreshAccessorySlot();
         if (fruitPickerRoot != null) fruitPickerRoot.SetActive(false);
@@ -222,6 +244,36 @@ public class BunnyInfoUI : MonoBehaviour
         thirstBar.fillAmount = currentBunny.ThirstValue / 100f;
         energyBar.fillAmount = currentBunny.EnergyValue / 100f;
         moodBar.fillAmount = currentBunny.MoodValue / 100f;
+
+        if (hpBar != null)
+        {
+            int maxHP = currentBunny.Stats.HP;
+            hpBar.fillAmount = maxHP > 0 ? (float)currentBunny.HPValue / maxHP : 0f;
+        }
+    }
+
+    // Disabled while there's no potion stock, the bunny's already at full HP, or it's Fainted — see
+    // NPCBunny.HealHP's own no-op guard for why a fainted bunny can't be healed mid-battle.
+    private void RefreshPotionButton()
+    {
+        if (usePotionButton == null || currentBunny == null) return;
+
+        int stock = ForagingInventoryManager.Instance != null ? ForagingInventoryManager.Instance.PotionStock : 0;
+        bool atFullHP = currentBunny.HPValue >= currentBunny.Stats.HP;
+        bool isFainted = currentBunny.CurrentState == BunnyState.Fainted;
+        usePotionButton.interactable = stock > 0 && !atFullHP && !isFainted;
+
+        if (potionButtonLabel != null) potionButtonLabel.text = $"Use Potion ({stock})";
+    }
+
+    private void UsePotionOnCurrentBunny()
+    {
+        if (currentBunny == null || ForagingInventoryManager.Instance == null || ForagingManager.Instance == null) return;
+        if (!ForagingInventoryManager.Instance.TryWithdrawPotions(1)) return;
+
+        currentBunny.HealHP(ForagingManager.Instance.PotionHealAmount);
+        RefreshBars();
+        RefreshPotionButton();
     }
 
     // Re-run every Update (not just on Open) so a stat change from another source while the panel is

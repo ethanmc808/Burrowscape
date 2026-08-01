@@ -111,7 +111,7 @@ public class ForagingManager : MonoBehaviour
     [SerializeField] private float luckWeightInEffectivePower = 0.25f;
     [Tooltip("Fraction of max HP at/below which a carried potion auto-uses after a loss.")]
     [Range(0f, 1f)] [SerializeField] private float lowHPPotionThreshold = 0.3f;
-    [Tooltip("Flat HP restored per potion (Foraging's auto-use, and the Bunny UI's manual potion button both use this — see BunnyStatsUI). Flat for now; stronger potion tiers are future work.")]
+    [Tooltip("Flat HP restored per potion (Foraging's auto-use, and the Bunny UI's manual potion button both use this — see BunnyInfoUI). Flat for now; stronger potion tiers are future work.")]
     [SerializeField] private int potionHealAmount = 20;
     public int PotionHealAmount => potionHealAmount;
 
