@@ -8,9 +8,12 @@ using UnityEngine;
 // still always targeting closest — that override is a separate, not-yet-built concern and doesn't change
 // anything here.
 //
-// Ranged-only for this pass (per Combat_DesignDoc.md's melee/flank rules being a separate, not-yet-
-// resolved system) — a melee AttackSource (isMelee true) simply never fires from here; it just stands at
-// its CombatSpot/EnemySpot doing nothing until the melee-approach/flanking system is built.
+// Melee and ranged both fire through TryBeginAttack/ReleaseAttack now. Melee gating lives with the
+// CALLER instead of here: NPCBunny.HandleMeleeDefending/EnemyInstance.HandleMeleeUpdate only ever invoke
+// TryBeginAttack once a melee combatant has already claimed a FlankSlots slot and walked into position,
+// passing a 1-element "pinned" candidate pool (that one flanked target) rather than the full room-wide
+// candidate pool ranged uses — so TryBeginAttack itself stays attack-type-agnostic and doesn't need to
+// know about flanking at all.
 //
 // Attack firing is split into two phases so the VFX/damage actually lines up with the attack animation's
 // own "release" frame (an Animation Event on each type's Attacking clip), instead of firing instantly the
@@ -86,11 +89,62 @@ public static class CombatEngagement
 
         BunnyTypeDefinition attackSource = self.AttackSource;
         if (attackSource == null || attackSource.attackVFXPrefab == null) return false;
-        if (attackSource.isMelee) return false; // melee approach/flanking not built yet — ranged only this pass
 
         cooldownRemaining = attackSource.attackIntervalSeconds;
         attackTarget = target;
         return true;
+    }
+
+    // Melee-specific target selection: prefers the closest candidate that currently has an OPEN flank
+    // slot over a closer-but-fully-flanked one, since claiming a slot is a hard prerequisite for a melee
+    // attacker to ever engage that target at all — a candidate with both slots taken is simply not a
+    // valid choice right now, no matter how close. Candidates with no FlankSlots component (never added
+    // to their prefab yet) are silently skipped, same "content not authored yet, not an error" tolerance
+    // as the rest of this system. Returns null if every alive candidate is fully flanked (or has no
+    // FlankSlots at all) — callers should idle at their CombatSpot/EnemySpot rather than treat this as a
+    // hard failure.
+    public static ICombatant FindBestMeleeTarget(Vector3 fromPosition, IEnumerable<ICombatant> candidates)
+    {
+        ICombatant best = null;
+        float bestSqrDistance = float.MaxValue;
+
+        foreach (ICombatant candidate in candidates)
+        {
+            if (candidate == null || candidate.CombatGameObject == null || !candidate.IsAlive) continue;
+
+            FlankSlots slots = GetFlankSlots(candidate);
+            if (slots == null || !slots.HasOpenSlot) continue;
+
+            float sqrDistance = (candidate.CombatTransform.position - fromPosition).sqrMagnitude;
+            if (sqrDistance < bestSqrDistance)
+            {
+                bestSqrDistance = sqrDistance;
+                best = candidate;
+            }
+        }
+
+        return best;
+    }
+
+    // Single lookup point for "the FlankSlots on this ICombatant" — a GetComponent call rather than an
+    // ICombatant interface addition, since FlankSlots is optional per-prefab content (not every bunny/
+    // enemy prefab has it added yet), same pattern StatusEffectController is already looked up by.
+    public static FlankSlots GetFlankSlots(ICombatant combatant)
+    {
+        return combatant?.CombatGameObject != null ? combatant.CombatGameObject.GetComponent<FlankSlots>() : null;
+    }
+
+    // World-space point meleeStandingDistance units to the given side of target's VisualCenter — never
+    // front/behind, per Combat_DesignDoc.md's positioning rules. NOTE: this project's world-X axis is
+    // inverted relative to screen space (increasing world X = screen-LEFT — see EnemyInstance.AttackOrigin's
+    // own comment on this same convention). The sign below is a first guess, not yet verified empirically
+    // against an actual Left/Right claim in Play mode — flip if a "Left"-claimed attacker visually lands
+    // on the target's right.
+    public static Vector3 ComputeFlankPosition(ICombatant target, FlankSide side)
+    {
+        float offset = CombatBalanceConfig.Instance.meleeStandingDistance;
+        float signedOffset = side == FlankSide.Left ? -offset : offset;
+        return target.VisualCenter + new Vector3(signedOffset, 0f, 0f);
     }
 
     // Called by the Animation Event placed at the attacking clip's "release" frame — instantiates the
@@ -108,9 +162,6 @@ public static class CombatEngagement
         float distance = Vector3.Distance(attacker.CombatTransform.position, target.CombatTransform.position);
         if (distance > CombatBalanceConfig.Instance.rangedMaxRange) return;
 
-        // TEMP — chasing "enemy attackOriginOffset appears mirrored" bug.
-        Debug.Log($"[VFXDEBUG] ReleaseAttack({attacker.CombatGameObject?.name}): attackerPos={attacker.CombatTransform.position} attackerRot={attacker.CombatTransform.rotation.eulerAngles} attackOrigin={attacker.AttackOrigin}");
-
         GameObject vfxObject = Object.Instantiate(attackSource.attackVFXPrefab, attacker.AttackOrigin, Quaternion.identity);
         AttackInstance instance = vfxObject.GetComponent<AttackInstance>();
         if (instance == null)
@@ -120,6 +171,7 @@ public static class CombatEngagement
             return;
         }
 
-        instance.Launch(attacker, target, isStationary: false);
+        // Melee attacks resolve stationary (in place at the target, no travel) — see AttackInstance.Launch.
+        instance.Launch(attacker, target, isStationary: attackSource.isMelee);
     }
 }

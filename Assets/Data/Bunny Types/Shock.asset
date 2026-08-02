@@ -24,6 +24,7 @@ MonoBehaviour:
   attackName: Lightning Bolt
   isMelee: 0
   attackVFXPrefab: {fileID: 65765615186785171, guid: 252ab7147e878464ab2aa17432af4ce9, type: 3}
+  attackIntervalSeconds: 2.5
   group: 1
   populationThreshold: 0
   passives: []

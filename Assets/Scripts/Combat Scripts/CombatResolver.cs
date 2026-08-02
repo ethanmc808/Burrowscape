@@ -23,8 +23,17 @@ public static class CombatResolver
         StatusEffectController attackerStatus = attacker.CombatGameObject != null ? attacker.CombatGameObject.GetComponent<StatusEffectController>() : null;
         StatusEffectController defenderStatus = defender.CombatGameObject != null ? defender.CombatGameObject.GetComponent<StatusEffectController>() : null;
 
+        // Independent of StatusEffectController above — both can be active at once (a guarding bunny hit
+        // by Burn still gets its guard buff too), so both are consulted and chained rather than one
+        // replacing the other. See GuardBuffController's own header comment for why this isn't folded
+        // into the Trait system instead.
+        GuardBuffController attackerGuardBuff = attacker.CombatGameObject != null ? attacker.CombatGameObject.GetComponent<GuardBuffController>() : null;
+        GuardBuffController defenderGuardBuff = defender.CombatGameObject != null ? defender.CombatGameObject.GetComponent<GuardBuffController>() : null;
+
         int attackerSpeed = attackerStatus != null ? attackerStatus.ModifySpeed(attacker.Stats.Speed) : attacker.Stats.Speed;
+        if (attackerGuardBuff != null) attackerSpeed = attackerGuardBuff.ModifySpeed(attackerSpeed);
         int defenderSpeed = defenderStatus != null ? defenderStatus.ModifySpeed(defender.Stats.Speed) : defender.Stats.Speed;
+        if (defenderGuardBuff != null) defenderSpeed = defenderGuardBuff.ModifySpeed(defenderSpeed);
 
         float hitChance = CombatMath.GetHitChance(attackerSpeed, defenderSpeed);
         if (Random.value > hitChance)
@@ -36,7 +45,9 @@ public static class CombatResolver
 
         int power = CombatMath.GetBasePower(attacker.Level);
         int attackStat = attackerStatus != null ? attackerStatus.ModifyAttack(attacker.Stats.Attack) : attacker.Stats.Attack;
+        if (attackerGuardBuff != null) attackStat = attackerGuardBuff.ModifyAttack(attackStat);
         int defenseStat = defenderStatus != null ? defenderStatus.ModifyDefense(defender.Stats.Defense) : defender.Stats.Defense;
+        if (defenderGuardBuff != null) defenseStat = defenderGuardBuff.ModifyDefense(defenseStat);
         defenseStat = Mathf.Max(1, defenseStat); // guard against a fully-zeroed-out Defense dividing by zero
 
         int core = (2 * attacker.Level / 5 + 2) * power * attackStat / defenseStat / 50 + 2;

@@ -41,6 +41,14 @@ public class DwellerRoster : MonoBehaviour
             .ToList();
     }
 
+    // Every bunny currently claimed to a bed in `room` (walking there or already Recovering) — mirrors
+    // GetBunniesAssignedTo's claim-based shape, just keyed on ClaimedHospitalRoom instead of
+    // AssignedJobRoom, for PatientUI's own assigned-list-with-unassign panel.
+    public List<NPCBunny> GetPatientsIn(HospitalRoom room)
+    {
+        return allBunnies.Where(b => b.ClaimedHospitalRoom == room).ToList();
+    }
+
     // Candidate pool for GuardDeployUI's manual-reinforcement panel — any resident bunny safely pullable
     // mid-activity to go fight: Idle (holds no claim), Working, or Relaxing (both leave their claim
     // intact when interrupted — see NPCBunny.BeginDefending's own comment — so ReturnToPreviousActivity

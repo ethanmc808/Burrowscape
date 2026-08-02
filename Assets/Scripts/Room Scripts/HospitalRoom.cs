@@ -152,8 +152,15 @@ public class HospitalRoom : RoomBase, IJobRoom
             int healAmount = Mathf.RoundToInt(rate * healTickInterval);
             if (healAmount <= 0) continue;
 
+            // bedOccupants is populated the instant a bed is CLAIMED (RequestBed, called by PatientUI
+            // before the patient has actually walked there — see AssignToHospitalBed's MoveAlongPath),
+            // not once they arrive. Only heal patients who've actually reached their bed (CurrentState ==
+            // Recovering) — a claimed-but-still-walking patient is still BunnyState.MovingToSpot.
             foreach (NPCBunny patient in bedOccupants.Values.ToList())
+            {
+                if (patient.CurrentState != BunnyState.Recovering) continue;
                 patient.HealHP(healAmount);
+            }
         }
     }
 }

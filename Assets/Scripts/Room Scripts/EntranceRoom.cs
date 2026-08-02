@@ -21,6 +21,7 @@ public class EntranceRoom : RoomBase, IJobRoom
         base.OnEnable();
         BaseLayoutManager.Instance?.SetEntranceRoom(this);
         GateQueueManager.Instance?.SetEntranceRoom(this);
+        EntranceGate.Instance?.SetEntranceRoom(this);
     }
 
     public RoomSpot RequestSpot(NPCBunny bunny)

@@ -47,6 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AttackInstance
   travelSpeed: 100
   arrivalThreshold: 0.1
+  travelDelaySeconds: 0
   useArcMotion: 0
   arcHeight: 2
   trailFollower: {fileID: 0}
@@ -55,7 +56,7 @@ MonoBehaviour:
   impactVFX: {fileID: 0}
   impactLingerSeconds: 1.525
   clearInstantlyOnResolve: []
-  launchSFX: {fileID: 0}
+  launchSFX: {fileID: 8300000, guid: 0f53e3146c4cf274fae3ab10f52ccf6f, type: 3}
   impactSFX: {fileID: 0}
 --- !u!1 &1311482729611994638
 GameObject:

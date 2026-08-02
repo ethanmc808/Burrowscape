@@ -123,6 +123,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
     [Header("HP (Foraging's encounter resolver and base-defense combat both spend this — see Foraging_DesignDoc.md / Combat_DesignDoc.md)")]
     [Tooltip("Current HP. Initialized to Stats.HP whenever Stats changes (spawn, LevelUp) and never exceeds it. Foraging's placeholder encounter resolver floors at 1 and never reduces this to 0; base-defense combat (TakeCombatDamage) is the only thing that can, at which point the bunny faints (BunnyState.Fainted) until revived to 1 HP once the invasion clears.")]
     [SerializeField] private int currentHP = 1;
+    // Grade 3 Guard Room shield buffer — a separate absorb pool, not extra max HP (see TakeCombatDamage).
+    // Both 0 whenever this bunny isn't currently posted at a Grade 3+ Guard Room; granted/cleared wholesale
+    // by GuardRoom, never regenerates, never persists across unassignment.
+    private int currentShieldHP;
+    private int maxShieldHP;
     [Tooltip("Sleeping's HP regen is derived from actual energy gained, not a flat per-second rate — this is the fraction of max HP restored per point of energy gained (0.005 = 0.5%, i.e. 2 energy restored = 1% max HP, so a full 0->100 energy night heals 50% of max HP). Automatically inherits Bedroom.GradeMultiplier scaling since it's driven off the energy gain, which is already scaled.")]
     [SerializeField] private float hpPercentOfMaxPerEnergyRestored = 0.005f;
     [Tooltip("Slow always-on passive regen (ticks in every state except Sleeping, which uses the formula above instead, and Fainted, which must stay at 0 until StopDefendingAndReturn's battle-end revive). 0.005 = 0.5% max HP/sec, i.e. 1% every 2 seconds. Multiplied by any active Regrowth-style HPRegenMultiplier passive (see GetPassiveHPRegenMultiplier).")]
@@ -214,6 +219,8 @@ public class NPCBunny : MonoBehaviour, ICombatant
     public float EnergyValue => energy;
     public float MoodValue => mood;
     public int HPValue => currentHP;
+    public int ShieldValue => currentShieldHP;
+    public int MaxShieldValue => maxShieldHP;
     public bool IsAssignedToJob => assignedJobRoom != null;
     public IJobRoom AssignedJobRoom => assignedJobRoom;
     public LivingRoom ClaimedRelaxRoom => claimedRelaxRoom;
@@ -326,6 +333,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
     private RoomSpot claimedHospitalBedSpot;
     private HospitalRoom claimedHospitalRoom;
     public bool IsHospitalized => claimedHospitalRoom != null;
+    public HospitalRoom ClaimedHospitalRoom => claimedHospitalRoom;
 
     // Combat AI (see CombatEngagement) — always targets whichever enemy in defendingRoom is closest, per
     // Ethan's design (a future quest system will let the player override this by clicking a target; that's
@@ -336,6 +344,20 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // an Animation Event on this type's Attacking clip, at its "release" frame) — see CombatEngagement's
     // own comment for why firing is split into these two phases instead of instant-on-cooldown.
     private ICombatant pendingAttackTarget;
+
+    // Melee-only combat state (see HandleMeleeDefending) — null/unset whenever this bunny isn't currently
+    // holding a flank slot on a target. Distinct from currentCombatTarget/attackCooldownRemaining above
+    // (shared ranged+melee cooldown bookkeeping, unchanged) since only melee needs to track "who am I
+    // physically flanking right now" and on which side.
+    private FlankSlots claimedFlankSlots;
+    private ICombatant claimedFlankTarget;
+    private FlankSide claimedFlankSide;
+
+    // Lazily created the first time this bunny ever needs to walk to a flank position, then reused for
+    // every subsequent flank walk (repositioned in place rather than Instantiate/Destroy per trip) — a
+    // flank destination is a computed Vector3 next to a target, not an authored room Transform, so
+    // MoveAlongPath's normal RoomSpot-based waypoints don't apply here.
+    private Transform flankWaypoint;
 
     // Which room (if any) this bunny currently holds a proximity-ambient ref count against, per need —
     // see SyncProximityAmbient. Tracked separately from cafeteriaBeingUsed/waterRoomBeingUsed/
@@ -753,9 +775,16 @@ public class NPCBunny : MonoBehaviour, ICombatant
     }
 
     // Called by the same job room's OnRoomRestored once it's operational again, for everyone it idled.
+    // Only actually resumes if the bunny is still exactly where ForceIdleDueToRoomShutdown left it (Idle,
+    // job claim intact, per IsIdledByRoomShutdown) — a bunny can be added to a room's idledByShutdown
+    // list at shutdown time and then move on to something else entirely before restore happens (e.g. an
+    // injured worker sent to the Hospital mid-shutdown: AssignToHospitalBed deliberately leaves
+    // assignedJobRoom/claimedWorkSpot untouched, so without this guard, the ORIGINAL job room coming back
+    // online would forcibly yank CurrentState back to Working — visibly interrupting Recovering and
+    // silently halting HospitalRoom.HealPatientsRoutine's healing, confirmed as a real bug in testing).
     public void ResumeWorkAfterRoomRestored()
     {
-        if (assignedJobRoom == null || claimedWorkSpot == null) return;
+        if (!IsIdledByRoomShutdown()) return;
         CurrentState = BunnyState.Working;
         assignedJobRoom.NotifyBunnyReadyToWork(this);
     }
@@ -1391,6 +1420,22 @@ public class NPCBunny : MonoBehaviour, ICombatant
         currentHP = Mathf.Clamp(currentHP + Mathf.Max(0, amount), 1, Stats.HP);
     }
 
+    // Called by GuardRoom on assignment to a Grade 3+ post — grants the shield at full, no ramp-up.
+    // Overwrites whatever shield state existed before (there's no stacking/accumulation across
+    // re-assignment — see the header comment on currentShieldHP/maxShieldHP).
+    public void GrantShield(int amount)
+    {
+        maxShieldHP = Mathf.Max(0, amount);
+        currentShieldHP = maxShieldHP;
+    }
+
+    // Called by GuardRoom on unassignment (or shutdown) — full reset, no partial persistence.
+    public void ClearShield()
+    {
+        maxShieldHP = 0;
+        currentShieldHP = 0;
+    }
+
     // ---------- ICombatant (see Combat_DesignDoc.md) ----------
     // Deliberately separate from ApplyForagingDamage above — that method floors at 1 by design (Foraging
     // never kills, per its own design doc), whereas real combat damage can and does reach 0. Fainting
@@ -1428,7 +1473,19 @@ public class NPCBunny : MonoBehaviour, ICombatant
     public void TakeCombatDamage(int amount)
     {
         if (currentHP <= 0) return; // already fainted — no further hits matter until StopDefendingAndReturn revives it
-        currentHP = Mathf.Max(0, currentHP - Mathf.Max(0, amount));
+
+        // Grade 3 Guard Room shield — a separate absorb pool, not extra max HP, so it reads as its own
+        // thing ("37/50 shield") and is always the first thing depleted. Granted/cleared wholesale by
+        // GuardRoom on assignment/unassignment (see GrantShield/ClearShield) — no regen, no persistence.
+        int remaining = Mathf.Max(0, amount);
+        if (currentShieldHP > 0)
+        {
+            int shieldAbsorbed = Mathf.Min(currentShieldHP, remaining);
+            currentShieldHP -= shieldAbsorbed;
+            remaining -= shieldAbsorbed;
+        }
+
+        currentHP = Mathf.Max(0, currentHP - remaining);
         if (currentHP != 0) return;
 
         OnDefeated?.Invoke();
@@ -1445,6 +1502,16 @@ public class NPCBunny : MonoBehaviour, ICombatant
         // still find and revive/recall it once the invasion clears, same as before this change.
         if (defendingRoom != null && defendingSpot != null)
             defendingRoom.ReleaseCombatSpot(defendingSpot, this);
+
+        // Same "release immediately, don't wait for battle-end" reasoning as the CombatSpot above — a
+        // fainted melee bunny would otherwise permanently occupy a flank slot on its target for the rest
+        // of the fight (and beyond, since nothing else ever clears it).
+        if (claimedFlankSlots != null)
+        {
+            claimedFlankSlots.ReleaseSlot(this);
+            claimedFlankSlots = null;
+            claimedFlankTarget = null;
+        }
     }
 
     // Fades this bunny's sprite to faintFadeTargetAlpha once it collapses — timed to start at
@@ -3052,6 +3119,13 @@ public class NPCBunny : MonoBehaviour, ICombatant
     {
         if (InvasionManager.Instance == null || defendingRoom == null) return;
 
+        BunnyTypeDefinition attackSource = ((ICombatant)this).AttackSource;
+        if (attackSource != null && attackSource.isMelee)
+        {
+            HandleMeleeDefending();
+            return;
+        }
+
         List<ICombatant> candidatePoolList = InvasionManager.Instance.GetEnemiesInRoom(defendingRoom).Cast<ICombatant>().ToList();
         bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentCombatTarget, ref attackCooldownRemaining, candidatePoolList, out ICombatant attackTarget);
 
@@ -3064,6 +3138,77 @@ public class NPCBunny : MonoBehaviour, ICombatant
         pendingAttackTarget = attackTarget;
         if (animator != null)
             animator.SetTrigger(isAttackingParam);
+    }
+
+    // Melee counterpart to HandleDefending above — a melee defender can't just fire from wherever it's
+    // standing (its CombatSpot) the way ranged does, it has to physically walk to and hold a flank
+    // position beside ONE specific target first. Split into two branches: already flanking someone (fight,
+    // or release-and-retarget if that target died), or not yet flanking anyone (find a target with an open
+    // FlankSlots slot and start walking there).
+    private void HandleMeleeDefending()
+    {
+        if (claimedFlankSlots != null)
+        {
+            if (claimedFlankTarget == null || claimedFlankTarget.CombatGameObject == null || !claimedFlankTarget.IsAlive)
+            {
+                claimedFlankSlots.ReleaseSlot(this);
+                claimedFlankSlots = null;
+                claimedFlankTarget = null;
+                return; // re-evaluate fresh next frame — pick a new target below
+            }
+
+            // Pinned single-target pool: a flanking melee attacker must NOT retarget to "whatever's
+            // closest now" the way ranged does (CombatEngagement's own header comment) — it's physically
+            // committed to the one target it walked up to and claimed a slot on.
+            List<ICombatant> pinnedPool = new List<ICombatant> { claimedFlankTarget };
+            bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentCombatTarget, ref attackCooldownRemaining, pinnedPool, out ICombatant attackTarget);
+            if (!startedWindUp) return;
+
+            pendingAttackTarget = attackTarget;
+            if (animator != null)
+                animator.SetTrigger(isAttackingParam);
+            return;
+        }
+
+        List<ICombatant> candidatePool = InvasionManager.Instance.GetEnemiesInRoom(defendingRoom).Cast<ICombatant>().ToList();
+        ICombatant chosen = CombatEngagement.FindBestMeleeTarget(transform.position, candidatePool);
+        if (chosen == null) return; // nobody in the room has an open flank slot right now — idle at CombatSpot until one frees
+
+        FlankSlots slots = CombatEngagement.GetFlankSlots(chosen);
+        if (slots == null || !slots.TryClaimSlot(this, out FlankSide side)) return; // no FlankSlots authored on this target yet, or lost the claim race — retry next frame
+
+        claimedFlankSlots = slots;
+        claimedFlankSide = side;
+        claimedFlankTarget = chosen;
+
+        Vector3 flankPoint = CombatEngagement.ComputeFlankPosition(chosen, side);
+        // Standing left of the target means facing right, toward it, and vice versa.
+        MoveToFlankPosition(flankPoint, faceRightOnArrival: side == FlankSide.Left);
+    }
+
+    // Walks this bunny to an arbitrary world-space point within its current combat room, rather than a
+    // RoomSpot the way every other MoveAlongPath call in this file targets — a flank position is a
+    // computed offset from a live target, not an authored room Transform. Reuses MoveAlongPath's own
+    // pendingFacingOverride/currentPath/pendingStateOnArrival machinery directly instead of going through
+    // MoveAlongPath itself (which requires a RoomSpot parameter) since flankWaypoint is a single reused
+    // scratch Transform, not a room-authored one. pendingStateOnArrival stays BunnyState.Defending, so
+    // arrival re-dispatches through OnArrivedAtDefendingSpot — verified safe to reuse for this: that method
+    // re-derives currentRoom/currentSpot from defendingRoom/defendingSpot directly, never from
+    // currentTargetSpot (which this leaves null), so reusing it here is a true no-op for those fields.
+    private void MoveToFlankPosition(Vector3 worldPosition, bool faceRightOnArrival)
+    {
+        if (flankWaypoint == null)
+        {
+            flankWaypoint = new GameObject($"~{name} FlankWaypoint (runtime)").transform;
+        }
+        flankWaypoint.position = worldPosition;
+
+        pendingFacingOverride = faceRightOnArrival;
+        currentTargetSpot = null; // not a RoomSpot — facing on arrival comes from pendingFacingOverride above instead
+        currentPath = new Queue<Transform>(new List<Transform> { flankWaypoint });
+        pendingStateOnArrival = BunnyState.Defending;
+        CurrentState = BunnyState.MovingToSpot;
+        AdvanceToNextWaypoint();
     }
 
     // Animation Event receiver — place this on this type's Attacking clip (via its Animator Override
@@ -3135,6 +3280,16 @@ public class NPCBunny : MonoBehaviour, ICombatant
         defendingRoom.ReleaseCombatSpot(defendingSpot, this);
         defendingSpot = null;
         defendingRoom = null;
+
+        // Melee-only cleanup — releases whatever this bunny was flanking, if anything, on recall. In
+        // practice the target is almost always already dead/gone by the time an invasion actually clears,
+        // but this stays unconditional for correctness/symmetry with the CombatSpot release above.
+        if (claimedFlankSlots != null)
+        {
+            claimedFlankSlots.ReleaseSlot(this);
+            claimedFlankSlots = null;
+            claimedFlankTarget = null;
+        }
 
         ReturnToPreviousActivity();
     }

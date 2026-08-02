@@ -283,6 +283,27 @@ public class BaseLayoutManager : MonoBehaviour
         return roomsByFloor[floor].OrderBy(r => r.GridX).ToList();
     }
 
+    // The room, if any, sitting immediately next to the Entrance on its own floor — the chokepoint
+    // position InvasionManager.PickTargetRoom consults so raids always hit whatever's built there first,
+    // regardless of room type (placement is what matters, not what's placed — see Combat_DesignDoc.md's
+    // Guard Room section). Entrance is always the last index in GetOrderedRooms' ascending-GridX order
+    // (see GetRouteToSpot's own "BaseEntrance sits at the visually-leftmost position" comment above) —
+    // this checks whether the next room over is actually touching, not merely next in sort order, since a
+    // gap between them would mean nothing is really adjacent yet (reuses the exact same interval-touching
+    // primitives IsContiguousRun/RefreshDoorwaysForFloor already use, rather than a new concept).
+    public RoomBase GetRoomAdjacentToEntrance()
+    {
+        List<RoomBase> ordered = GetOrderedRooms(EntranceFloorIndex);
+        if (ordered.Count < 2) return null;
+
+        RoomPlacementValidator.GetInterval(ordered[ordered.Count - 1], out float entranceMin, out _);
+        RoomPlacementValidator.GetInterval(ordered[ordered.Count - 2], out _, out float candidateMax);
+
+        return Mathf.Abs(candidateMax - entranceMin) < RoomPlacementValidator.Epsilon
+            ? ordered[ordered.Count - 2]
+            : null;
+    }
+
     // startFloorOverride: the floor the bunny is ACTUALLY standing on right now. Defaults to
     // startRoom.FloorIndex, which is correct for every normal room (one room, one floor) — but a
     // LiftRoom's FloorIndex only ever represents its primary floor, so callers routing a bunny that's

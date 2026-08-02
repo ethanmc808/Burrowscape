@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using System.Linq;
 
 public class AssignmentUI : MonoBehaviour
 {
@@ -57,14 +58,16 @@ public class AssignmentUI : MonoBehaviour
 
     // playSound=false is used by confirm actions (e.g. AssignAndClose) that close this panel as a side
     // effect of succeeding — PlayUIClose is reserved for an actual Close/Back button press, not layered
-    // on top of the confirm action's own PlayButtonClick. Propagated through the RoomUpgradeUI cross-close
-    // too, so assigning a bunny never plays either panel's close cue.
+    // on top of the confirm action's own PlayButtonClick. Propagated through the RoomUpgradeUI/PatientUI
+    // cross-closes too, so assigning a bunny never plays any of the three panels' close cue twice.
     public void Close(bool playSound)
     {
-        // Room clicks always open AssignmentUI and RoomUpgradeUI together (see RoomClickHandler/
-        // RoomUpgradeClickHandler), so either one's Close button should close both rather than making
-        // the player dismiss each separately. The activeSelf guard makes this idempotent, which is what
-        // stops the two Close() calls from recursing into each other forever.
+        // Room clicks always open AssignmentUI alongside RoomUpgradeUI (see RoomClickHandler/
+        // RoomUpgradeClickHandler) and, for a Hospital specifically, PatientUI too — so any one panel's
+        // Close button should close all of them rather than making the player dismiss each separately.
+        // PatientUI has no close button of its own for exactly this reason (see its own header comment:
+        // "opens alongside AssignmentUI"). The activeSelf guard makes this idempotent, which is what
+        // stops the Close() calls from recursing into each other forever.
         if (!panelRoot.activeSelf) return;
 
         panelRoot.SetActive(false);
@@ -72,6 +75,7 @@ public class AssignmentUI : MonoBehaviour
         currentRoom = null;
         ClearSelection();
         RoomUpgradeUI.Instance?.Close(playSound);
+        PatientUI.Instance?.Close(playSound);
     }
 
     private void PopulateLists()
@@ -86,6 +90,11 @@ public class AssignmentUI : MonoBehaviour
             Destroy(child.gameObject);
 
         List<NPCBunny> unassigned = DwellerRoster.Instance.GetUnassignedBunnies();
+
+        // Guard Room specifically wants its strongest candidates surfaced first — a simple re-sort of the
+        // same list, no bunnies hidden. Every other room type is unaffected (registration order, as before).
+        if (currentRoom is GuardRoom)
+            unassigned = unassigned.OrderByDescending(b => b.Level).ToList();
 
         foreach (NPCBunny bunny in unassigned)
         {

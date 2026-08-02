@@ -100,6 +100,28 @@ public class CombatBalanceConfig : ScriptableObject
     [Tooltip("Left + right slot, per target, both bunny-on-enemy and enemy-on-bunny.")]
     public int maxFlankersPerTarget = 2;
 
+    [Header("Guard Room Buffs")]
+    [Tooltip("Grade 1+ — Attack multiplier applied via GuardBuffController while a bunny is posted at a Guard Room. Values TBD/tunable.")]
+    public float guardGrade1AttackMultiplier = 1.2f;
+    [Tooltip("Grade 1+ — Defense multiplier, same lifecycle as the Attack multiplier above.")]
+    public float guardGrade1DefenseMultiplier = 1.2f;
+    [Tooltip("Grade 3 only — Speed multiplier, granted/revoked alongside the shield buffer below.")]
+    public float guardGrade3SpeedMultiplier = 1.15f;
+    [Tooltip("Grade 3 only — flat HP shield buffer granted at full on assignment, cleared entirely on unassignment. Absorbs damage before real HP (see NPCBunny.TakeCombatDamage).")]
+    public int guardGrade3ShieldAmount = 50;
+
+    [Header("Entrance Gate")]
+    [Tooltip("Gate HP by Entrance Room grade — raiders must destroy the gate before entering.")]
+    public int gateGrade1MaxHP = 200;
+    public int gateGrade2MaxHP = 350;
+    public int gateGrade3MaxHP = 550;
+    [Tooltip("Gate Defense by Entrance Room grade.")]
+    public int gateGrade1Defense = 10;
+    public int gateGrade2Defense = 20;
+    public int gateGrade3Defense = 35;
+    [Tooltip("Fixed, NOT per-grade — deliberately low so enemies rarely miss the gate.")]
+    public int gateSpeed = 1;
+
     [Header("Enemy Leveling By Population")]
     [Tooltip("Same ramp shape as WildBunnySpawner's population-based level ramp, separate knobs per the design doc.")]
     public int levelRampStartPopulation = 10;

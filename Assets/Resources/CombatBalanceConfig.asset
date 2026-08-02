@@ -39,9 +39,28 @@ MonoBehaviour:
   rangedMaxRange: 12
   meleeStandingDistance: 0.5
   maxFlankersPerTarget: 2
+  guardGrade1AttackMultiplier: 1.2
+  guardGrade1DefenseMultiplier: 1.2
+  guardGrade3SpeedMultiplier: 1.15
+  guardGrade3ShieldAmount: 50
+  gateGrade1MaxHP: 2
+  gateGrade2MaxHP: 4
+  gateGrade3MaxHP: 6
+  gateGrade1Defense: 1
+  gateGrade2Defense: 2
+  gateGrade3Defense: 3
+  gateSpeed: 1
   levelRampStartPopulation: 10
   levelRampCapPopulation: 200
   levelRampStartMinLevel: 1
   levelRampStartMaxLevel: 3
   levelRampCapMinLevel: 45
   levelRampCapMaxLevel: 50
+  invasionStartMinWaitMinutes: 3
+  invasionStartMaxWaitMinutes: 6
+  invasionCapMinWaitMinutes: 20
+  invasionCapMaxWaitMinutes: 30
+  invasionGroupSizeStartMin: 1
+  invasionGroupSizeStartMax: 1
+  invasionGroupSizeCapMin: 2
+  invasionGroupSizeCapMax: 3

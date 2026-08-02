@@ -9728,8 +9728,8 @@ MonoBehaviour:
   impactVFX: {fileID: 2110641761484229438}
   impactLingerSeconds: 2.35
   clearInstantlyOnResolve: []
-  launchSFX: {fileID: 0}
-  impactSFX: {fileID: 0}
+  launchSFX: {fileID: 8300000, guid: 09619f6e87385934ea2b77959b2e9106, type: 3}
+  impactSFX: {fileID: 8300000, guid: 6c8e9c0dcfe18cb40916e5a2214e2569, type: 3}
 --- !u!1 &3040492037718411434
 GameObject:
   m_ObjectHideFlags: 0
