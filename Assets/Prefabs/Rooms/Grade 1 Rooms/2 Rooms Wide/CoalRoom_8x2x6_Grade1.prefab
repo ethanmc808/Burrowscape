@@ -785,9 +785,15 @@ MonoBehaviour:
     targetSpot: {fileID: 468752106746250703}
     waypoints:
     - {fileID: 7020160883281837471}
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 8
   grade: 1
   gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 04000000
   roomTypeId: CoalRoom
   shovelingSpots:
   - {fileID: 9184088085778036738}
@@ -797,6 +803,8 @@ MonoBehaviour:
   diminishingReturnsRate: 0.7
   recommendedTypes: 04000000
   typeMatchProductionBonus: 0.25
+  workAmbientClip: {fileID: 0}
+  workingAmbientClip: {fileID: 0}
 --- !u!114 &3115212270289717087
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -230,6 +230,7 @@ MonoBehaviour:
   moodGainPerSecondSleeping: 0.02
   moodDecayPerSecondIdlePacing: 0.1
   animator: {fileID: 3652824776330976974}
+  defaultWorkingClip: {fileID: 7400000, guid: 62d73262bd9c4bf487802b9e25ae9aa1, type: 2}
   isMovingParam: IsMoving
   isWorkingParam: IsWorking
   isEatingParam: IsEating

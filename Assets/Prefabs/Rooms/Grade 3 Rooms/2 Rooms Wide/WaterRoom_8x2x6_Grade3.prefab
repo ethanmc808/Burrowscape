@@ -635,13 +635,15 @@ MonoBehaviour:
     targetSpot: {fileID: 8137362496756005382}
     waypoints:
     - {fileID: 5481895144549414613}
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 8
   grade: 3
   gradeMultiplier: 2
   baseXPPerSecond: 0.25
   typeMatchXPBonus: 0.25
   xpGradeMultiplier: 1
-  xpRecommendedTypes: 
+  xpRecommendedTypes: 02000000
   roomTypeId: WaterRoom
   productionSpots:
   - {fileID: 7612317831466647811}
@@ -661,6 +663,7 @@ MonoBehaviour:
   recommendedTypes: 02000000
   typeMatchProductionBonus: 0.25
   workAmbientClip: {fileID: 8300000, guid: ee511615537162041a7bebb83a9653f7, type: 3}
+  workingAmbientClip: {fileID: 0}
 --- !u!65 &5538231150619298028
 BoxCollider:
   m_ObjectHideFlags: 0

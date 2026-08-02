@@ -16,7 +16,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   prefab: {fileID: 8566267086749515906, guid: 12582f138c32210458cf582c2c53ef47, type: 3}
   footprint: {x: 4, y: 2, z: 6}
-  roomTypeId: hospital
+  roomTypeId: Hospital
   grade: 1
   goldCost: 200
   isLiftSegment: 0

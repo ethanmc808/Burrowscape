@@ -6,6 +6,23 @@ using System.Linq;
 using UnityEditor;
 #endif
 
+// Which dedicated Animator "Working_*" state a room's workers should play (see
+// WorkingWanderPoints_DesignDoc.md's Animation Override section) — a small fixed set of pre-authored
+// states/clips, NOT an arbitrary AnimationClip reference. Deliberately replaces an earlier
+// AnimatorOverrideController-based design that swapped clips at runtime: that approach corrupted leg
+// bone playback for this rig (confirmed via isolating the wrap, the collision fix, and finally ruling
+// out everything except the runtime clip-swap itself), so this rework avoids ANY runtime clip
+// reassignment — WorkAnimIndex just selects between states that were always part of the graph, the
+// same mechanism every other spoke (Eating/Drinking/Sleeping/etc.) already uses reliably. Adding a new
+// working animation later means adding one more enum value here AND one more dedicated
+// "Working_<Name>" state + transitions in NPC_Rabbit_Neutral_Controller.controller — not a code change
+// beyond this enum and NPCBunny's int cast.
+public enum WorkAnimationKind
+{
+    Idle = 0,
+    Gardening = 1,
+}
+
 public class RoomBase : MonoBehaviour
 {
     [Header("Power")]
@@ -34,6 +51,12 @@ public class RoomBase : MonoBehaviour
     [Header("Worker Decay Rates (while Working in this room)")]
     [SerializeField] protected float workerEnergyDecayPerSecond = 0.2f; // matches NPCBunny's prior flat default
     [SerializeField] protected float workerMoodDecayPerSecond = 0f;
+
+    // Per-room selector for which dedicated Working_* Animator state this room's workers play — see
+    // WorkAnimationKind's own comment above. Idle (0) is the default and needs no authoring; only rooms
+    // wanting a distinct working pose (Garden Room -> Gardening) need to set this.
+    [SerializeField] protected WorkAnimationKind workingAnimationKind = WorkAnimationKind.Idle;
+    public WorkAnimationKind WorkingAnimationKind => workingAnimationKind;
 
     public bool ConsumesPower => consumesPower;
     public float PowerConsumptionAmount => powerConsumptionAmount;
@@ -155,6 +178,31 @@ public class RoomBase : MonoBehaviour
     public Transform MiddleLeft => middleLeft;
     public Transform MiddleRight => middleRight;
     public List<Transform> PassThroughWaypoints => passThroughWaypoints;
+
+    // Working-state local wander chain for a job spot (see WorkingWanderPoints_DesignDoc.md) — the spot
+    // itself is index 0, followed by its "SpotName_WanderLocation_NN" children in name order, forming a
+    // strictly linear chain (no branching). Resolved by name rather than a serialized list, same
+    // reasoning as the doorway pieces above: authoring is just placing/naming child Transforms, no
+    // per-spot Inspector wiring needed. Returns a single-element list (just the spot) if no wander
+    // locations have been authored yet — callers treat that as "stand still", the same behavior as
+    // before this feature existed, so rooms can be retrofitted one at a time.
+    public List<Transform> GetWorkWanderChain(RoomSpot spot)
+    {
+        List<Transform> chain = new List<Transform> { spot.transform };
+
+        string prefix = spot.name + "_WanderLocation_";
+        List<Transform> matches = new List<Transform>();
+        foreach (Transform t in GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name.StartsWith(prefix))
+                matches.Add(t);
+        }
+        matches.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+
+        chain.AddRange(matches);
+        return chain;
+    }
+
     public List<Transform> GetWanderPoints()
     {
         List<Transform> points = new List<Transform>();

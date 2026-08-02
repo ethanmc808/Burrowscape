@@ -801,6 +801,7 @@ MonoBehaviour:
   carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 1
   leftEntrance: {fileID: 811547279420599026}
   rightEntrance: {fileID: 5392654038108854841}
   middleLeft: {fileID: 9148878152707528837}
@@ -821,13 +822,15 @@ MonoBehaviour:
   - entrance: {fileID: 5392654038108854841}
     targetSpot: {fileID: 4191936910316496395}
     waypoints: []
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 12
   grade: 3
   gradeMultiplier: 2
   baseXPPerSecond: 0.25
   typeMatchXPBonus: 0.25
   xpGradeMultiplier: 1
-  xpRecommendedTypes: 
+  xpRecommendedTypes: 03000000
   roomTypeId: Garden
   farmingSpots:
   - {fileID: 87078019840192008}

@@ -144,6 +144,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
     [Header("Animation")]
     [SerializeField] private Animator animator;
+    // Selects which dedicated Working_* Animator state plays (see RoomBase.WorkAnimationKind's header
+    // comment for why this replaced an earlier AnimatorOverrideController-based design — that approach
+    // broke leg bone playback for this rig by reassigning clips at runtime; a plain int parameter has
+    // none of that risk, same as every other bool param below).
+    [SerializeField] private string workAnimIndexParam = "WorkAnimIndex";
     [SerializeField] private string isMovingParam = "IsMoving";
     [SerializeField] private string isWorkingParam = "IsWorking";
     [SerializeField] private string isEatingParam = "IsEating";
@@ -370,6 +375,24 @@ public class NPCBunny : MonoBehaviour, ICombatant
     private RoomBase currentRoom;
     private RoomSpot currentSpot; // the spot bunny is currently occupying, null if none/mid-transit
     private Transform currentWanderPoint; // last wander destination reached, null if occupying a RoomSpot instead
+
+    // Working-state local wander chain (see WorkingWanderPoints_DesignDoc.md) — a cosmetic movement loop
+    // layered on top of an already-claimed work spot, entirely separate from the CurrentState machine
+    // that drives normal cross-room travel (MovingToSpot/currentPath/currentWaypointTarget below).
+    // Deliberately self-contained: CurrentState stays Working for the whole loop (never flips to
+    // MovingToSpot) so production/XP coroutines that gate on CurrentState == Working, and
+    // HandleNeedsCheckWhileWorking's own interrupt checks, both keep running uninterrupted regardless of
+    // whether the bunny is currently dwelling or mid-hop. currentSpot is deliberately NEVER cleared by
+    // this system (unlike OnArrivedAtWanderPoint's Living-Room-pacing precedent) — see
+    // WorkingWanderPoints_DesignDoc.md's "Interruption Handling" section for why that's the one thing
+    // that must hold for hunger/thirst/sleep interrupts to keep routing through the room's authored
+    // stairs/exit path instead of a naive straight line.
+    private List<Transform> workWanderChain; // [spot, WanderLocation_01, WanderLocation_02, ...]; null/single-element = nothing authored, stand still
+    private int workWanderCurrentIndex; // index into workWanderChain of the bunny's last confirmed (dwelling) position
+    private int workWanderTargetIndex; // index being walked toward, only meaningful while workWanderPath != null
+    private Queue<Transform> workWanderPath; // remaining intermediate chain points for the current hop; null when dwelling
+    private Transform workWanderWaypointTarget; // current sub-step of workWanderPath being walked toward
+    private float workWanderDwellRemaining;
 
     // The floor the bunny is ACTUALLY on right now. Tracked separately from currentRoom.FloorIndex
     // because currentRoom can be a LiftRoom, whose own FloorIndex only ever represents its primary
@@ -2060,6 +2083,104 @@ public class NPCBunny : MonoBehaviour, ICombatant
         currentWanderPoint = null;
         currentFloorIndex = currentRoom.FloorIndex;
         assignedJobRoom.NotifyBunnyReadyToWork(this);
+        BeginWorkWander();
+    }
+
+    // Resets the local wander loop to "freshly arrived at the spot, dwelling" — called once per real
+    // arrival at a work spot (both a fresh assignment and a resume-after-eating/drinking walk-back, since
+    // both route through OnArrivedAtWorkSpot). currentSpot is left untouched here (already set by the
+    // caller) since it must never be cleared for the interrupt-routing reason described where the wander
+    // fields are declared above.
+    private void BeginWorkWander()
+    {
+        workWanderChain = ((RoomBase)assignedJobRoom).GetWorkWanderChain(claimedWorkSpot);
+        workWanderCurrentIndex = 0;
+        workWanderPath = null;
+        workWanderWaypointTarget = null;
+        workWanderDwellRemaining = RollWorkWanderDwellSeconds();
+    }
+
+    private float RollWorkWanderDwellSeconds()
+    {
+        return Random.Range(WorkWanderConfig.Instance.workWanderMinIntervalSeconds, WorkWanderConfig.Instance.workWanderMaxIntervalSeconds);
+    }
+
+    // Ticked every frame from HandleNeedsCheckWhileWorking while no need interrupt fired this frame — see
+    // that method. No-op (bunny just stands at the spot, today's pre-existing behavior) until this room's
+    // spot has WanderLocation children authored.
+    private void TickWorkWander()
+    {
+        if (workWanderChain == null || workWanderChain.Count <= 1) return;
+
+        if (workWanderPath != null)
+        {
+            StepWorkWanderMovement();
+            return;
+        }
+
+        workWanderDwellRemaining -= Time.deltaTime;
+        if (workWanderDwellRemaining > 0f) return;
+
+        PickNextWorkWanderTarget();
+    }
+
+    // Picks a random OTHER point in the chain and queues every intermediate chain point between the
+    // current and target index, in order — never a direct line — so a hop from index 0 to index 3 always
+    // walks through 1 and 2 first, same as the design doc's "no clipping through obstacles" requirement.
+    private void PickNextWorkWanderTarget()
+    {
+        int targetIndex;
+        do { targetIndex = Random.Range(0, workWanderChain.Count); } while (targetIndex == workWanderCurrentIndex);
+
+        int step = targetIndex > workWanderCurrentIndex ? 1 : -1;
+        List<Transform> hop = new List<Transform>();
+        for (int i = workWanderCurrentIndex + step; ; i += step)
+        {
+            hop.Add(workWanderChain[i]);
+            if (i == targetIndex) break;
+        }
+
+        workWanderTargetIndex = targetIndex;
+        workWanderPath = new Queue<Transform>(hop);
+        workWanderWaypointTarget = null;
+    }
+
+    // Mirrors HandleMovingToSpot's movement math (same moveSpeed/arrivalThreshold/SetFacing shape) but is
+    // entirely self-contained — never touches CurrentState, currentPath, currentWaypointTarget, or
+    // pendingStateOnArrival, so it can run underneath BunnyState.Working without disturbing the real
+    // travel state machine. Moves at moveSpeed scaled by WorkWanderConfig.workWanderSpeedMultiplier (a
+    // working bunny puttering around its post should read slower than one traveling cross-room) — see
+    // UpdateAnimator for the matching Animator playback-speed scale, so feet don't slide.
+    private void StepWorkWanderMovement()
+    {
+        if (workWanderWaypointTarget == null)
+        {
+            if (workWanderPath.Count == 0)
+            {
+                // Hop complete — settle into dwelling at the new chain position.
+                workWanderCurrentIndex = workWanderTargetIndex;
+                currentWanderPoint = workWanderChain[workWanderCurrentIndex];
+                workWanderPath = null;
+                workWanderDwellRemaining = RollWorkWanderDwellSeconds();
+                return;
+            }
+
+            workWanderWaypointTarget = workWanderPath.Dequeue();
+        }
+
+        Vector3 toTarget = workWanderWaypointTarget.position - transform.position;
+        if (toTarget.magnitude <= arrivalThreshold)
+        {
+            transform.position = workWanderWaypointTarget.position;
+            workWanderWaypointTarget = null;
+            return;
+        }
+
+        Vector3 direction = toTarget.normalized;
+        transform.position += direction * moveSpeed * WorkWanderConfig.Instance.workWanderSpeedMultiplier * Time.deltaTime;
+
+        if (Mathf.Abs(direction.x) > 0.01f)
+            SetFacing(direction.x < 0f);
     }
 
     private void OnArrivedAtDefendingSpot()
@@ -2492,6 +2613,8 @@ public class NPCBunny : MonoBehaviour, ICombatant
             LeaveWorkForWaterRoom();
         else if (IsTired)
             LeaveWorkForBedroom();
+        else
+            TickWorkWander();
     }
 
     private void HandleNeedsCheckWhileRelaxing()
@@ -3435,15 +3558,29 @@ public class NPCBunny : MonoBehaviour, ICombatant
     {
         if (animator == null) return;
 
-        animator.SetBool(isMovingParam, CurrentState == BunnyState.MovingToSpot);
+        // Also true while mid-hop in the Working-state local wander loop (see StepWorkWanderMovement) —
+        // CurrentState deliberately stays Working throughout that loop (see the wander fields' own
+        // comment for why), so the Walking animation has to be driven by this flag instead of a state
+        // check alone. Reuses the same IsMoving parameter/Walking state as real cross-room travel rather
+        // than a dedicated bool — see WorkingWanderPoints_DesignDoc.md's Animator section for why that's
+        // the safer choice around eat/drink/sleep interrupts firing mid-hop.
+        animator.SetBool(isMovingParam, CurrentState == BunnyState.MovingToSpot || workWanderPath != null);
         animator.SetBool(isWorkingParam, CurrentState == BunnyState.Working);
+        // Selects which dedicated Working_* state plays (see RoomBase.WorkAnimationKind) — a plain int
+        // parameter read every frame, never a runtime clip/controller reassignment.
+        animator.SetInteger(workAnimIndexParam, currentRoom != null ? (int)currentRoom.WorkingAnimationKind : 0);
         animator.SetBool(isEatingParam, CurrentState == BunnyState.Eating);
         animator.SetBool(isDrinkingParam, CurrentState == BunnyState.Drinking);
         animator.SetBool(isSleepingParam, CurrentState == BunnyState.Sleeping);
         animator.SetBool(isFaintedParam, CurrentState == BunnyState.Fainted);
 
         bool isSlowWander = CurrentState == BunnyState.MovingToSpot && IsWanderPacedLeg();
-        animator.speed = isSlowWander ? wanderSpeedMultiplier : 1f;
+        if (isSlowWander)
+            animator.speed = wanderSpeedMultiplier;
+        else if (workWanderPath != null)
+            animator.speed = WorkWanderConfig.Instance.workWanderSpeedMultiplier;
+        else
+            animator.speed = 1f;
     }
 
     // ---------- FACING (reused from BunnyMovement) ----------
