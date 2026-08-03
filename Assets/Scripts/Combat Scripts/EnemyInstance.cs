@@ -23,8 +23,10 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     [SerializeField] private Vector3 attackOriginOffset = new Vector3(0f, 1f, 0f);
     [Tooltip("Movement speed while walking to a flank position — melee enemies only, irrelevant for ranged (which never moves after spawn).")]
     [SerializeField] private float meleeMoveSpeed = 3f;
-    [Tooltip("Root transform whose localScale.x sign is flipped to face left/right, same mechanism as NPCBunny's own scale-root flip. Only consulted by melee enemies (see HandleMeleeUpdate) — ranged enemy prefabs can leave this unset and keep their fixed spawn orientation exactly as before.")]
+    [Tooltip("Root transform whose localScale.x sign is flipped to face left/right, same mechanism as NPCBunny's own scale-root flip. Consulted by every movement leg (walk-in, relocation) AND by ranged/melee attacks to face the current target — leave unset only if this prefab never needs to visibly turn.")]
     [SerializeField] private Transform visualScaleRoot;
+    [Tooltip("Whether this prefab's UN-flipped art (positive visualScaleRoot.localScale.x) visually faces left rather than right — same per-prefab flag as NPCBunny.bunnyFacesLeftByDefault, since the PSB rig pipeline's default unflipped pose isn't consistently one direction across every rig. Get this wrong and every flip will visibly happen backwards.")]
+    [SerializeField] private bool facesLeftByDefault = true;
     [Tooltip("Movement speed while walking in from the gate to the interior target room (once the siege phase has been broken) AND while walking up to a claimed siege spot from the offscreen spawn point beforehand (see ApproachingSiegeSpot/HandleApproachUpdate). Separate from meleeMoveSpeed (local flank shuffling) since both of these are base-scale walking.")]
     [SerializeField] private float walkInMoveSpeed = 2f;
     [Tooltip("Animator bool parameter driven true whenever this enemy is actually moving under code control (offscreen siege approach, post-breach interior walk-in, melee flank approach) and false the rest of the time — mirrors NPCBunny.isMovingParam's own naming convention. Only meaningful once this enemy's own Animator Controller actually has a matching parameter + Idle<->Walking transition wired (the Walking state existed with zero transitions in/out of it before this — see SetMoving's own comment).")]
@@ -54,7 +56,19 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     // the gate never attacks back).
     private RoomSpot claimedSiegeSpot;
 
+    // The EnemySpot this enemy currently holds for RaidingRoom purposes — either claimed directly by an
+    // interior spawn via SetClaimedSpot, or adopted immediately (not deferred to arrival) by
+    // BeginWalkToRoom for a gate-siege walk-in or a room-to-room relocation, since the caller has already
+    // claimed it via RoomSpot.TryClaim before calling either. Tracked so InvasionManager can read this
+    // enemy's CURRENT room/spot (via CurrentRoom/ClaimedInteriorSpot below) when relocating it or handling
+    // its death, rather than closing over stale locals captured at spawn time.
+    private RoomSpot claimedInteriorSpot;
+
     public EnemyDefinition Definition => definition;
+    // Read fresh by InvasionManager's OnDefeated subscription instead of a captured local, so a death
+    // after this enemy has relocated to a different room still reports the room/spot it actually died in.
+    public RoomBase CurrentRoom => room;
+    public RoomSpot ClaimedInteriorSpot => claimedInteriorSpot;
     public BunnyType Type { get; private set; }
     public int Level { get; private set; } = 1;
     public BunnyStats Stats { get; private set; }
@@ -70,6 +84,12 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     private void Awake()
     {
         visualRenderers = GetComponentsInChildren<Renderer>();
+
+        // Records facingRight's TRUE starting state (matching whatever this prefab's art was actually
+        // authored to show unflipped) rather than leaving it at its compile-time default of true — without
+        // this, a rig where facesLeftByDefault is true would have facingRight lying about which way it's
+        // actually facing from frame one, same fix as NPCBunny.Awake's identical call.
+        SetFacing(!facesLeftByDefault);
     }
 
     // Combat AI (see CombatEngagement) — always targets whichever Defending bunny in `room` is closest,
@@ -90,10 +110,13 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     private FlankSlots claimedSlots;
     private ICombatant claimedTarget;
     private Vector3 flankDestination;
-    // Enemies never flipped before melee needed it — defaults to true (facing whatever this prefab was
-    // authored to spawn facing), matching AttackOrigin's existing behavior for every enemy that never
-    // calls SetFacing (i.e. every current ranged prefab).
     private bool facingRight = true;
+    // Forces SetFacing's very first real call to actually apply instead of silently no-op'ing — without
+    // this, if the first requested direction happens to match facingRight's true default, the sprite
+    // stays at whatever raw orientation the prefab's art was authored in (which may not match
+    // facesLeftByDefault's assumption) until a genuine flip-flop happens to occur. Same fix as
+    // NPCBunny.hasInitializedFacing.
+    private bool hasInitializedFacing;
 
     // WalkingIn state (see BeginWalkToRoom/HandleWalkInUpdate) — deliberately simpler than
     // NPCBunny.MoveAlongPath (no facing-override table, no job-arrival dispatch), just a queue of
@@ -145,6 +168,14 @@ public class EnemyInstance : MonoBehaviour, ICombatant
         currentHP = Stats.HP;
     }
 
+    // Called by InvasionManager right after claiming an EnemySpot for a direct interior spawn (the
+    // gate-siege walk-in / relocation paths don't need this — BeginWalkToRoom sets claimedInteriorSpot
+    // itself, immediately at walk-start, not deferred to arrival — see that method's own comment).
+    public void SetClaimedSpot(RoomSpot spot)
+    {
+        claimedInteriorSpot = spot;
+    }
+
     // Called by InvasionManager.TrySpawnInvasion instead of Initialize for the gate-siege phase — spawns
     // with no room (siege enemies aren't in any room yet, they're outside attacking the gate) and tracks
     // the outside spot claimed for it, released once it starts walking in (see BeginWalkToRoom). Caller
@@ -188,6 +219,14 @@ public class EnemyInstance : MonoBehaviour, ICombatant
             Debug.Log($"[VFXDEBUG] EnemyInstance.Update({name}): defendersInRoom={string.Join(", ", defendersInRoom.Select(b => $"{b.name}:{b.CurrentState}"))} poolCount={candidatePool.Count} currentTarget={(currentTarget != null ? currentTarget.CombatGameObject?.name : "NULL")} cooldown={attackCooldownRemaining:F2}");
 
         bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, candidatePool, out ICombatant attackTarget);
+
+        // TryBeginAttack re-acquires the closest alive candidate into currentTarget EVERY call regardless
+        // of cooldown (see its own comment), so this stays accurate continuously — not just at wind-up
+        // start — and turns to face a newly-closer target immediately even mid-cooldown. Same world-X
+        // convention as ComputeFlankPosition/HandleMeleeUpdate's facing (higher world-X = screen-left).
+        if (currentTarget != null)
+            SetFacing(currentTarget.CombatTransform.position.x < transform.position.x);
+
         if (!startedWindUp) return;
 
         pendingAttackTarget = attackTarget;
@@ -259,6 +298,10 @@ public class EnemyInstance : MonoBehaviour, ICombatant
 
         List<ICombatant> candidatePool = new List<ICombatant> { gate };
         bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, candidatePool, out ICombatant attackTarget);
+
+        if (currentTarget != null)
+            SetFacing(currentTarget.CombatTransform.position.x < transform.position.x);
+
         if (!startedWindUp) return;
 
         pendingAttackTarget = attackTarget;
@@ -266,20 +309,32 @@ public class EnemyInstance : MonoBehaviour, ICombatant
             animator.SetTrigger("Attack");
     }
 
-    // Called by InvasionManager.HandleGateBreached once this enemy has a real interior target — releases
-    // the outside siege spot (leaving the gate for good) and walks the given path, set on arrival to
-    // RaidingRoom so normal Update() dispatch takes over next frame exactly as any interior-spawned enemy.
+    // Called by InvasionManager.HandleGateBreached once this enemy has a real interior target, AND by
+    // InvasionManager.RelocateGroup when an already-RaidingRoom enemy is being moved to a different room —
+    // releases whichever spot this enemy currently holds (outside siege spot OR interior EnemySpot,
+    // whichever is set — a gate-siege walk-in only ever has the former, a relocation only ever has the
+    // latter) and walks the given path, set on arrival to RaidingRoom so normal Update() dispatch takes
+    // over next frame exactly as any interior-spawned enemy.
     public void BeginWalkToRoom(List<Transform> path, RoomBase targetRoom, RoomSpot targetSpot)
     {
         claimedSiegeSpot?.Release(this);
         claimedSiegeSpot = null;
+        claimedInteriorSpot?.Release(this);
+
+        // room/claimedInteriorSpot are set to the DESTINATION immediately, not deferred to arrival — the
+        // caller has already claimed targetSpot before calling this (see HandleGateBreached/RelocateGroup),
+        // so this enemy is already correctly "in" targetRoom for activeInvasions/OnDefeated bookkeeping
+        // purposes for the whole WalkingIn leg, exactly like the old code's spawn-time-captured closure
+        // used to behave. Without this, a death mid-walk (e.g. the debug kill context menu) would read
+        // CurrentRoom/ClaimedInteriorSpot as null/stale and either NRE or leak the claimed spot.
+        room = targetRoom;
+        claimedInteriorSpot = targetSpot;
 
         if (path == null || path.Count == 0)
         {
             // No walkable route — fail-soft straight into the room rather than stranding this enemy
             // outside forever (same "don't leave an unreachable target reserved" tolerance BeginDefending
             // already uses elsewhere).
-            room = targetRoom;
             phase = EnemyPhase.RaidingRoom;
             return;
         }
@@ -295,7 +350,8 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     {
         if (currentWalkTarget == null)
         {
-            room = pendingTargetRoom;
+            // room/claimedInteriorSpot were already set to these same values back in BeginWalkToRoom —
+            // just flipping phase here, arrival doesn't change which room/spot this enemy belongs to.
             phase = EnemyPhase.RaidingRoom;
             transform.position = pendingTargetSpot != null ? pendingTargetSpot.transform.position : transform.position;
             SetMoving(false);
@@ -391,16 +447,27 @@ public class EnemyInstance : MonoBehaviour, ICombatant
         SetFacing(side != FlankSide.Left);
     }
 
-    // No-op if visualScaleRoot isn't wired — every current ranged enemy prefab never calls this at all,
-    // so facingRight stays at its default true and AttackOrigin's sign is unaffected for them.
+    // No-op if visualScaleRoot isn't wired. Mirrors NPCBunny.SetFacing exactly — a hardcoded
+    // faceRight?1:-1 ternary (the original version of this method) is what caused the Slime's movement
+    // facing to never visibly update in Play mode: its art's unflipped pose actually reads as facing left,
+    // and once facingRight's compile-time default (true) already matched the first requested direction,
+    // the old early-return guard skipped the flip entirely with no way to recover. facesLeftByDefault +
+    // Awake's SetFacing(!facesLeftByDefault) call together fix both the wrong-sign-for-this-rig problem
+    // AND the stale-default-never-applies problem, exactly the way NPCBunny already solved it.
     private void SetFacing(bool faceRight)
     {
-        if (visualScaleRoot == null || facingRight == faceRight) return;
+        if (visualScaleRoot == null) return;
+
+        if (!hasInitializedFacing)
+            hasInitializedFacing = true;
+        else if (facingRight == faceRight)
+            return;
+
         facingRight = faceRight;
+        bool flip = facesLeftByDefault ? faceRight : !faceRight;
         Vector3 scale = visualScaleRoot.localScale;
-        // Sign convention not yet verified empirically against a real melee enemy rig — flip if a
-        // "face right" call visually lands facing left in Play mode.
-        scale.x = Mathf.Abs(scale.x) * (faceRight ? 1f : -1f);
+        float magnitude = Mathf.Abs(scale.x);
+        scale.x = flip ? -magnitude : magnitude;
         visualScaleRoot.localScale = scale;
     }
 

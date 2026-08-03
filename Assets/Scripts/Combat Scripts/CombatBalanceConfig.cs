@@ -149,6 +149,13 @@ public class CombatBalanceConfig : ScriptableObject
     [Tooltip("Each invasion cycle rolls exactly ONE raid type — never both, per the single-active-raid rule above. Chance the roll picks a gate-siege invasion (walk up, besiege, breach, then raid the chokepoint room); the remainder picks a direct in-room spawn (enemies appear straight into a random room's EnemySpots, bypassing the gate entirely). 0.5 = 50/50, tunable.")]
     public float gateSiegeInvasionChance = 0.5f;
 
+    [Header("Enemy Room Relocation")]
+    [Tooltip("How often InvasionManager re-checks whether an enemy group's current room still has any bunnies to fight.")]
+    public float enemyRoomAbandonCheckIntervalSeconds = 1.5f;
+    [Tooltip("When NO room on the floor has any bunnies at all, an enemy group waits this long (randomized between min/max) before wandering to a random room, giving the player time to cross-floor-deploy a guard.")]
+    public float enemyWanderWaitMinSeconds = 30f;
+    public float enemyWanderWaitMaxSeconds = 60f;
+
     // Shared by RollEnemyLevel, GetInvasionWaitRangeSeconds, and RollInvasionGroupSize — all three ramp
     // off the same population/difficulty curve (levelRampStartPopulation/levelRampCapPopulation), just
     // applied to different output ranges. Same ramp shape as WildBunnySpawner.GetPopulationRampT, kept as
@@ -187,5 +194,10 @@ public class CombatBalanceConfig : ScriptableObject
         int minSize = Mathf.RoundToInt(Mathf.Lerp(invasionGroupSizeStartMin, invasionGroupSizeCapMin, t));
         int maxSize = Mathf.RoundToInt(Mathf.Lerp(invasionGroupSizeStartMax, invasionGroupSizeCapMax, t));
         return Mathf.Clamp(Random.Range(minSize, maxSize + 1), 1, 8);
+    }
+
+    public float RollEnemyWanderWaitSeconds()
+    {
+        return Random.Range(enemyWanderWaitMinSeconds, enemyWanderWaitMaxSeconds);
     }
 }

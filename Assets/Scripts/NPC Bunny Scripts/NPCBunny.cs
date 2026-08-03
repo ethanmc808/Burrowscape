@@ -3318,6 +3318,14 @@ public class NPCBunny : MonoBehaviour, ICombatant
         List<ICombatant> candidatePoolList = InvasionManager.Instance.GetEnemiesInRoom(defendingRoom).Cast<ICombatant>().ToList();
         bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentCombatTarget, ref attackCooldownRemaining, candidatePoolList, out ICombatant attackTarget);
 
+        // TryBeginAttack re-acquires the closest alive candidate into currentCombatTarget EVERY call
+        // regardless of cooldown (see its own comment), so this stays accurate continuously, not just at
+        // wind-up start — a ranged defender never actually turned to face whichever enemy it was shooting
+        // at before this (confirmed in Play mode: stayed facing whichever way it was last walking,
+        // regardless of which side an enemy was actually on).
+        if (currentCombatTarget != null)
+            SetFacing(currentCombatTarget.CombatTransform.position.x < transform.position.x);
+
         // TEMP — chasing "second invasion, bunny reaches CombatSpot but never attacks" bug.
         if (Time.frameCount % 30 == 0 || startedWindUp)
             Debug.Log($"[VFXDEBUG] HandleDefending({name}): pool={candidatePoolList.Count} target={(currentCombatTarget != null ? currentCombatTarget.CombatGameObject?.name : "NULL")} cooldown={attackCooldownRemaining:F2} attackSource={((ICombatant)this).AttackSource?.displayName ?? "NULL"} startedWindUp={startedWindUp} animator={(animator != null ? "set" : "NULL")}");

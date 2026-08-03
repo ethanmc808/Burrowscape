@@ -27,6 +27,12 @@ public class InvasionManager : MonoBehaviour
 
     private readonly Dictionary<RoomBase, List<EnemyInstance>> activeInvasions = new Dictionary<RoomBase, List<EnemyInstance>>();
 
+    // Set the moment RoomAbandonWatchRoutine finds NO room anywhere on a group's floor with any bunnies
+    // in it — cleared the moment a target reappears anywhere, or the group actually relocates. Absolute
+    // Time.time deadline (rolled once via CombatBalanceConfig.RollEnemyWanderWaitSeconds), not a countdown
+    // float, so the poll interval doesn't need to tick it down itself.
+    private readonly Dictionary<RoomBase, float> wanderDeadlineByRoom = new Dictionary<RoomBase, float>();
+
     // Gate-siege phase bookkeeping — not keyed by RoomBase like activeInvasions above, since siege
     // enemies aren't in any room yet (see Combat_DesignDoc.md's Gate Siege section). Every enemy here
     // survives to breach by definition (siege enemies are invulnerable — bunnies can't defend the gate,
@@ -66,6 +72,8 @@ public class InvasionManager : MonoBehaviour
     {
         if (autoSpawnEnabled)
             invasionRoutine = StartCoroutine(InvasionLoop());
+
+        StartCoroutine(RoomAbandonWatchRoutine());
     }
 
     private IEnumerator InvasionLoop()
@@ -107,6 +115,145 @@ public class InvasionManager : MonoBehaviour
     {
         if (!activeInvasions.TryGetValue(room, out List<EnemyInstance> group)) return Array.Empty<EnemyInstance>();
         return group.Where(e => e.HasArrivedInRoom).ToList();
+    }
+
+    // Periodically checks every room currently holding an enemy group for whether it still has anyone to
+    // fight — if not, moves the whole group on (Ethan's explicit ask: nearest same-floor room with bunnies
+    // present if one exists, otherwise wander to a random same-floor room after a tunable wait so the
+    // player has time to cross-floor-deploy a guard). Same floor only for now, deliberately — raiders
+    // don't use lifts yet (see Combat_DesignDoc.md's deferred multi-floor raider pathing; a future "rival
+    // bunny gang" invader type is the one meant to eventually use lifts, cloned off NPCBunny's own
+    // already-built lift-riding code, not this system).
+    private IEnumerator RoomAbandonWatchRoutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(CombatBalanceConfig.Instance.enemyRoomAbandonCheckIntervalSeconds);
+
+            foreach (RoomBase room in activeInvasions.Keys.ToList())
+            {
+                if (!activeInvasions.TryGetValue(room, out List<EnemyInstance> group)) continue; // relocated away already this pass
+                group.RemoveAll(e => e == null);
+                if (group.Count == 0) { activeInvasions.Remove(room); wanderDeadlineByRoom.Remove(room); continue; }
+
+                // GetBunniesDefendingRoom(room) filtered to CurrentState != Fainted (not just
+                // ==Defending) — DefendingRoom is set the instant BeginDefending is called, before the
+                // walk to the CombatSpot even starts, so a bunny auto-defended a moment ago but still
+                // mid-walk still counts as a real incoming target (this is what closes the race described
+                // above ClearRoomInvasion). But DefendingRoom also stays set on a FAINTED bunny until the
+                // invasion actually clears (StopDefendingAndReturn revives it) — counting Fainted here
+                // would deadlock: the room never looks "abandoned" because its own defeated bunny still
+                // reads as a target, so the enemies never leave, so the invasion never clears, so the
+                // fainted bunny never gets recalled. CONFIRMED this exact deadlock in Play mode 2026-08-03
+                // (Crimson fainted in Living Room, slimes never moved on despite bunnies in Garden Room).
+                bool hasTarget = DwellerRoster.Instance != null &&
+                    (DwellerRoster.Instance.GetBunniesDefendingRoom(room).Any(b => b.CurrentState != BunnyState.Fainted) ||
+                     DwellerRoster.Instance.GetBunniesCurrentlyInRoom(room).Count > 0);
+                if (hasTarget) { wanderDeadlineByRoom.Remove(room); continue; }
+
+                // Only enemies that have actually finished walking in are eligible to be redirected —
+                // one still mid-WalkingIn is already committed to a destination this frame, same
+                // HasArrivedInRoom filter GetEnemiesInRoom uses for targeting eligibility.
+                List<EnemyInstance> arrived = group.Where(e => e.HasArrivedInRoom).ToList();
+                if (arrived.Count == 0) continue;
+
+                RoomBase destination = PickNearestRoomWithBunnies(room);
+                if (destination == null)
+                {
+                    if (!wanderDeadlineByRoom.TryGetValue(room, out float deadline))
+                    {
+                        deadline = Time.time + CombatBalanceConfig.Instance.RollEnemyWanderWaitSeconds();
+                        wanderDeadlineByRoom[room] = deadline;
+                    }
+                    if (Time.time < deadline) continue;
+
+                    destination = PickRandomRoomForWander(room);
+                    if (destination == null) continue; // no other room even exists on this floor — stay put
+                }
+
+                wanderDeadlineByRoom.Remove(room);
+                RelocateGroup(room, destination, arrived);
+            }
+        }
+    }
+
+    // Nearest same-floor room (by room-index distance, not raw world distance — same convention
+    // BaseLayoutManager's own GridX-ordered lookups use elsewhere) with a free EnemySpot AND at least one
+    // bunny currently in it. Null if no such room exists.
+    private RoomBase PickNearestRoomWithBunnies(RoomBase fromRoom)
+    {
+        List<RoomBase> ordered = BaseLayoutManager.Instance.GetAllRoomsOnFloor(fromRoom.FloorIndex);
+        int fromIndex = ordered.IndexOf(fromRoom);
+        if (fromIndex == -1) return null;
+
+        return ordered
+            .Select((r, i) => (room: r, distance: Mathf.Abs(i - fromIndex)))
+            .Where(x => x.room != fromRoom && x.distance > 0
+                && x.room.EnemySpots != null && x.room.EnemySpots.Any(s => !s.IsOccupied)
+                && DwellerRoster.Instance.GetBunniesCurrentlyInRoom(x.room).Count > 0)
+            .OrderBy(x => x.distance)
+            .Select(x => x.room)
+            .FirstOrDefault();
+    }
+
+    // Wander fallback — any other same-floor room with a free EnemySpot, regardless of whether it
+    // currently has bunnies (there are none anywhere on this floor by the time this is called, per
+    // RoomAbandonWatchRoutine's own gating). Uniformly random, no distance preference.
+    private RoomBase PickRandomRoomForWander(RoomBase excludeRoom)
+    {
+        List<RoomBase> candidates = BaseLayoutManager.Instance.GetAllRoomsOnFloor(excludeRoom.FloorIndex)
+            .Where(r => r != excludeRoom && r.EnemySpots != null && r.EnemySpots.Any(s => !s.IsOccupied))
+            .ToList();
+
+        if (candidates.Count == 0) return null;
+        return candidates[UnityEngine.Random.Range(0, candidates.Count)];
+    }
+
+    // Walks as many of `movingEnemies` as toRoom currently has free EnemySpots for (same "accepted edge
+    // case" tolerance TriggerAutoDefend's own comment already uses for CombatSpots) — any leftover stay
+    // behind in fromRoom's group and get retried next RoomAbandonWatchRoutine pass. Moves the whole group
+    // together as a unit (Ethan's explicit ask), so fromRoom/toRoom's activeInvasions entries only ever
+    // gain/lose whole batches together, not enemy-by-enemy.
+    private void RelocateGroup(RoomBase fromRoom, RoomBase toRoom, List<EnemyInstance> movingEnemies)
+    {
+        List<RoomSpot> freeSpots = toRoom.EnemySpots.Where(s => !s.IsOccupied).ToList();
+        int moveCount = Mathf.Min(movingEnemies.Count, freeSpots.Count);
+        if (moveCount == 0) return; // toRoom filled up between selection and here — retried next pass
+
+        List<EnemyInstance> moving = movingEnemies.Take(moveCount).ToList();
+        for (int i = 0; i < moveCount; i++)
+        {
+            EnemyInstance enemy = moving[i];
+            RoomSpot spot = freeSpots[i];
+            RoomSpot fromSpot = enemy.ClaimedInteriorSpot;
+
+            spot.TryClaim(enemy);
+            List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(fromRoom, fromSpot, null, toRoom, spot, fromRoom.FloorIndex);
+            enemy.BeginWalkToRoom(path, toRoom, spot); // releases fromSpot and adopts toRoom/spot as current immediately (see that method's own comment)
+        }
+
+        if (activeInvasions.TryGetValue(fromRoom, out List<EnemyInstance> fromGroup))
+        {
+            fromGroup.RemoveAll(e => moving.Contains(e));
+            // ClearRoomInvasion recalls any bunny still Defending/en-route-to-defend fromRoom — without
+            // it, a defender that hadn't yet reached its CombatSpot when this relocation fired would be
+            // stranded there forever with nothing left to fight (see that method's own comment).
+            if (fromGroup.Count == 0) ClearRoomInvasion(fromRoom);
+        }
+
+        if (activeInvasions.TryGetValue(toRoom, out List<EnemyInstance> toGroup))
+            toGroup.AddRange(moving);
+        else
+            activeInvasions[toRoom] = moving;
+
+        // Without this, a bunny already idling in toRoom BEFORE the relocation never gets diverted to
+        // Defending at all — TriggerAutoDefend is the only thing that catches an already-Working/Relaxing
+        // bunny (OnArrivedAtWorkSpot/OnArrivedAtRelaxSpot's own race-checks only catch a bunny ARRIVING
+        // after toRoom is already in activeInvasions, not one already standing there). Same "fires at the
+        // decision moment, not on physical arrival" timing HandleGateBreached/TrySpawnInRoomInvasion
+        // already use for their own spawns — bunnies get a head start walking to CombatSpots while the
+        // enemies are still mid-walk-in themselves.
+        TriggerAutoDefend(toRoom);
     }
 
     // Shared by both raid types' availableTypes filter — fails closed (treats as locked) if
@@ -294,10 +441,12 @@ public class InvasionManager : MonoBehaviour
             List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(
                 null, null, null, targetRoom, claimedSpot, BaseLayoutManager.Instance.EntranceFloorIndex);
 
-            RoomBase room = targetRoom;
+            // Reads enemy.CurrentRoom/ClaimedInteriorSpot fresh at invocation time rather than closing
+            // over targetRoom/claimedSpot — this enemy may relocate to a different room entirely
+            // (RoomAbandonWatchRoutine/RelocateGroup) long before it actually dies, and a captured local
+            // here would report the wrong room/spot to HandleEnemyDefeated when that happens.
             EnemyInstance walkingEnemy = enemy;
-            RoomSpot spot = claimedSpot;
-            enemy.OnDefeated += () => HandleEnemyDefeated(room, walkingEnemy, spot); // first OnDefeated subscription for this enemy — same pattern interior spawns already use
+            walkingEnemy.OnDefeated += () => HandleEnemyDefeated(walkingEnemy.CurrentRoom, walkingEnemy, walkingEnemy.ClaimedInteriorSpot);
 
             enemy.BeginWalkToRoom(path, targetRoom, claimedSpot); // also releases this enemy's outside siege spot internally
             walkingGroup.Add(enemy);
@@ -399,11 +548,12 @@ public class InvasionManager : MonoBehaviour
 
             spot.TryClaim(enemy);
             enemy.Initialize(chosenType, targetRoom); // straight into RaidingRoom phase — no siege/walk-in leg at all
+            enemy.SetClaimedSpot(spot); // so RelocateGroup/HandleEnemyDefeated can read this enemy's current spot later, same as a walk-in arrival sets it
 
-            RoomBase room = targetRoom;
+            // Same "read fresh at invocation time" reasoning as the gate-siege walk-in subscription above
+            // — this enemy can relocate to a different room long before it dies.
             EnemyInstance spawnedEnemy = enemy;
-            RoomSpot claimedSpot = spot;
-            enemy.OnDefeated += () => HandleEnemyDefeated(room, spawnedEnemy, claimedSpot);
+            spawnedEnemy.OnDefeated += () => HandleEnemyDefeated(spawnedEnemy.CurrentRoom, spawnedEnemy, spawnedEnemy.ClaimedInteriorSpot);
 
             spawnedGroup.Add(enemy);
         }
@@ -453,6 +603,18 @@ public class InvasionManager : MonoBehaviour
         group.Remove(enemy);
         if (group.Count > 0) return;
 
+        ClearRoomInvasion(room);
+    }
+
+    // A room's enemy group can empty out two ways — every enemy in it dies (HandleEnemyDefeated above), or
+    // the whole group relocates away while still alive (RelocateGroup) — and both need the exact same
+    // cleanup. Without this shared here, a bunny auto-defended into a room right as its enemies relocated
+    // elsewhere (a real race: TriggerAutoDefend fires the instant enemies arrive, but the defender can take
+    // a couple seconds to actually walk to its CombatSpot, during which RoomAbandonWatchRoutine can already
+    // decide the room's abandoned and move the group on) was left stuck in Defending forever — nothing ever
+    // told it the room was clear, since only HandleEnemyDefeated used to call this recall logic.
+    private void ClearRoomInvasion(RoomBase room)
+    {
         activeInvasions.Remove(room);
 
         // Recall every defender (auto-defenders and any deployed guards) — ReturnToPreviousActivity
