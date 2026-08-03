@@ -205,32 +205,32 @@ MonoBehaviour:
   experience: 0
   hunger: 100
   hungerDecayPerSecond: 0.1
-  hungerThresholdLow: 30
+  hungerThresholdLow: 20
   hungerThresholdFull: 90
-  hungerThresholdCritical: 15
+  hungerThresholdCritical: 10
   hungerGainPerCarrot: 25
   thirst: 100
   thirstDecayPerSecond: 0.2
-  thirstThresholdLow: 30
+  thirstThresholdLow: 20
   thirstThresholdFull: 90
-  thirstThresholdCritical: 15
+  thirstThresholdCritical: 10
   thirstGainPerDrink: 15
   energy: 100
-  energyDecayPerSecond: 0.05
-  energyDecayPerSecondWorking: 0.1
-  energyDecayPerSecondQuesting: 0.1
-  energyDecayPerSecondForaging: 0.1
-  energyThresholdLow: 35
-  energyGainPerSecondSleeping: 4
+  energyDecayPerSecond: 0.025
+  energyDecayPerSecondWorking: 0.025
+  energyDecayPerSecondQuesting: 0.05
+  energyDecayPerSecondForaging: 0.05
+  energyThresholdLow: 10
+  energyGainPerSecondSleeping: 2
   currentHP: 1
   hpPercentOfMaxPerEnergyRestored: 0.005
   hpPassiveRegenPercentPerSecond: 0.005
   mood: 100
-  moodDecayPerSecondWorking: 0.05
+  moodDecayPerSecondWorking: 0.1
   moodGainPerSecondRelaxing: 0.2
   moodGainPerSecondEatingOrDrinking: 0.2
   moodGainPerSecondSleeping: 0.02
-  moodDecayPerSecondIdlePacing: 0.1
+  moodDecayPerSecondIdlePacing: 1
   animator: {fileID: 5682828441522450851}
   workAnimIndexParam: WorkAnimIndex
   isMovingParam: IsMoving
@@ -281,7 +281,7 @@ MonoBehaviour:
   bunny: {fileID: 0}
   indicatorPrefab: {fileID: 2253899879721663037, guid: 2096e2ca0d77c0543b60b4b4ea9d49af, type: 3}
   worldCamera: {fileID: 0}
-  worldOffset: {x: 0, y: -0.5, z: 0}
+  worldOffset: {x: 0, y: -0.3, z: 0}
 --- !u!114 &1513251125751683704
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -15,7 +15,8 @@ using System.Linq;
 // bunny already Working/Relaxing in the targeted room gets routed to a CombatSpot via NPCBunny.
 // BeginDefending — only once enemies actually reach the interior room, not during the gate-siege phase
 // (bunnies can't defend the gate itself). Positioning only — actual targeting/firing is CombatEngagement's
-// job, ticked by NPCBunny (while Defending) and EnemyInstance (via GetEnemiesInRoom below) independently.
+// job, ticked by NPCBunny (via GetEnemiesInRoom below, while Defending) and EnemyInstance (via
+// DwellerRoster's own bunny query) independently.
 public class InvasionManager : MonoBehaviour
 {
     public static InvasionManager Instance { get; private set; }
@@ -96,21 +97,42 @@ public class InvasionManager : MonoBehaviour
         return activeInvasions.ContainsKey(room);
     }
 
-    // Query used by EnemyInstance's own combat tick (see CombatEngagement) — every currently-active enemy
-    // in `room`, so an enemy only ever considers targets that share its actual room, not the whole base.
+    // Query used by NPCBunny's own combat tick (see CombatEngagement) — every enemy that's actually
+    // arrived and standing in `room` right now, so a bunny only ever targets something it can really reach.
+    // activeInvasions[room] itself gets populated the instant the gate breaks (HandleGateBreached), well
+    // before survivors finish walking in from the gate — HasArrivedInRoom filters those still mid-walk
+    // out, so a melee bunny can no longer flank a target that's still outside and compute a flank point
+    // next to wherever it happened to be at that moment (confirmed bug, 2026-08-03: "attack empty air").
     public IReadOnlyList<EnemyInstance> GetEnemiesInRoom(RoomBase room)
     {
-        return activeInvasions.TryGetValue(room, out List<EnemyInstance> group) ? group : Array.Empty<EnemyInstance>();
+        if (!activeInvasions.TryGetValue(room, out List<EnemyInstance> group)) return Array.Empty<EnemyInstance>();
+        return group.Where(e => e.HasArrivedInRoom).ToList();
     }
+
+    // Shared by both raid types' availableTypes filter — fails closed (treats as locked) if
+    // EnemyTypeUnlockTracker isn't in the scene, same fail-closed convention WildBunnySpawner.
+    // GetAvailableTypes already uses for a missing BunnyTypeUnlockTracker.
+    private bool IsEnemyUnlocked(EnemyDefinition def)
+    {
+        return EnemyTypeUnlockTracker.Instance != null && EnemyTypeUnlockTracker.Instance.IsUnlocked(def);
+    }
+
+    // Debug/testing entry point — always a full 3-enemy group regardless of population pacing (Ethan's
+    // ask: RollInvasionGroupSize() often returns just 1 at low population, which made manual testing
+    // slower than necessary). The automatic InvasionLoop still calls TrySpawnInvasion() directly with no
+    // override, so real gameplay pacing is completely unaffected.
+    [ContextMenu("Force Invasion")]
+    private void DebugForceInvasion() => TrySpawnInvasion(forcedGroupSize: 3);
 
     // Entry point for every raid — spawns onto EntranceGate's outside siege spots rather than a room's
     // EnemySpots. Enemies fight the gate only (see EnemyInstance.HandleSiegeUpdate); once it breaks,
     // HandleGateBreached takes the SAME surviving enemies inward via the unchanged PickTargetRoom logic.
-    [ContextMenu("Force Invasion")]
-    public void TrySpawnInvasion()
+    // forcedGroupSize: when set, skips CombatBalanceConfig.RollInvasionGroupSize() and uses this exact
+    // count instead (still clamped to totalAvailable below) — see DebugForceInvasion above.
+    public void TrySpawnInvasion(int? forcedGroupSize = null)
     {
         List<EnemyDefinition> availableTypes = enemyTypes != null
-            ? enemyTypes.Where(d => d != null && d.prefab != null).ToList()
+            ? enemyTypes.Where(d => d != null && d.prefab != null && IsEnemyUnlocked(d)).ToList()
             : new List<EnemyDefinition>();
 
         if (availableTypes.Count == 0)
@@ -157,7 +179,7 @@ public class InvasionManager : MonoBehaviour
             return;
         }
 
-        int groupSize = Mathf.Min(CombatBalanceConfig.Instance.RollInvasionGroupSize(), totalAvailable);
+        int groupSize = Mathf.Min(forcedGroupSize ?? CombatBalanceConfig.Instance.RollInvasionGroupSize(), totalAvailable);
         List<EnemyInstance> spawnedGroup = new List<EnemyInstance>();
         int rangedUsed = 0;
         int meleeUsed = 0;
@@ -303,16 +325,23 @@ public class InvasionManager : MonoBehaviour
         if (chokepoint != null && chokepoint.EnemySpots != null && chokepoint.EnemySpots.Any(s => !s.IsOccupied))
             return chokepoint;
 
-        return PickRandomRoomWithFreeEnemySpot();
+        return PickRandomRoomWithFreeEnemySpot(restrictToEntranceFloor: true);
     }
 
-    // Any floor-1 room (any type) with at least one free EnemySpot, uniformly random — no chokepoint
-    // preference, unlike PickTargetRoom's gate-siege fallback above. Used directly by the in-room spawn
-    // type below: "pests burrow up from underground" has no "breaks through the front line first"
-    // narrative the way a gate siege does, so every eligible room is an equally likely target.
-    private RoomBase PickRandomRoomWithFreeEnemySpot()
+    // Any room (any type) with at least one free EnemySpot, uniformly random — no chokepoint preference,
+    // unlike PickTargetRoom's gate-siege fallback above ("pests burrow up from underground" has no
+    // "breaks through the front line first" narrative the way a gate siege does, so every eligible room is
+    // an equally likely target). restrictToEntranceFloor keeps PickTargetRoom's own floor-1-only rule
+    // (raiders don't reach upper floors yet — lifts/multi-floor raider pathing explicitly deferred) without
+    // imposing it on the in-room spawn type below, which never walks/paths anywhere at all and so has no
+    // reason to be floor-limited — any floor's rooms are equally valid candidates for it.
+    private RoomBase PickRandomRoomWithFreeEnemySpot(bool restrictToEntranceFloor)
     {
-        List<RoomBase> candidates = BaseLayoutManager.Instance.GetAllRoomsOnFloor(BaseLayoutManager.Instance.EntranceFloorIndex)
+        List<RoomBase> pool = restrictToEntranceFloor
+            ? BaseLayoutManager.Instance.GetAllRoomsOnFloor(BaseLayoutManager.Instance.EntranceFloorIndex)
+            : BaseLayoutManager.Instance.GetAllRooms();
+
+        List<RoomBase> candidates = pool
             .Where(r => r.EnemySpots != null && r.EnemySpots.Any(s => !s.IsOccupied))
             .ToList();
 
@@ -320,17 +349,21 @@ public class InvasionManager : MonoBehaviour
         return candidates[UnityEngine.Random.Range(0, candidates.Count)];
     }
 
+    // Debug/testing entry point — always a full 3-enemy group, same reasoning as DebugForceInvasion above.
+    [ContextMenu("Force In-Room Invasion")]
+    private void DebugForceInRoomInvasion() => TrySpawnInRoomInvasion(forcedGroupSize: 3);
+
     // Second raid type, alongside the gate-siege pipeline above — enemies appear directly in a random
     // room's EnemySpots, bypassing EntranceGate/the siege phase entirely (no walk-in, no gate HP/Defense
     // involved at all). Shares every downstream mechanic with a gate-siege's interior arm: activeInvasions
     // bookkeeping, TriggerAutoDefend, OnEnemyGroupSpawned, and HandleEnemyDefeated's own clear/recall
     // logic — the only thing genuinely new here is spawn placement. Picking between this and
     // TrySpawnInvasion (never both at once) happens once per cycle in InvasionLoop.
-    [ContextMenu("Force In-Room Invasion")]
-    public void TrySpawnInRoomInvasion()
+    // forcedGroupSize: see TrySpawnInvasion's own comment — same override mechanism, same debug purpose.
+    public void TrySpawnInRoomInvasion(int? forcedGroupSize = null)
     {
         List<EnemyDefinition> availableTypes = enemyTypes != null
-            ? enemyTypes.Where(d => d != null && d.prefab != null).ToList()
+            ? enemyTypes.Where(d => d != null && d.prefab != null && IsEnemyUnlocked(d)).ToList()
             : new List<EnemyDefinition>();
 
         if (availableTypes.Count == 0)
@@ -339,7 +372,7 @@ public class InvasionManager : MonoBehaviour
             return;
         }
 
-        RoomBase targetRoom = PickRandomRoomWithFreeEnemySpot();
+        RoomBase targetRoom = PickRandomRoomWithFreeEnemySpot(restrictToEntranceFloor: false);
         if (targetRoom == null)
         {
             DebugLog.Log("InvasionManager: no interior room has a free EnemySpot — skipping in-room invasion.");
@@ -347,7 +380,7 @@ public class InvasionManager : MonoBehaviour
         }
 
         List<RoomSpot> freeSpots = targetRoom.EnemySpots.Where(s => !s.IsOccupied).ToList();
-        int groupSize = Mathf.Min(CombatBalanceConfig.Instance.RollInvasionGroupSize(), freeSpots.Count);
+        int groupSize = Mathf.Min(forcedGroupSize ?? CombatBalanceConfig.Instance.RollInvasionGroupSize(), freeSpots.Count);
         List<EnemyInstance> spawnedGroup = new List<EnemyInstance>();
 
         for (int i = 0; i < groupSize; i++)

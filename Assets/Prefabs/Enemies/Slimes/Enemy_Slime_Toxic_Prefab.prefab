@@ -225,6 +225,8 @@ GameObject:
   - component: {fileID: 482786114839546272}
   - component: {fileID: 4150792909451537276}
   - component: {fileID: 8242884225445179976}
+  - component: {fileID: 8885435690048601088}
+  - component: {fileID: 7383417448751098880}
   m_Layer: 0
   m_Name: Enemy_Slime_Toxic_Prefab
   m_TagString: Untagged
@@ -280,6 +282,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0545d39728386bb4990fe91b985ded45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlankSlots
+--- !u!210 &8885435690048601088
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3794836812984047467}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 1
+--- !u!114 &7383417448751098880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3794836812984047467}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a054963f2734af9847eabb119dd7dc2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDepthSorter
+  sortingResolution: 0.1
 --- !u!1001 &3222271145176706030
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -156,9 +156,25 @@ public static class CombatEngagement
     // whichever target TryBeginAttack snapshotted. Re-validates the target (a few frames of wind-up may
     // have passed since it was chosen) and silently no-ops if it's dead/gone or now out of range — same
     // "just doesn't fire" tolerance TryBeginAttack itself already has, not an error state.
-    public static void ReleaseAttack(ICombatant attacker, ICombatant target)
+    //
+    // retargetPool: optional — if the original target died during the wind-up AND a pool is given, picks
+    // the closest still-alive replacement from it instead of just no-op'ing (Ethan's ask: a ranged bunny's
+    // slow-cadence attack, e.g. Shock's ~3.5s interval, was otherwise wasted every time its specific target
+    // got sniped by a faster ally first, even with other enemies still very much alive and in range).
+    // NPCBunny.ReleasePendingAttack only passes this for ranged attacks — a melee attacker is physically
+    // committed to the one target it walked up to and claimed a FlankSlots slot on (see
+    // HandleMeleeDefending's own pinned-pool comment), so silently swapping to a different enemy elsewhere
+    // in the room would visually attack from the wrong position. EnemyInstance.ReleasePendingAttack never
+    // passes one either, deliberately — see that method's own comment for why fizzle-only must stay as-is
+    // for enemies attacking bunnies.
+    public static void ReleaseAttack(ICombatant attacker, ICombatant target, IEnumerable<ICombatant> retargetPool = null)
     {
-        if (target == null || target.CombatGameObject == null || !target.IsAlive) return;
+        bool targetGone = target == null || target.CombatGameObject == null || !target.IsAlive;
+        if (targetGone)
+        {
+            target = retargetPool != null ? FindClosestAliveTarget(attacker.CombatTransform.position, retargetPool) : null;
+            if (target == null) return;
+        }
 
         BunnyTypeDefinition attackSource = attacker.AttackSource;
         if (attackSource == null || attackSource.attackVFXPrefab == null) return;

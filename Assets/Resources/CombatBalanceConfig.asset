@@ -53,16 +53,16 @@ MonoBehaviour:
   levelRampStartPopulation: 10
   levelRampCapPopulation: 200
   levelRampStartMinLevel: 1
-  levelRampStartMaxLevel: 3
+  levelRampStartMaxLevel: 2
   levelRampCapMinLevel: 45
   levelRampCapMaxLevel: 50
   invasionStartMinWaitMinutes: 3
   invasionStartMaxWaitMinutes: 6
   invasionCapMinWaitMinutes: 20
   invasionCapMaxWaitMinutes: 30
-  invasionGroupSizeStartMin: 1
-  invasionGroupSizeStartMax: 1
-  invasionGroupSizeCapMin: 2
+  invasionGroupSizeStartMin: 3
+  invasionGroupSizeStartMax: 3
+  invasionGroupSizeCapMin: 3
   invasionGroupSizeCapMax: 3
-  invasionCooldownMinutes: 5
+  invasionCooldownMinutes: 3
   gateSiegeInvasionChance: 0.5

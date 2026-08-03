@@ -16,8 +16,9 @@ MonoBehaviour:
   type: 9
   prefab: {fileID: 3794836812984047467, guid: 60ee000e6714d5944832e892f63126ef, type: 3}
   baseHP: 40
-  baseAttack: 25
-  baseDefense: 15
+  baseAttack: 20
+  baseDefense: 10
   baseSpeed: 15
   baseLuck: 10
   attackSource: {fileID: 11400000, guid: 448d9deb71f429248beb1633ce992c46, type: 2}
+  populationThreshold: 0

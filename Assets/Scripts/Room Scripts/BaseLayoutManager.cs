@@ -500,4 +500,15 @@ public class BaseLayoutManager : MonoBehaviour
     {
         return GetOrderedRooms(floor);
     }
+
+    // Every room across every floor, unordered — unlike GetAllRoomsOnFloor, callers here don't care about
+    // left-to-right position (see InvasionManager's in-room spawn type, which has no floor restriction and
+    // no reason to prefer one floor's ordering over another's).
+    public List<RoomBase> GetAllRooms()
+    {
+        List<RoomBase> all = new List<RoomBase>();
+        foreach (List<RoomBase> floorRooms in roomsByFloor.Values)
+            all.AddRange(floorRooms);
+        return all;
+    }
 }

@@ -26,4 +26,8 @@ public class EnemyDefinition : ScriptableObject
     [Header("Attack")]
     [Tooltip("Reused for this enemy's attack name/animation/VFX instead of authoring enemy-specific art. Must match this enemy's type.")]
     public BunnyTypeDefinition attackSource;
+
+    [Header("Unlock")]
+    [Tooltip("Population needed to permanently unlock this enemy for invasions — see EnemyTypeUnlockTracker. Hand-authored per enemy (Ethan's call: not worth a category/type system while the roster is small), not tied to BunnyType or any other grouping. Once population has ever crossed this, the enemy keeps spawning forever even if population later drops — its LEVEL keeps scaling with population via the existing ramp (CombatBalanceConfig.RollEnemyLevel) independently of this unlock, exactly like a bunny type does.")]
+    public int populationThreshold;
 }

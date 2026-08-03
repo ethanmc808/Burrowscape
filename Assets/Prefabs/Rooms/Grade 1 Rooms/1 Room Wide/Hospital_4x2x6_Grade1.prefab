@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 581987224821589216}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: -1.688, y: -0.894, z: 1.817}
+  m_LocalPosition: {x: -0.61, y: -0.894, z: 1.457}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -201,6 +201,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4057481417804119105}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3285568024742729783
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 832413473414294698}
+  m_Layer: 0
+  m_Name: NursingSpot_01_WanderLocation_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &832413473414294698
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3285568024742729783}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.242, y: -0.892, z: 3.906}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4057481417804119105}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3322607948399103795
 GameObject:
   m_ObjectHideFlags: 0
@@ -227,7 +258,7 @@ Transform:
   m_GameObject: {fileID: 3322607948399103795}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: -1.116, y: -0.894, z: 1.817}
+  m_LocalPosition: {x: -0.038000077, y: -0.894, z: 2.154}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -384,7 +415,7 @@ Transform:
   m_GameObject: {fileID: 4217879116458138460}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: 0.37, y: -0.894, z: 3.194}
+  m_LocalPosition: {x: 0.221, y: -0.619, z: 3.081}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -515,6 +546,37 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &4428189716560425752
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8019251431656299680}
+  m_Layer: 0
+  m_Name: NursingSpot_01_WanderLocation_03
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8019251431656299680
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4428189716560425752}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.379, y: -0.892, z: 2.365}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4057481417804119105}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4924023070578327062
 GameObject:
   m_ObjectHideFlags: 0
@@ -747,7 +809,7 @@ Transform:
   m_GameObject: {fileID: 6216609352015014528}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.55, y: -0.892, z: 2.906}
+  m_LocalPosition: {x: 1.573, y: -0.892, z: 3.035}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1139,7 +1201,7 @@ Transform:
   m_GameObject: {fileID: 7289488799633357362}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: -0.417, y: -0.894, z: 1.817}
+  m_LocalPosition: {x: 0.661, y: -0.894, z: 1.831}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1478,13 +1540,16 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 936398291144794227}
   - {fileID: 335067016963888518}
   - {fileID: 7150366905568226587}
   - {fileID: 6003898871868787295}
   - {fileID: 2886067887395585409}
   - {fileID: 8570753344037357080}
   - {fileID: 2037844727751352067}
+  - {fileID: 832413473414294698}
+  - {fileID: 3929554217859659345}
+  - {fileID: 8019251431656299680}
+  - {fileID: 936398291144794227}
   - {fileID: 5113558006930564067}
   - {fileID: 4507237960744877661}
   - {fileID: 1544161815313383251}
@@ -1619,8 +1684,28 @@ MonoBehaviour:
     waypoints:
     - {fileID: 1544161815313383251}
     - {fileID: 4507237960744877661}
+  - entrance: {fileID: 8240320741292344357}
+    targetSpot: {fileID: 1452832311029580759}
+    waypoints: []
+  - entrance: {fileID: 8240320741292344357}
+    targetSpot: {fileID: 3492684538582437246}
+    waypoints: []
+  - entrance: {fileID: 8240320741292344357}
+    targetSpot: {fileID: 5804947994850776807}
+    waypoints: []
+  - entrance: {fileID: 3732991216787322094}
+    targetSpot: {fileID: 1452832311029580759}
+    waypoints: []
+  - entrance: {fileID: 3732991216787322094}
+    targetSpot: {fileID: 3492684538582437246}
+    waypoints: []
+  - entrance: {fileID: 3732991216787322094}
+    targetSpot: {fileID: 5804947994850776807}
+    waypoints: []
   enemySpots:
   - {fileID: 1452832311029580759}
+  - {fileID: 3492684538582437246}
+  - {fileID: 5804947994850776807}
   combatSpots:
   - {fileID: 3087047646741120775}
   footprintWidth: 4
@@ -1652,6 +1737,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
+--- !u!1 &8992214550278103311
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3929554217859659345}
+  m_Layer: 0
+  m_Name: NursingSpot_01_WanderLocation_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3929554217859659345
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8992214550278103311}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.379, y: -0.892, z: 3.558}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4057481417804119105}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9078633222504689190
 GameObject:
   m_ObjectHideFlags: 0
@@ -2066,15 +2182,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9176837682939082712, guid: 65111e801b45d634781b734ab8cd0a90, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.5
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 9176837682939082712, guid: 65111e801b45d634781b734ab8cd0a90, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.5
+      value: 0.6449
       objectReference: {fileID: 0}
     - target: {fileID: 9176837682939082712, guid: 65111e801b45d634781b734ab8cd0a90, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.456
+      value: 1.3268
       objectReference: {fileID: 0}
     - target: {fileID: 9176837682939082712, guid: 65111e801b45d634781b734ab8cd0a90, type: 3}
       propertyPath: m_LocalPosition.y

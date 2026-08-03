@@ -615,6 +615,19 @@ public class RoomBase : MonoBehaviour
             if (referencedWaypoints.Contains(t)) continue;
             DrawPointGizmo(t, Color.gray);
         }
+
+        // "<SpotName>_WanderLocation_NN" children (see GetWorkWanderChain/WorkingWanderPoints_DesignDoc.md)
+        // are deliberately plain Transforms with NO RoomSpot component — GetWorkWanderChain resolves them
+        // purely by name at runtime, and a RoomSpot on one would make RoomSpotPathAutoPopulator's
+        // GetComponentsInChildren<RoomSpot> scan mistake it for a real spot (its name always starts with
+        // the same [SpotNamePrefix] as the spot it belongs to) and wrongly generate entrance paths for it.
+        // Drawn blue to stay visually distinct from every spot/waypoint color above.
+        foreach (Transform t in GetComponentsInChildren<Transform>(true))
+        {
+            if (t == transform) continue;
+            if (!t.name.Contains("_WanderLocation_")) continue;
+            DrawPointGizmo(t, Color.blue);
+        }
     }
 
     private static void DrawPointGizmo(Transform point, Color color)

@@ -39,6 +39,15 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     // first, mirroring WildBunnySpawner's own offscreen-arrival visual for bunnies.
     public enum EnemyPhase { ApproachingSiegeSpot, BesiegingGate, WalkingIn, RaidingRoom }
     private EnemyPhase phase = EnemyPhase.RaidingRoom;
+    // True once this enemy has actually finished walking in and is standing at its claimed EnemySpot —
+    // false for the entire WalkingIn leg, even though InvasionManager.HandleGateBreached registers it into
+    // activeInvasions[room] (making it show up in GetEnemiesInRoom) the instant the gate breaks, well
+    // before it physically arrives. Mirrors the equivalent bunny-side filter EnemyInstance.Update already
+    // applies (bunny.CurrentState == BunnyState.Defending excludes a bunny still walking to its CombatSpot)
+    // — enemies never had the symmetric check, which let melee bunnies flank a target that was still
+    // outside near the gate and compute a flank point next to wherever it was AT THAT MOMENT, then walk
+    // there only to find it long gone ("attack empty air", confirmed 2026-08-03).
+    public bool HasArrivedInRoom => phase == EnemyPhase.RaidingRoom;
     // The outside RoomSpot (ranged or melee) this enemy claimed at siege-spawn time — released the
     // moment it starts walking in (BeginWalkToRoom), not on eventual death, since siege-phase enemies are
     // invulnerable and can't die pre-breach (nothing can damage them: bunnies can't defend the gate, and
@@ -398,7 +407,11 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     // Animation Event receiver — place this on this enemy's Attacking clip at the frame the attack
     // visually "releases", so the AttackInstance VFX spawns in sync with the animation instead of
     // instantly on cooldown. Re-validates the target itself (see CombatEngagement.ReleaseAttack) since a
-    // few frames of wind-up may have passed since TryBeginAttack snapshotted it.
+    // few frames of wind-up may have passed since TryBeginAttack snapshotted it. Deliberately no
+    // retargetPool here (unlike NPCBunny.ReleasePendingAttack's ranged case) — an enemy whose original
+    // bunny target died/got recalled just fizzles rather than sniping a different bunny, per Ethan's ask:
+    // a lingering enemy attack landing on the "wrong" bunny would be a real fairness/surprise problem the
+    // way a fainted bunny's own stray attack still landing on an enemy simply isn't.
     public void ReleasePendingAttack()
     {
         if (pendingAttackTarget == null) return;

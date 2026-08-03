@@ -2667,9 +2667,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // Clears an in-progress wander hop before an interrupt hands off to real travel — without this,
     // workWanderPath can be left stale-non-null if the interrupt fires mid-hop, which keeps
     // UpdateAnimator's IsMoving check permanently true (it OR's on workWanderPath != null) even once the
-    // bunny arrives and settles into Eating/Drinking/Sleeping, since nothing else ever clears it outside
-    // TickWorkWander/StepWorkWanderMovement. BeginWorkWander fully rebuilds the other wander fields fresh
-    // on return to Working, so only the two fields that actually leak into that check need clearing here.
+    // bunny arrives and settles into Eating/Drinking/Sleeping/Defending, since nothing else ever clears it
+    // outside TickWorkWander/StepWorkWanderMovement. Called both by the needs-check leaving-work path
+    // below and by BeginDefending (auto-defend/guard-deploy combat interrupt). BeginWorkWander fully
+    // rebuilds the other wander fields fresh on return to Working, so only the two fields that actually
+    // leak into that check need clearing here.
     private void StopWorkWander()
     {
         workWanderPath = null;
@@ -3274,6 +3276,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // RequestNewJobSpot's routing shape but targets an arbitrary room/spot instead of assignedJobRoom.
     public void BeginDefending(RoomSpot spot, RoomBase room)
     {
+        // A Working bunny can get caught mid-wander-hop (see StopWorkWander's comment) — without this,
+        // workWanderPath stays stale non-null through Defending/Fainted, which forces UpdateAnimator's
+        // IsMoving check permanently true for the whole fight.
+        StopWorkWander();
+
         defendingSpot = spot;
         defendingRoom = room;
 
@@ -3407,7 +3414,16 @@ public class NPCBunny : MonoBehaviour, ICombatant
         // whether the Animation Event even fires on the second engagement.
         Debug.Log($"[VFXDEBUG] ReleasePendingAttack({name}): pendingAttackTarget={(pendingAttackTarget != null ? pendingAttackTarget.CombatGameObject?.name : "NULL")}");
         if (pendingAttackTarget == null) return;
-        CombatEngagement.ReleaseAttack(this, pendingAttackTarget);
+
+        // Ranged only — see CombatEngagement.ReleaseAttack's own comment on retargetPool. Melee stays
+        // fizzle-only here since HandleMeleeDefending already retargets itself at the wind-up level via its
+        // pinned FlankSlots claim, well before this point.
+        IEnumerable<ICombatant> retargetPool = null;
+        BunnyTypeDefinition attackSource = ((ICombatant)this).AttackSource;
+        if (attackSource != null && !attackSource.isMelee && defendingRoom != null && InvasionManager.Instance != null)
+            retargetPool = InvasionManager.Instance.GetEnemiesInRoom(defendingRoom).Cast<ICombatant>();
+
+        CombatEngagement.ReleaseAttack(this, pendingAttackTarget, retargetPool);
         pendingAttackTarget = null;
     }
 
