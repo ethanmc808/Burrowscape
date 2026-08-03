@@ -142,6 +142,13 @@ public class CombatBalanceConfig : ScriptableObject
     public int invasionGroupSizeCapMin = 2;
     public int invasionGroupSizeCapMax = 3;
 
+    [Header("Invasion Cooldown")]
+    [Tooltip("Only one invasion (siege + whatever it fed into interior rooms) is ever active at a time — InvasionManager's loop waits for full resolution before counting toward the next one at all. This is a FIXED minimum quiet period on top of that, elapsing before the population-based wait above even starts ticking — Ethan's explicit call: more than one invasion at once would be overwhelming early game, and population pacing's own low end can dip well under a comfortable floor. Late-game difficulty should come from the level/group-size ramp, not raw frequency.")]
+    public float invasionCooldownMinutes = 5f;
+    [Range(0f, 1f)]
+    [Tooltip("Each invasion cycle rolls exactly ONE raid type — never both, per the single-active-raid rule above. Chance the roll picks a gate-siege invasion (walk up, besiege, breach, then raid the chokepoint room); the remainder picks a direct in-room spawn (enemies appear straight into a random room's EnemySpots, bypassing the gate entirely). 0.5 = 50/50, tunable.")]
+    public float gateSiegeInvasionChance = 0.5f;
+
     // Shared by RollEnemyLevel, GetInvasionWaitRangeSeconds, and RollInvasionGroupSize — all three ramp
     // off the same population/difficulty curve (levelRampStartPopulation/levelRampCapPopulation), just
     // applied to different output ranges. Same ramp shape as WildBunnySpawner.GetPopulationRampT, kept as

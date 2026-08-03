@@ -25,14 +25,19 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     [SerializeField] private float meleeMoveSpeed = 3f;
     [Tooltip("Root transform whose localScale.x sign is flipped to face left/right, same mechanism as NPCBunny's own scale-root flip. Only consulted by melee enemies (see HandleMeleeUpdate) — ranged enemy prefabs can leave this unset and keep their fixed spawn orientation exactly as before.")]
     [SerializeField] private Transform visualScaleRoot;
-    [Tooltip("Movement speed while walking in from the gate to the interior target room, once the siege phase has been broken. Separate from meleeMoveSpeed (local flank shuffling) since this is base-scale walking.")]
+    [Tooltip("Movement speed while walking in from the gate to the interior target room (once the siege phase has been broken) AND while walking up to a claimed siege spot from the offscreen spawn point beforehand (see ApproachingSiegeSpot/HandleApproachUpdate). Separate from meleeMoveSpeed (local flank shuffling) since both of these are base-scale walking.")]
     [SerializeField] private float walkInMoveSpeed = 2f;
+    [Tooltip("Animator bool parameter driven true whenever this enemy is actually moving under code control (offscreen siege approach, post-breach interior walk-in, melee flank approach) and false the rest of the time — mirrors NPCBunny.isMovingParam's own naming convention. Only meaningful once this enemy's own Animator Controller actually has a matching parameter + Idle<->Walking transition wired (the Walking state existed with zero transitions in/out of it before this — see SetMoving's own comment).")]
+    [SerializeField] private string isMovingParam = "IsMoving";
 
-    // Which of the three combat phases this enemy is currently in — replaces the old implicit
+    // Which of the four combat phases this enemy is currently in — replaces the old implicit
     // "room == null means not spawned yet" assumption, since room == null is now a legitimate state for
-    // BesiegingGate/WalkingIn (see Combat_DesignDoc.md's Gate Siege section). Defaults to RaidingRoom so
-    // the original Initialize(def, room) interior-spawn path is completely unaffected.
-    public enum EnemyPhase { BesiegingGate, WalkingIn, RaidingRoom }
+    // every phase before RaidingRoom (see Combat_DesignDoc.md's Gate Siege section). Defaults to
+    // RaidingRoom so the original Initialize(def, room) interior-spawn path is completely unaffected.
+    // ApproachingSiegeSpot is the newest addition — a siege enemy used to just appear already standing at
+    // its claimed spot; now it spawns at one of EntranceGate.EnemySpawnPoints (offscreen) and walks in
+    // first, mirroring WildBunnySpawner's own offscreen-arrival visual for bunnies.
+    public enum EnemyPhase { ApproachingSiegeSpot, BesiegingGate, WalkingIn, RaidingRoom }
     private EnemyPhase phase = EnemyPhase.RaidingRoom;
     // The outside RoomSpot (ranged or melee) this enemy claimed at siege-spawn time — released the
     // moment it starts walking in (BeginWalkToRoom), not on eventual death, since siege-phase enemies are
@@ -133,18 +138,23 @@ public class EnemyInstance : MonoBehaviour, ICombatant
 
     // Called by InvasionManager.TrySpawnInvasion instead of Initialize for the gate-siege phase — spawns
     // with no room (siege enemies aren't in any room yet, they're outside attacking the gate) and tracks
-    // the outside spot claimed for it, released once it starts walking in (see BeginWalkToRoom).
-    public void InitializeForSiege(EnemyDefinition def, RoomSpot spot, int? explicitLevel = null)
+    // the outside spot claimed for it, released once it starts walking in (see BeginWalkToRoom). Caller
+    // already Instantiate()'d this at spawnPoint's position/rotation (or the siege spot's, if spawnPoint
+    // wasn't configured) — this just decides which phase to start in based on that.
+    public void InitializeForSiege(EnemyDefinition def, RoomSpot spot, Transform spawnPoint, int? explicitLevel = null)
     {
         Initialize(def, spawnedRoom: null, explicitLevel);
         claimedSiegeSpot = spot;
-        phase = EnemyPhase.BesiegingGate;
+        // No spawnPoint configured (EntranceGate.EnemySpawnPoints empty) — fall back to today's
+        // instant-appear-at-spot behavior rather than an approach walk with nowhere real to walk from.
+        phase = spawnPoint != null ? EnemyPhase.ApproachingSiegeSpot : EnemyPhase.BesiegingGate;
     }
 
     private void Update()
     {
         if (currentHP <= 0 || DwellerRoster.Instance == null) return;
 
+        if (phase == EnemyPhase.ApproachingSiegeSpot) { HandleApproachUpdate(); return; }
         if (phase == EnemyPhase.BesiegingGate) { HandleSiegeUpdate(); return; }
         if (phase == EnemyPhase.WalkingIn) { HandleWalkInUpdate(); return; }
 
@@ -179,6 +189,41 @@ public class EnemyInstance : MonoBehaviour, ICombatant
             animator.SetTrigger("Attack");
     }
 
+    // Pre-siege approach leg — walks straight from this enemy's offscreen EntranceGate.EnemySpawnPoints entry to
+    // enemy's already-claimed siege spot, then hands off to the real siege phase. Deliberately a single
+    // MoveTowards rather than reusing HandleWalkInUpdate's Queue<Transform>-of-waypoints shape: unlike the
+    // post-breach walk (which crosses real room geometry), there's nothing between the offscreen spawn
+    // point and the siege spot to route around, so one destination is all this needs. Mirrors
+    // HandleWalkInUpdate's facing-follows-travel-direction convention for consistency.
+    private void HandleApproachUpdate()
+    {
+        if (claimedSiegeSpot == null) { phase = EnemyPhase.BesiegingGate; return; } // defensive — a siege spot is always assigned before this phase starts
+
+        Vector3 destination = claimedSiegeSpot.transform.position;
+        Vector3 toTarget = destination - transform.position;
+        if (toTarget.magnitude <= 0.05f)
+        {
+            transform.position = destination;
+            transform.rotation = claimedSiegeSpot.transform.rotation;
+            phase = EnemyPhase.BesiegingGate;
+            SetMoving(false);
+            return;
+        }
+
+        Vector3 dir = toTarget.normalized;
+        transform.position += dir * walkInMoveSpeed * Time.deltaTime;
+        if (Mathf.Abs(dir.x) > 0.01f) SetFacing(dir.x < 0f);
+        SetMoving(true);
+    }
+
+    // Drives isMovingParam — see that field's own comment. Centralized here rather than inlined at every
+    // call site so every movement leg (approach, interior walk-in, melee flank-approach) stays consistent
+    // if this ever needs to change (e.g. a future per-phase movement sound/dust-puff hook).
+    private void SetMoving(bool isMoving)
+    {
+        if (animator != null) animator.SetBool(isMovingParam, isMoving);
+    }
+
     // Siege-phase combat — every siege enemy (melee or ranged) has exactly one possible target, the gate
     // itself, so this is simpler than the interior path: no room-wide candidate pool, no death handling
     // (siege enemies can't take damage pre-breach — see the EnemyPhase field comment). Ranged fires from
@@ -192,6 +237,13 @@ public class EnemyInstance : MonoBehaviour, ICombatant
         BunnyTypeDefinition attackSource = definition != null ? definition.attackSource : null;
         if (attackSource != null && attackSource.isMelee)
         {
+            // Only the enemy actually standing at the front meleeSiegeSpot is close enough to strike —
+            // one claiming a MeleeWaitingSpots entry instead just idles here for the whole siege (siege
+            // enemies are invulnerable and never die pre-breach, so the front slot never opens up for a
+            // waiting enemy to advance into mid-siege). It still walks in normally with everyone else
+            // once the gate breaks (BeginWalkToRoom/HandleGateBreached don't care which spot it held).
+            if (claimedSiegeSpot != ((EntranceGate)gate).MeleeSiegeSpot) return;
+
             HandleMeleeUpdate(candidateOverride: new List<ICombatant> { gate });
             return;
         }
@@ -237,6 +289,7 @@ public class EnemyInstance : MonoBehaviour, ICombatant
             room = pendingTargetRoom;
             phase = EnemyPhase.RaidingRoom;
             transform.position = pendingTargetSpot != null ? pendingTargetSpot.transform.position : transform.position;
+            SetMoving(false);
             return;
         }
 
@@ -245,12 +298,13 @@ public class EnemyInstance : MonoBehaviour, ICombatant
         {
             transform.position = currentWalkTarget.position;
             currentWalkTarget = walkInPath.Count > 0 ? walkInPath.Dequeue() : null;
-            return;
+            return; // still walking overall (just advancing to the next waypoint) — SetMoving stays true from below
         }
 
         Vector3 dir = toTarget.normalized;
         transform.position += dir * walkInMoveSpeed * Time.deltaTime;
         if (Mathf.Abs(dir.x) > 0.01f) SetFacing(dir.x < 0f); // reuses existing SetFacing/visualScaleRoot, no-op if unset
+        SetMoving(true);
     }
 
     // Melee counterpart to Update above — mirrors NPCBunny.HandleMeleeDefending's shape exactly (pick a
@@ -272,6 +326,7 @@ public class EnemyInstance : MonoBehaviour, ICombatant
                 claimedSlots = null;
                 claimedTarget = null;
                 meleeApproachState = MeleeApproachState.SeekingTarget;
+                SetMoving(false);
                 return;
             }
 
@@ -280,8 +335,11 @@ public class EnemyInstance : MonoBehaviour, ICombatant
                 transform.position = Vector3.MoveTowards(transform.position, flankDestination, meleeMoveSpeed * Time.deltaTime);
                 if (Vector3.Distance(transform.position, flankDestination) <= 0.05f)
                     meleeApproachState = MeleeApproachState.Flanking;
+                SetMoving(true);
                 return; // no attacking mid-walk
             }
+
+            SetMoving(false); // Flanking — standing in place, attacking below
 
             List<ICombatant> pinnedPool = new List<ICombatant> { claimedTarget };
             bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, pinnedPool, out ICombatant attackTarget);

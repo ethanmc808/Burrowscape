@@ -43,6 +43,18 @@ public class InvasionManager : MonoBehaviour
 
     private Coroutine invasionRoutine;
 
+    // Only one invasion (siege + whatever it fed into interior rooms) is ever active at a time (Ethan's
+    // explicit ask — more than one at once would be overwhelming early game, and other levers like the
+    // level/group-size ramp should drive late-game difficulty instead of raw frequency). Set true the
+    // moment TrySpawnInvasion actually spawns/reinforces a wave, cleared the moment OnSiegeFullyCleared
+    // fires (both call sites below). InvasionLoop blocks on this before it'll even begin the next
+    // cooldown-then-population-wait cycle.
+    private bool raidActive;
+    // False only until the very first invasion of the playthrough spawns — keeps invasionCooldownMinutes
+    // from delaying game-start's first raid on top of its own already-tuned invasionStartMinWaitMinutes
+    // wait; the fixed cooldown is meant to space raids apart from EACH OTHER, not from game start.
+    private bool hasSpawnedFirstInvasion;
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -59,11 +71,23 @@ public class InvasionManager : MonoBehaviour
     {
         while (true)
         {
+            // Never even start counting toward the next invasion until the current raid has fully
+            // resolved — see raidActive's own comment.
+            while (raidActive) yield return null;
+
+            if (hasSpawnedFirstInvasion)
+                yield return new WaitForSeconds(CombatBalanceConfig.Instance.invasionCooldownMinutes * 60f);
+
             CombatBalanceConfig.Instance.GetInvasionWaitRangeSeconds(out float minSeconds, out float maxSeconds);
             float wait = UnityEngine.Random.Range(minSeconds, maxSeconds);
             yield return new WaitForSeconds(wait);
 
-            TrySpawnInvasion();
+            // Exactly one raid type per cycle, never both — same single-active-raid rule raidActive
+            // already enforces between cycles, just applied to the choice within a cycle too.
+            if (UnityEngine.Random.value < CombatBalanceConfig.Instance.gateSiegeInvasionChance)
+                TrySpawnInvasion();
+            else
+                TrySpawnInRoomInvasion();
         }
     }
 
@@ -102,12 +126,31 @@ public class InvasionManager : MonoBehaviour
             return;
         }
 
+        // A broken-but-not-yet-repaired gate can't be besieged again — HandleSiegeUpdate no-ops once
+        // !gate.IsAlive, so a wave spawned here would just idle at its siege spot forever, never breaching
+        // (TakeCombatDamage ignores further hits at 0 HP) and never walking in. That would permanently
+        // strand this wave in gateSiegeGroup, which in turn permanently blocks OnSiegeFullyCleared (it
+        // requires gateSiegeGroup.Count == 0) — i.e. the gate would never repair again for the rest of the
+        // playthrough. Repair only happens once every interior room from the current raid has cleared
+        // (HandleSiegeFullyCleared), so waiting for that is correct, not just a workaround.
+        if (!((ICombatant)gate).IsAlive)
+        {
+            DebugLog.Log("InvasionManager: gate is already breached and awaiting repair — skipping invasion until the current raid fully resolves.");
+            return;
+        }
+
         List<RoomSpot> rangedSpots = gate.RangedSiegeSpots != null
             ? gate.RangedSiegeSpots.Where(s => !s.IsOccupied).ToList()
             : new List<RoomSpot>();
-        RoomSpot meleeSpot = gate.MeleeSiegeSpot != null && !gate.MeleeSiegeSpot.IsOccupied ? gate.MeleeSiegeSpot : null;
 
-        int totalAvailable = rangedSpots.Count + (meleeSpot != null ? 1 : 0);
+        // Front spot first, then waiting spots — so a solo melee enemy always gets the one actually
+        // close enough to attack, and any extra melee picks this wave fall back to waiting (see
+        // EnemyInstance.HandleSiegeUpdate, which only lets the meleeSiegeSpot occupant actually swing).
+        List<RoomSpot> meleeSpots = new List<RoomSpot>();
+        if (gate.MeleeSiegeSpot != null && !gate.MeleeSiegeSpot.IsOccupied) meleeSpots.Add(gate.MeleeSiegeSpot);
+        if (gate.MeleeWaitingSpots != null) meleeSpots.AddRange(gate.MeleeWaitingSpots.Where(s => !s.IsOccupied));
+
+        int totalAvailable = rangedSpots.Count + meleeSpots.Count;
         if (totalAvailable == 0)
         {
             DebugLog.Log("InvasionManager: gate siege spots are all occupied — skipping invasion.");
@@ -117,16 +160,28 @@ public class InvasionManager : MonoBehaviour
         int groupSize = Mathf.Min(CombatBalanceConfig.Instance.RollInvasionGroupSize(), totalAvailable);
         List<EnemyInstance> spawnedGroup = new List<EnemyInstance>();
         int rangedUsed = 0;
+        int meleeUsed = 0;
 
         for (int i = 0; i < groupSize; i++)
         {
-            EnemyDefinition chosenType = PickTypeWithAvailableSpot(availableTypes, rangedSpots.Count - rangedUsed, meleeSpot != null);
+            EnemyDefinition chosenType = PickTypeWithAvailableSpot(availableTypes, rangedSpots.Count - rangedUsed, meleeSpots.Count - meleeUsed > 0);
             if (chosenType == null) break; // both pools this wave could still roll from are exhausted
 
             bool isMelee = chosenType.attackSource != null && chosenType.attackSource.isMelee;
-            RoomSpot spot = isMelee ? meleeSpot : rangedSpots[rangedUsed];
+            RoomSpot spot = isMelee ? meleeSpots[meleeUsed] : rangedSpots[rangedUsed];
 
-            GameObject spawnedObject = Instantiate(chosenType.prefab, spot.transform.position, spot.transform.rotation);
+            // Spawn offscreen (if EntranceGate.EnemySpawnPoints is configured) rather than already
+            // standing at the siege spot — InitializeForSiege below then walks this enemy in from there.
+            // Cycles through the list by how many enemies have actually spawned so far this wave (not the
+            // loop index i, which could skip ahead on a bad-prefab continue below) — a multi-enemy wave
+            // spreads across separate points instead of everyone stacking on one and clumping together.
+            Transform spawnPoint = gate.EnemySpawnPoints != null && gate.EnemySpawnPoints.Count > 0
+                ? gate.EnemySpawnPoints[spawnedGroup.Count % gate.EnemySpawnPoints.Count]
+                : null;
+            Vector3 spawnPosition = spawnPoint != null ? spawnPoint.position : spot.transform.position;
+            Quaternion spawnRotation = spawnPoint != null ? spawnPoint.rotation : spot.transform.rotation;
+
+            GameObject spawnedObject = Instantiate(chosenType.prefab, spawnPosition, spawnRotation);
             EnemyInstance enemy = spawnedObject.GetComponent<EnemyInstance>();
             if (enemy == null)
             {
@@ -136,13 +191,16 @@ public class InvasionManager : MonoBehaviour
             }
 
             spot.TryClaim(enemy);
-            enemy.InitializeForSiege(chosenType, spot);
+            enemy.InitializeForSiege(chosenType, spot, spawnPoint);
 
-            if (isMelee) meleeSpot = null; else rangedUsed++;
+            if (isMelee) meleeUsed++; else rangedUsed++;
             spawnedGroup.Add(enemy);
         }
 
         if (spawnedGroup.Count == 0) return;
+
+        raidActive = true;
+        hasSpawnedFirstInvasion = true;
 
         // Merge into an ongoing siege rather than replacing it — same reasoning as room invasions already
         // merging (see HandleGateBreached's own interior-room merge below): a second wave while the gate
@@ -161,9 +219,9 @@ public class InvasionManager : MonoBehaviour
     }
 
     // Filters to types whose pool still has room BEFORE rolling, rather than rolling then rejecting —
-    // avoids dead-looping when e.g. the melee pool (capacity 1) is already full but ranged still has
-    // room, or vice versa. A type with no attackSource assigned is treated as ranged, matching
-    // EnemyInstance.Update's own existing null-tolerant convention.
+    // avoids dead-looping when e.g. the melee pool (1 front spot + however many MeleeWaitingSpots exist)
+    // is already full but ranged still has room, or vice versa. A type with no attackSource assigned is
+    // treated as ranged, matching EnemyInstance.Update's own existing null-tolerant convention.
     private EnemyDefinition PickTypeWithAvailableSpot(List<EnemyDefinition> availableTypes, int rangedRemaining, bool meleeAvailable)
     {
         List<EnemyDefinition> eligible = availableTypes.Where(d =>
@@ -180,7 +238,13 @@ public class InvasionManager : MonoBehaviour
     {
         List<EnemyInstance> survivors = new List<EnemyInstance>(gateSiegeGroup);
         gateSiegeGroup.Clear();
-        gateBreachSubscribed = false;
+        // Deliberately NOT resetting gateBreachSubscribed here — this subscription is meant to be
+        // permanent for the gate's lifetime, not re-armed per siege. It used to reset here, which meant
+        // every subsequent TrySpawnInvasion call re-subscribed this same handler on TOP of the still-live
+        // one from last cycle (never unsubscribed), so a later breach fired HandleGateBreached multiple
+        // times in a row — harmless in the common case (gateSiegeGroup already cleared by the first call)
+        // but an unbounded leak, and a real double-fire risk on OnSiegeFullyCleared in the rare
+        // no-free-EnemySpot branch below.
 
         RoomBase targetRoom = PickTargetRoom(); // unchanged chokepoint logic, resolved once for the group
         if (targetRoom == null)
@@ -190,7 +254,11 @@ public class InvasionManager : MonoBehaviour
             // forever near the broken gate (their HandleSiegeUpdate no-ops once the gate is dead). Rare —
             // needs every room's EnemySpots simultaneously full — revisit with a retry timer or a
             // capacity-ignoring force-place if it turns out to matter in practice.
-            if (activeInvasions.Count == 0) OnSiegeFullyCleared?.Invoke(); // gate still repairs even if nobody got in
+            if (activeInvasions.Count == 0)
+            {
+                raidActive = false;
+                OnSiegeFullyCleared?.Invoke(); // gate still repairs even if nobody got in
+            }
             return;
         }
 
@@ -235,12 +303,92 @@ public class InvasionManager : MonoBehaviour
         if (chokepoint != null && chokepoint.EnemySpots != null && chokepoint.EnemySpots.Any(s => !s.IsOccupied))
             return chokepoint;
 
+        return PickRandomRoomWithFreeEnemySpot();
+    }
+
+    // Any floor-1 room (any type) with at least one free EnemySpot, uniformly random — no chokepoint
+    // preference, unlike PickTargetRoom's gate-siege fallback above. Used directly by the in-room spawn
+    // type below: "pests burrow up from underground" has no "breaks through the front line first"
+    // narrative the way a gate siege does, so every eligible room is an equally likely target.
+    private RoomBase PickRandomRoomWithFreeEnemySpot()
+    {
         List<RoomBase> candidates = BaseLayoutManager.Instance.GetAllRoomsOnFloor(BaseLayoutManager.Instance.EntranceFloorIndex)
             .Where(r => r.EnemySpots != null && r.EnemySpots.Any(s => !s.IsOccupied))
             .ToList();
 
         if (candidates.Count == 0) return null;
         return candidates[UnityEngine.Random.Range(0, candidates.Count)];
+    }
+
+    // Second raid type, alongside the gate-siege pipeline above — enemies appear directly in a random
+    // room's EnemySpots, bypassing EntranceGate/the siege phase entirely (no walk-in, no gate HP/Defense
+    // involved at all). Shares every downstream mechanic with a gate-siege's interior arm: activeInvasions
+    // bookkeeping, TriggerAutoDefend, OnEnemyGroupSpawned, and HandleEnemyDefeated's own clear/recall
+    // logic — the only thing genuinely new here is spawn placement. Picking between this and
+    // TrySpawnInvasion (never both at once) happens once per cycle in InvasionLoop.
+    [ContextMenu("Force In-Room Invasion")]
+    public void TrySpawnInRoomInvasion()
+    {
+        List<EnemyDefinition> availableTypes = enemyTypes != null
+            ? enemyTypes.Where(d => d != null && d.prefab != null).ToList()
+            : new List<EnemyDefinition>();
+
+        if (availableTypes.Count == 0)
+        {
+            DebugLog.Log("InvasionManager: no enemy types have a prefab assigned — skipping in-room invasion.");
+            return;
+        }
+
+        RoomBase targetRoom = PickRandomRoomWithFreeEnemySpot();
+        if (targetRoom == null)
+        {
+            DebugLog.Log("InvasionManager: no interior room has a free EnemySpot — skipping in-room invasion.");
+            return;
+        }
+
+        List<RoomSpot> freeSpots = targetRoom.EnemySpots.Where(s => !s.IsOccupied).ToList();
+        int groupSize = Mathf.Min(CombatBalanceConfig.Instance.RollInvasionGroupSize(), freeSpots.Count);
+        List<EnemyInstance> spawnedGroup = new List<EnemyInstance>();
+
+        for (int i = 0; i < groupSize; i++)
+        {
+            EnemyDefinition chosenType = availableTypes[UnityEngine.Random.Range(0, availableTypes.Count)];
+            RoomSpot spot = freeSpots[i];
+
+            GameObject spawnedObject = Instantiate(chosenType.prefab, spot.transform.position, spot.transform.rotation);
+            EnemyInstance enemy = spawnedObject.GetComponent<EnemyInstance>();
+            if (enemy == null)
+            {
+                Debug.LogWarning($"InvasionManager: {chosenType.displayName}'s prefab has no EnemyInstance component.");
+                Destroy(spawnedObject);
+                continue;
+            }
+
+            spot.TryClaim(enemy);
+            enemy.Initialize(chosenType, targetRoom); // straight into RaidingRoom phase — no siege/walk-in leg at all
+
+            RoomBase room = targetRoom;
+            EnemyInstance spawnedEnemy = enemy;
+            RoomSpot claimedSpot = spot;
+            enemy.OnDefeated += () => HandleEnemyDefeated(room, spawnedEnemy, claimedSpot);
+
+            spawnedGroup.Add(enemy);
+        }
+
+        if (spawnedGroup.Count == 0) return;
+
+        raidActive = true;
+        hasSpawnedFirstInvasion = true;
+
+        if (activeInvasions.TryGetValue(targetRoom, out List<EnemyInstance> existingGroup))
+            existingGroup.AddRange(spawnedGroup);
+        else
+            activeInvasions[targetRoom] = spawnedGroup;
+
+        DebugLog.Log($"InvasionManager: spawned {spawnedGroup.Count} enemy(ies) directly into {targetRoom.name}.");
+
+        TriggerAutoDefend(targetRoom);
+        OnEnemyGroupSpawned?.Invoke(targetRoom, spawnedGroup);
     }
 
     // Any bunny already Working/Relaxing in the invaded room breaks off to a CombatSpot without losing
@@ -289,6 +437,9 @@ public class InvasionManager : MonoBehaviour
         // no rooms and no ongoing siege remain — EntranceGate listens for this specifically, not
         // OnInvasionCleared above, since that fires per-room and a raid can spread across more than one.
         if (activeInvasions.Count == 0 && gateSiegeGroup.Count == 0)
+        {
+            raidActive = false;
             OnSiegeFullyCleared?.Invoke();
+        }
     }
 }

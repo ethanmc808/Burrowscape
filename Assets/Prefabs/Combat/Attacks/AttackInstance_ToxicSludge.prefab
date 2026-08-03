@@ -47,11 +47,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AttackInstance
   travelSpeed: 2
   arrivalThreshold: 0.1
+  meleeImpactOffset: {x: 0, y: 0, z: 0}
   travelDelaySeconds: 0
   useArcMotion: 1
   arcHeight: 0.5
   trailFollower: {fileID: 7370765690274264971}
-  trailLagDistance: 0.35
+  trailLagDistance: 0.15
   reverseDirection: 0
   impactVFX: {fileID: 3481929076976064698}
   impactLingerSeconds: 1

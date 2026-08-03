@@ -43,7 +43,7 @@ GameObject:
   - component: {fileID: 7391025816263471002}
   - component: {fileID: 7391025816263471003}
   m_Layer: 0
-  m_Name: AttackInstance_Swipe
+  m_Name: AttackInstance_Slash
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -89,7 +89,7 @@ MonoBehaviour:
   impactVFX: {fileID: 0}
   impactLingerSeconds: 0.5
   clearInstantlyOnResolve: []
-  launchSFX: {fileID: 0}
+  launchSFX: {fileID: 8300000, guid: e4a0612d8b328c0458880ae4c0616729, type: 3}
   impactSFX: {fileID: 0}
 --- !u!1 &7391025816263471004
 GameObject:

@@ -21,10 +21,10 @@ MonoBehaviour:
   baseDefense: 70
   baseSpeed: 70
   baseLuck: 20
-  attackName: 
+  attackName: Slash
   isMelee: 1
   attackVFXPrefab: {fileID: 7391025816263471001, guid: b5f43d98e236df24184eb89b0c21239c, type: 3}
-  attackIntervalSeconds: 2
+  attackIntervalSeconds: 1.5
   group: 1
   populationThreshold: 0
   passives: []

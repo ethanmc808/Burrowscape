@@ -76,6 +76,12 @@ public class AssignmentUI : MonoBehaviour
         ClearSelection();
         RoomUpgradeUI.Instance?.Close(playSound);
         PatientUI.Instance?.Close(playSound);
+        // GuardDeployUI also opens alongside AssignmentUI (RoomClickHandler), but deliberately has no
+        // close button of its own (see its header comment — stays open across deploys so the player can
+        // send reinforcements one at a time). Without this it only ever closed via OnInvasionCleared, so
+        // assigning a bunny into an invaded room through the normal AssignAndClose flow left it stranded
+        // open with no way to dismiss it until the battle ended.
+        GuardDeployUI.Instance?.Close(playSound);
     }
 
     private void PopulateLists()

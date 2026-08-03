@@ -35,8 +35,14 @@ public class EntranceGate : MonoBehaviour, ICombatant
     [Header("Siege Spots (outside, near the queue — hand-placed, no auto-populator)")]
     [SerializeField] private List<RoomSpot> rangedSiegeSpots;
     [SerializeField] private RoomSpot meleeSiegeSpot;
+    [Tooltip("Extra melee siege positions beyond the single front meleeSiegeSpot above — a melee enemy claiming one of these just stands and waits (see EnemyInstance.HandleSiegeUpdate) rather than attacking, since only meleeSiegeSpot is close enough to actually strike the gate. Siege enemies are invulnerable and never die pre-breach, so the front spot never actually opens up mid-siege for a waiting enemy to advance into — they simply ride along and walk in together with everyone else once the gate breaks. Exists purely to raise melee capacity per wave beyond 1 (see InvasionManager.TrySpawnInvasion), same reasoning as rangedSiegeSpots already being a list.")]
+    [SerializeField] private List<RoomSpot> meleeWaitingSpots;
     public IReadOnlyList<RoomSpot> RangedSiegeSpots => rangedSiegeSpots;
     public RoomSpot MeleeSiegeSpot => meleeSiegeSpot;
+    public IReadOnlyList<RoomSpot> MeleeWaitingSpots => meleeWaitingSpots;
+    [Tooltip("Offscreen points new siege enemies spawn at and walk in from, mirroring WildBunnySpawner's own offscreen bunny-arrival point for visual consistency (hand-placed Transforms, same idea — no auto-populator). InvasionManager assigns one per enemy in a wave (wrapping if a wave is bigger than this list), so a multi-enemy wave starts spread out across separate points instead of all stacked on one — simpler than staggering spawn timing with a coroutine, and solves the clumping directly rather than just delaying it. Leave empty to fall back to the old instant-appear-at-spot behavior.")]
+    [SerializeField] private List<Transform> enemySpawnPoints;
+    public IReadOnlyList<Transform> EnemySpawnPoints => enemySpawnPoints;
 
     private int activeTraffic = 0; // bunnies currently queued/waiting/passing through
     private Coroutine gateRoutine;
@@ -108,8 +114,15 @@ public class EntranceGate : MonoBehaviour, ICombatant
         ResolveStatsForGrade();
     }
 
+    // Fires once per fully-resolved raid, regardless of which raid type it was (InvasionManager now also
+    // spawns enemies directly into a room, entirely bypassing the gate — see TrySpawnInRoomInvasion).
+    // currentHP only ever reaches 0 via an actual breach (TakeCombatDamage), so >0 here means this
+    // particular raid never touched the gate at all — nothing to repair, and replaying the
+    // opening/closing transition + SFX for a gate that was never broken would be a visible/audible glitch.
     private void HandleSiegeFullyCleared()
     {
+        if (currentHP > 0) return;
+
         ResolveStatsForGrade(); // full repair
         StartTransition(GateState.Closing);
     }

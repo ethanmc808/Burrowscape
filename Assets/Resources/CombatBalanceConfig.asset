@@ -43,9 +43,9 @@ MonoBehaviour:
   guardGrade1DefenseMultiplier: 1.2
   guardGrade3SpeedMultiplier: 1.15
   guardGrade3ShieldAmount: 50
-  gateGrade1MaxHP: 2
-  gateGrade2MaxHP: 4
-  gateGrade3MaxHP: 6
+  gateGrade1MaxHP: 20
+  gateGrade2MaxHP: 40
+  gateGrade3MaxHP: 60
   gateGrade1Defense: 1
   gateGrade2Defense: 2
   gateGrade3Defense: 3
@@ -64,3 +64,5 @@ MonoBehaviour:
   invasionGroupSizeStartMax: 1
   invasionGroupSizeCapMin: 2
   invasionGroupSizeCapMax: 3
+  invasionCooldownMinutes: 5
+  gateSiegeInvasionChance: 0.5

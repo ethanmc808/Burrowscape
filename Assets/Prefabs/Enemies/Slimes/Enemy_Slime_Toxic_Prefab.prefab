@@ -263,10 +263,11 @@ MonoBehaviour:
   definition: {fileID: 11400000, guid: d7d9d733ddfafe449a217769f187d0db, type: 2}
   animator: {fileID: 0}
   deathAnimationSeconds: 1
-  attackOriginOffset: {x: 0.3, y: 0.5, z: 0}
+  attackOriginOffset: {x: 0.3, y: 0.45, z: 0}
   meleeMoveSpeed: 3
   visualScaleRoot: {fileID: 4294209199311311408}
-  walkInMoveSpeed: 2
+  walkInMoveSpeed: 1
+  isMovingParam: IsMoving
 --- !u!114 &8242884225445179976
 MonoBehaviour:
   m_ObjectHideFlags: 0

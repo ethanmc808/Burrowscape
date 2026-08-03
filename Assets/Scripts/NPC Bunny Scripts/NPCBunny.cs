@@ -1873,6 +1873,14 @@ public class NPCBunny : MonoBehaviour, ICombatant
         currentSpot = claimedRelaxSpot;
         currentWanderPoint = null;
         currentFloorIndex = currentRoom.FloorIndex;
+
+        // Same late-arrival/race fix as OnArrivedAtWorkSpot above — see its comment.
+        if (InvasionManager.Instance != null && InvasionManager.Instance.IsRoomInvaded(currentRoom))
+        {
+            RoomSpot combatSpot = currentRoom.ClaimCombatSpot(this);
+            if (combatSpot != null)
+                BeginDefending(combatSpot, currentRoom);
+        }
     }
 
     private void OnArrivedAtDrinkingSpot()
@@ -2095,6 +2103,23 @@ public class NPCBunny : MonoBehaviour, ICombatant
         currentSpot = claimedWorkSpot;
         currentWanderPoint = null;
         currentFloorIndex = currentRoom.FloorIndex;
+
+        // TriggerAutoDefend only fires once, the instant an invasion breaches into a room, and only
+        // catches bunnies already CurrentState==Working/Relaxing at that exact frame (see
+        // DwellerRoster.GetBunniesCurrentlyInRoom) — a bunny still mid-walk toward this spot, or assigned
+        // to this job after the breach already happened, would otherwise arrive and start working right
+        // next to an enemy neither side ever targets (EnemyInstance's own candidate pool is likewise
+        // Defending-only). Catch that race here instead of proceeding to work.
+        if (InvasionManager.Instance != null && InvasionManager.Instance.IsRoomInvaded(currentRoom))
+        {
+            RoomSpot combatSpot = currentRoom.ClaimCombatSpot(this);
+            if (combatSpot != null)
+            {
+                BeginDefending(combatSpot, currentRoom);
+                return;
+            }
+        }
+
         assignedJobRoom.NotifyBunnyReadyToWork(this);
         BeginWorkWander();
     }
