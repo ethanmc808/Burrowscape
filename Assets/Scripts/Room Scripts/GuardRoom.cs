@@ -2,13 +2,19 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-// A Guard-job bunny's "work spot" is its combat post — RequestSpot/ReleaseSpot/HasAvailableSpot are thin
-// wrappers around RoomBase's inherited CombatSpots (see RoomBase.ClaimCombatSpot), the same list used by
-// auto-defending residents and manually-deployed guards in any other room. No production of its own (see
-// GardenRoom for that shape) — a posted guard just stands there until InvasionManager sends them into
-// combat via NPCBunny.BeginDefending, same as any other room's defenders.
+// A Guard-job bunny's "work spot" is its own WatchSpot — a dedicated job-spot list, same shape as
+// EntranceRoom's guardSpots, distinct from RoomBase's inherited CombatSpots. WatchSpots are where a
+// posted guard patrols/stands during normal duty (and pick up patrol paths for free via
+// RoomBase.GetWorkWanderChain, same as any other job spot); CombatSpots are the shared pool every room
+// has for actual invasion combat (auto-defenders and manually-deployed guards alike, via
+// NPCBunny.BeginDefending — see InvasionManager.TriggerAutoDefend / GuardDeployUI). The auto-populator
+// already routes a WatchSpot -> CombatSpot RoomPath for every pairing (its "occupancy spot to CombatSpot"
+// rule), so a guard called into battle reroutes cleanly from wherever it was posted/patrolling.
 public class GuardRoom : RoomBase, IJobRoom
 {
+    [SpotNamePrefix("WatchSpot")]
+    [SerializeField] private List<RoomSpot> watchSpots;
+
     // Bunnies idled because this room lost Power/Water while posted — resumed automatically by
     // OnRoomRestored, same shape as GardenRoom's idledByShutdown.
     private List<NPCBunny> idledByShutdown = new List<NPCBunny>();
@@ -35,18 +41,27 @@ public class GuardRoom : RoomBase, IJobRoom
             BaseManager.Instance.UnregisterGuardRoom(this);
     }
 
-    public RoomSpot RequestSpot(NPCBunny bunny) => ClaimCombatSpot(bunny);
+    public RoomSpot RequestSpot(NPCBunny bunny)
+    {
+        if (watchSpots == null) return null;
+        foreach (RoomSpot spot in watchSpots)
+        {
+            if (spot.TryClaim(bunny))
+                return spot;
+        }
+        return null;
+    }
 
     public void ReleaseSpot(RoomSpot spot, NPCBunny bunny)
     {
-        ReleaseCombatSpot(spot, bunny);
+        spot.Release(bunny);
         RevokeGuardBuff(bunny);
     }
 
     public bool HasAvailableSpot()
     {
-        if (CombatSpots == null) return false;
-        foreach (RoomSpot spot in CombatSpots)
+        if (watchSpots == null) return false;
+        foreach (RoomSpot spot in watchSpots)
         {
             if (!spot.IsOccupied)
                 return true;

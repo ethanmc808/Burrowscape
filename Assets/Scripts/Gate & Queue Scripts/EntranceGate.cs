@@ -74,6 +74,7 @@ public class EntranceGate : MonoBehaviour, ICombatant
     GameObject ICombatant.CombatGameObject => this == null ? null : gameObject;
     Vector3 ICombatant.AttackOrigin => CombatOrigin.position; // unused, gate never attacks
     Vector3 ICombatant.VisualCenter => CombatEngagement.ComputeVisualCenter(visualRenderers, CombatOrigin.position);
+    bool ICombatant.IsFacingRight => true; // unused, gate never attacks
 
     public void TakeCombatDamage(int amount)
     {

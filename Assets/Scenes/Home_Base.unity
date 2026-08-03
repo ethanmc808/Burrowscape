@@ -3609,6 +3609,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f84ccd7160ee98e4cb0f3e2d70dfd2f1, type: 2}
   - {fileID: 11400000, guid: f9f41574887536c47a022af202be3913, type: 2}
   - {fileID: 11400000, guid: ea20fd1bd248b5685cd1f92b3a10a288, type: 2}
+  - {fileID: 11400000, guid: 8b935b91b7dbb829d10f5b1df89157b0, type: 2}
   panelRoot: {fileID: 282330184}
   listContainer: {fileID: 27536204}
   roomListItemPrefab: {fileID: 7630879028902250852, guid: 02f12ef8da883264796cf083b7969da5, type: 3}

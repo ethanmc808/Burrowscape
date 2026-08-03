@@ -81,11 +81,13 @@ public class RoomSpotPathAutoPopulator : Editor
         List<RoomPath> resultPaths = new List<RoomPath>(existingPaths);
         int addedCount = 0;
 
-        // EnemySpots never get an entrance path — enemies spawn straight onto their spot via
-        // InvasionManager.TrySpawnInvasion's Instantiate(prefab, spot.transform.position, ...), no gate
-        // walk-in built yet ("a documented future addition, not built here" per that method's own
-        // comment), so a RoomPath targeting one would just be dead data nothing ever reads.
-        List<RoomSpot> entrancePairableSpots = spotsUsedForPaths.Where(s => !enemySpots.Contains(s)).ToList();
+        // Every spot gets an entrance path, including EnemySpots — the Gate Siege system's walk-in phase
+        // (InvasionManager.HandleGateBreached -> BaseLayoutManager.GetRouteToSpot -> RoomBase.
+        // GetPathBetweenEntranceAndSpot) routes surviving enemies from the entrance to their claimed
+        // EnemySpot, and without an authored path that silently falls back to a naive straight line
+        // through walls/furniture. A future dig-up spawn type (appearing directly at the spot, no
+        // walk-in) would simply never read this path, same as interior spawns did before Gate Siege.
+        List<RoomSpot> entrancePairableSpots = spotsUsedForPaths;
 
         foreach (Transform entrance in entrances)
         {

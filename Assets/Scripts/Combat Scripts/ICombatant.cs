@@ -35,6 +35,12 @@ public interface ICombatant
     // on any given prefab.
     Vector3 VisualCenter { get; }
 
+    // True when this combatant's sprite(s) currently face right — same sign convention each implementer's
+    // own SetFacing/visual-scale-root already uses internally. Lets AttackInstance mirror a stationary
+    // (melee) attack's VFX to match whichever side the attacker is actually facing, without AttackInstance
+    // needing to know whether it's working with a bunny or an enemy.
+    bool IsFacingRight { get; }
+
     // Reduces HP, can reach 0 (unlike NPCBunny.ApplyForagingDamage's floor-at-1 — that method is a
     // separate, deliberately-non-lethal Foraging placeholder, not reused here). Implementers fire
     // OnDefeated exactly once, the moment CurrentHP first reaches 0.

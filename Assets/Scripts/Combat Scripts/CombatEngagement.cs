@@ -134,17 +134,21 @@ public static class CombatEngagement
         return combatant?.CombatGameObject != null ? combatant.CombatGameObject.GetComponent<FlankSlots>() : null;
     }
 
-    // World-space point meleeStandingDistance units to the given side of target's VisualCenter — never
-    // front/behind, per Combat_DesignDoc.md's positioning rules. NOTE: this project's world-X axis is
-    // inverted relative to screen space (increasing world X = screen-LEFT — see EnemyInstance.AttackOrigin's
-    // own comment on this same convention). The sign below is a first guess, not yet verified empirically
-    // against an actual Left/Right claim in Play mode — flip if a "Left"-claimed attacker visually lands
-    // on the target's right.
+    // World-space point meleeStandingDistance units to the given side of target's CombatTransform — never
+    // front/behind, per Combat_DesignDoc.md's positioning rules. Deliberately CombatTransform, not
+    // VisualCenter: VisualCenter is a bounds-center point built for aiming a projectile at center-of-body
+    // (see its own doc comment on ICombatant), which usually sits well above a sprite's ground-level root
+    // pivot — anchoring flanking to it stood attackers at the target's mid-body height instead of its
+    // actual ground position (confirmed empirically: identical Z, ~0.12 unit Y gap, in Play mode). NOTE:
+    // this project's world-X axis is inverted relative to screen space (increasing world X = screen-LEFT —
+    // see EnemyInstance.AttackOrigin's own comment on this same convention). The sign below is a first
+    // guess, not yet verified empirically against an actual Left/Right claim in Play mode — flip if a
+    // "Left"-claimed attacker visually lands on the target's right.
     public static Vector3 ComputeFlankPosition(ICombatant target, FlankSide side)
     {
         float offset = CombatBalanceConfig.Instance.meleeStandingDistance;
         float signedOffset = side == FlankSide.Left ? -offset : offset;
-        return target.VisualCenter + new Vector3(signedOffset, 0f, 0f);
+        return target.CombatTransform.position + new Vector3(signedOffset, 0f, 0f);
     }
 
     // Called by the Animation Event placed at the attacking clip's "release" frame — instantiates the

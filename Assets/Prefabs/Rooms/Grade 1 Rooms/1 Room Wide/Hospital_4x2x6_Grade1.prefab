@@ -1570,6 +1570,7 @@ MonoBehaviour:
   carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 8240320741292344357}
   rightEntrance: {fileID: 3732991216787322094}
   middleLeft: {fileID: 571932724801697362}
@@ -1629,7 +1630,7 @@ MonoBehaviour:
   typeMatchXPBonus: 0.25
   xpGradeMultiplier: 1
   xpRecommendedTypes: 
-  roomTypeId: hospital
+  roomTypeId: Hospital
   nurseSpots:
   - {fileID: 6454381275732381130}
   bedSpots:

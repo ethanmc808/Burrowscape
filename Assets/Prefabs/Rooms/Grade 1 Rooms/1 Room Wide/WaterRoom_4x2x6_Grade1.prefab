@@ -786,6 +786,7 @@ MonoBehaviour:
   carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 9213148216188798901}
   rightEntrance: {fileID: 4489546531400349566}
   middleLeft: {fileID: 752035971000661442}
@@ -843,6 +844,30 @@ MonoBehaviour:
     targetSpot: {fileID: 8137362496756005382}
     waypoints:
     - {fileID: 7671422005047717199}
+  - entrance: {fileID: 9115307621330988968}
+    targetSpot: {fileID: 3127534184920157001}
+    waypoints:
+    - {fileID: 390865597773718160}
+    - {fileID: 3668763511696360141}
+    - {fileID: 5793116571825198309}
+  - entrance: {fileID: 9115307621330988968}
+    targetSpot: {fileID: 9133867876962229638}
+    waypoints:
+    - {fileID: 390865597773718160}
+    - {fileID: 3668763511696360141}
+    - {fileID: 5793116571825198309}
+  - entrance: {fileID: 9115307621330988968}
+    targetSpot: {fileID: 4841619156250362801}
+    waypoints:
+    - {fileID: 390865597773718160}
+    - {fileID: 3668763511696360141}
+    - {fileID: 5793116571825198309}
+  - entrance: {fileID: 9115307621330988968}
+    targetSpot: {fileID: 8137362496756005382}
+    waypoints:
+    - {fileID: 390865597773718160}
+    - {fileID: 3668763511696360141}
+    - {fileID: 5793116571825198309}
   enemySpots: []
   combatSpots: []
   footprintWidth: 4

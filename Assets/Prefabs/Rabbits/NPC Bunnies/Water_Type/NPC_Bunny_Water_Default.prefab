@@ -81,6 +81,8 @@ GameObject:
   - component: {fileID: 3142430252561249029}
   - component: {fileID: 8040749088625341291}
   - component: {fileID: 6017790442959256821}
+  - component: {fileID: 48176784534322638}
+  - component: {fileID: 5043168083735419102}
   m_Layer: 0
   m_Name: NPC_Bunny_Water_Default
   m_TagString: Untagged
@@ -230,7 +232,7 @@ MonoBehaviour:
   moodGainPerSecondSleeping: 0.02
   moodDecayPerSecondIdlePacing: 0.1
   animator: {fileID: 3652824776330976974}
-  defaultWorkingClip: {fileID: 7400000, guid: 62d73262bd9c4bf487802b9e25ae9aa1, type: 2}
+  workAnimIndexParam: WorkAnimIndex
   isMovingParam: IsMoving
   isWorkingParam: IsWorking
   isEatingParam: IsEating
@@ -280,6 +282,30 @@ MonoBehaviour:
   indicatorPrefab: {fileID: 2253899879721663037, guid: 2096e2ca0d77c0543b60b4b4ea9d49af, type: 3}
   worldCamera: {fileID: 0}
   worldOffset: {x: 0, y: -0.5, z: 0}
+--- !u!114 &48176784534322638
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601990158651218953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0545d39728386bb4990fe91b985ded45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlankSlots
+--- !u!114 &5043168083735419102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601990158651218953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41b2c9eb41007834e9f3dce17b262871, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardBuffController
 --- !u!1001 &5346258186291160782
 PrefabInstance:
   m_ObjectHideFlags: 0

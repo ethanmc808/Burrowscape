@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 581987224821589216}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: -1.688, y: -0.894, z: 1.817}
+  m_LocalPosition: {x: -1.495, y: -0.894, z: 1.817}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -227,7 +227,7 @@ Transform:
   m_GameObject: {fileID: 3322607948399103795}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: -1.116, y: -0.894, z: 1.817}
+  m_LocalPosition: {x: -0.935, y: -0.894, z: 1.817}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -384,7 +384,7 @@ Transform:
   m_GameObject: {fileID: 4217879116458138460}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: 0.292, y: -0.894, z: 2.316}
+  m_LocalPosition: {x: 0.356, y: -0.894, z: 2.316}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1222,7 +1222,7 @@ Transform:
   m_GameObject: {fileID: 7289488799633357362}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: -0.417, y: -0.894, z: 1.817}
+  m_LocalPosition: {x: -0.417, y: -0.894, z: 2.304}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1677,6 +1677,7 @@ MonoBehaviour:
   carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 8240320741292344357}
   rightEntrance: {fileID: 3732991216787322094}
   middleLeft: {fileID: 571932724801697362}
@@ -1684,15 +1685,57 @@ MonoBehaviour:
   passThroughWaypoints: []
   paths:
   - entrance: {fileID: 8240320741292344357}
+    targetSpot: {fileID: 1468418492054323314}
+    waypoints: []
+  - entrance: {fileID: 8240320741292344357}
+    targetSpot: {fileID: 2464645234689586726}
+    waypoints: []
+  - entrance: {fileID: 8240320741292344357}
+    targetSpot: {fileID: 1452832311029580759}
+    waypoints: []
+  - entrance: {fileID: 8240320741292344357}
+    targetSpot: {fileID: 3492684538582437246}
+    waypoints: []
+  - entrance: {fileID: 8240320741292344357}
+    targetSpot: {fileID: 5804947994850776807}
+    waypoints: []
+  - entrance: {fileID: 8240320741292344357}
     targetSpot: {fileID: 3087047646741120775}
     waypoints: []
   - entrance: {fileID: 8240320741292344357}
     targetSpot: {fileID: 6099833523157268765}
     waypoints: []
   - entrance: {fileID: 3732991216787322094}
+    targetSpot: {fileID: 1468418492054323314}
+    waypoints: []
+  - entrance: {fileID: 3732991216787322094}
+    targetSpot: {fileID: 2464645234689586726}
+    waypoints: []
+  - entrance: {fileID: 3732991216787322094}
+    targetSpot: {fileID: 1452832311029580759}
+    waypoints: []
+  - entrance: {fileID: 3732991216787322094}
+    targetSpot: {fileID: 3492684538582437246}
+    waypoints: []
+  - entrance: {fileID: 3732991216787322094}
+    targetSpot: {fileID: 5804947994850776807}
+    waypoints: []
+  - entrance: {fileID: 3732991216787322094}
     targetSpot: {fileID: 3087047646741120775}
     waypoints: []
   - entrance: {fileID: 3732991216787322094}
+    targetSpot: {fileID: 6099833523157268765}
+    waypoints: []
+  - entrance: {fileID: 2886067887395585409}
+    targetSpot: {fileID: 3087047646741120775}
+    waypoints: []
+  - entrance: {fileID: 2886067887395585409}
+    targetSpot: {fileID: 6099833523157268765}
+    waypoints: []
+  - entrance: {fileID: 8570753344037357080}
+    targetSpot: {fileID: 3087047646741120775}
+    waypoints: []
+  - entrance: {fileID: 8570753344037357080}
     targetSpot: {fileID: 6099833523157268765}
     waypoints: []
   enemySpots:
@@ -1709,7 +1752,10 @@ MonoBehaviour:
   typeMatchXPBonus: 0.25
   xpGradeMultiplier: 1
   xpRecommendedTypes: 
-  roomTypeId: guardroom
+  roomTypeId: G
+  watchSpots:
+  - {fileID: 1468418492054323314}
+  - {fileID: 2464645234689586726}
 --- !u!1 &9078633222504689190
 GameObject:
   m_ObjectHideFlags: 0
@@ -1812,7 +1858,7 @@ Transform:
   m_GameObject: {fileID: 9150608847131439509}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -1, z: -0, w: 0}
-  m_LocalPosition: {x: 1.138, y: -0.894, z: 2.55}
+  m_LocalPosition: {x: 1.203, y: -0.894, z: 2.687}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

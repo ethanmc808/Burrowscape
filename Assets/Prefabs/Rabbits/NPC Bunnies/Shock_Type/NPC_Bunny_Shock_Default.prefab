@@ -81,6 +81,8 @@ GameObject:
   - component: {fileID: 3142430252561249029}
   - component: {fileID: 1888416620590431085}
   - component: {fileID: 9165023350792910834}
+  - component: {fileID: 1091220762253816232}
+  - component: {fileID: 6841320182374299491}
   m_Layer: 0
   m_Name: NPC_Bunny_Shock_Default
   m_TagString: Untagged
@@ -230,7 +232,7 @@ MonoBehaviour:
   moodGainPerSecondSleeping: 0.02
   moodDecayPerSecondIdlePacing: 0.1
   animator: {fileID: 8204205625117658579}
-  defaultWorkingClip: {fileID: 7400000, guid: 62d73262bd9c4bf487802b9e25ae9aa1, type: 2}
+  workAnimIndexParam: WorkAnimIndex
   isMovingParam: IsMoving
   isWorkingParam: IsWorking
   isEatingParam: IsEating
@@ -280,6 +282,30 @@ MonoBehaviour:
   indicatorPrefab: {fileID: 2253899879721663037, guid: 2096e2ca0d77c0543b60b4b4ea9d49af, type: 3}
   worldCamera: {fileID: 0}
   worldOffset: {x: 0, y: -0.5, z: 0}
+--- !u!114 &1091220762253816232
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601990158651218953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0545d39728386bb4990fe91b985ded45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlankSlots
+--- !u!114 &6841320182374299491
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601990158651218953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41b2c9eb41007834e9f3dce17b262871, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardBuffController
 --- !u!1001 &674405476443289043
 PrefabInstance:
   m_ObjectHideFlags: 0

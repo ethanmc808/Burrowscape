@@ -104,6 +104,7 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     // own live-facing check, just against facingRight instead of a scale-root read.
     Vector3 ICombatant.AttackOrigin => transform.position + new Vector3(facingRight ? -attackOriginOffset.x : attackOriginOffset.x, attackOriginOffset.y, attackOriginOffset.z);
     Vector3 ICombatant.VisualCenter => CombatEngagement.ComputeVisualCenter(visualRenderers, transform.position);
+    bool ICombatant.IsFacingRight => facingRight;
 
     public event System.Action OnDefeated;
 
@@ -316,7 +317,11 @@ public class EnemyInstance : MonoBehaviour, ICombatant
         claimedTarget = chosen;
         flankDestination = CombatEngagement.ComputeFlankPosition(chosen, side);
         meleeApproachState = MeleeApproachState.MovingToFlank;
-        SetFacing(side == FlankSide.Left); // standing left of target => face right, toward it
+        // FlankSide.Left gets a NEGATIVE world-X offset in ComputeFlankPosition, and this project's
+        // world-X is inverted from screen space (bigger world-X = screen-left) — so "Left" actually lands
+        // the attacker on the target's screen-RIGHT, and it must face left (toward the target) from there.
+        // Same fix as NPCBunny.HandleMeleeDefending, confirmed empirically there in Play mode.
+        SetFacing(side != FlankSide.Left);
     }
 
     // No-op if visualScaleRoot isn't wired — every current ranged enemy prefab never calls this at all,

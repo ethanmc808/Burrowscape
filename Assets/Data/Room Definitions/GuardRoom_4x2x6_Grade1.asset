@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomDefinition
   displayName: Guard Room
   icon: {fileID: 0}
-  prefab: {fileID: 0, guid: , type: 3}
+  prefab: {fileID: 8566267086749515906, guid: 155f5fd1356a79644a422889702c4df6, type: 3}
   footprint: {x: 4, y: 2, z: 6}
   roomTypeId: GuardRoom
   grade: 1

@@ -19,6 +19,13 @@ public class AttackInstance : MonoBehaviour
     [SerializeField] private float travelSpeed = 10f; // units/second, irrelevant when stationary
     [SerializeField] private float arrivalThreshold = 0.1f;
 
+    // Melee-only fine-tuning — added on top of target.VisualCenter once the instance snaps there (see
+    // isStationary handling in Launch), since a melee swipe/hit VFX often reads better nudged slightly off
+    // dead-center rather than exactly on the target's computed midpoint. Irrelevant for ranged attacks
+    // (their carrier homes toward VisualCenter directly, unaffected by this). Authored assuming the
+    // attacker faces right — X mirrors automatically for a left-facing attacker, same as attackOriginOffset.
+    [SerializeField] private Vector3 meleeImpactOffset;
+
     // "Charge-up" look (e.g. Giga Drain) — the carrier holds at its spawn position for this many seconds
     // before it starts actually traveling, instead of homing the instant it's launched. Purely a delay on
     // the MoveTowards step below; irrelevant when stationary. Defaults to 0 (no behavior change) for every
@@ -113,9 +120,36 @@ public class AttackInstance : MonoBehaviour
         this.isStationary = isStationary;
 
         if (isStationary)
-            transform.position = target.VisualCenter;
+        {
+            // meleeImpactOffset is authored assuming the attacker faces right, same convention as
+            // NPCBunny/EnemyInstance's own attackOriginOffset — X mirrors whenever it's actually facing
+            // the other way, so one authored value reads correctly from either flank side. Anchored to
+            // CombatTransform.position (the target's stable ground pivot), NOT VisualCenter — VisualCenter
+            // is a live bounds encapsulation that rides along with whatever the target's own Idle/Attacking
+            // animation is doing to its body sprite (e.g. Enemy_Slime_Idle's bone_root squash-breathing,
+            // Enemy_Slime_Attacking's bone_root/Body/Eyes lunge), so two swipes fired moments apart can land
+            // at genuinely different heights just from sampling a different animation phase — confirmed via
+            // [SWIPEDEBUG] logging showing VisualCenter.y drift by ~0.27 with target.IsFacingRight and
+            // target.CombatTransform.position both identical between samples. Same reasoning as
+            // CombatEngagement.ComputeFlankPosition's own VisualCenter -> CombatTransform.position fix.
+            Vector3 offset = meleeImpactOffset;
+            if (!attacker.IsFacingRight) offset.x = -offset.x;
+            transform.position = target.CombatTransform.position + offset;
+        }
         else if (reverseDirection)
             transform.position = target.VisualCenter;
+
+        // Mirrors the whole instance (and everything nested under it, e.g. a melee swipe sprite) to match
+        // the attacker's own facing. Sign confirmed empirically in Play mode (opposite of the naive guess)
+        // once NPCBunny/EnemyInstance's own facingRight-vs-flank-side sign bug was fixed — the Swipe art's
+        // default (unflipped) orientation reads correctly for a LEFT-facing attacker, not a right-facing
+        // one. Ranged attacks ignore this; their direction already reads from travel motion.
+        if (isStationary)
+        {
+            Vector3 scale = transform.localScale;
+            scale.x = Mathf.Abs(scale.x) * (attacker.IsFacingRight ? -1f : 1f);
+            transform.localScale = scale;
+        }
 
         basePosition = transform.position;
         positionHistory.Clear();

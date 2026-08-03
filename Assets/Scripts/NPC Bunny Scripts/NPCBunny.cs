@@ -1490,6 +1490,19 @@ public class NPCBunny : MonoBehaviour, ICombatant
         }
     }
     Vector3 ICombatant.VisualCenter => CombatEngagement.ComputeVisualCenter(visualRenderers, transform.position);
+    // Live scale-sign read, same reasoning as AttackOrigin above — reflects reality even if this bunny's
+    // facing was changed some way other than SetFacing's normal path. Inverts SetFacing's own flip formula
+    // (scale goes negative when flip is true, and flip itself is XOR'd with bunnyFacesLeftByDefault) to
+    // recover "is this bunny genuinely facing right" from the live scale sign alone.
+    bool ICombatant.IsFacingRight
+    {
+        get
+        {
+            if (bunnyScaleRoot == null) return !bunnyFacesLeftByDefault;
+            bool flipped = bunnyScaleRoot.localScale.x < 0f;
+            return bunnyFacesLeftByDefault ? flipped : !flipped;
+        }
+    }
 
     public event System.Action OnDefeated;
 
@@ -2608,13 +2621,34 @@ public class NPCBunny : MonoBehaviour, ICombatant
     private void HandleNeedsCheckWhileWorking()
     {
         if (IsHungry)
+        {
+            StopWorkWander();
             LeaveWorkForCafeteria();
+        }
         else if (IsThirsty)
+        {
+            StopWorkWander();
             LeaveWorkForWaterRoom();
+        }
         else if (IsTired)
+        {
+            StopWorkWander();
             LeaveWorkForBedroom();
+        }
         else
             TickWorkWander();
+    }
+
+    // Clears an in-progress wander hop before an interrupt hands off to real travel — without this,
+    // workWanderPath can be left stale-non-null if the interrupt fires mid-hop, which keeps
+    // UpdateAnimator's IsMoving check permanently true (it OR's on workWanderPath != null) even once the
+    // bunny arrives and settles into Eating/Drinking/Sleeping, since nothing else ever clears it outside
+    // TickWorkWander/StepWorkWanderMovement. BeginWorkWander fully rebuilds the other wander fields fresh
+    // on return to Working, so only the two fields that actually leak into that check need clearing here.
+    private void StopWorkWander()
+    {
+        workWanderPath = null;
+        workWanderWaypointTarget = null;
     }
 
     private void HandleNeedsCheckWhileRelaxing()
@@ -3305,8 +3339,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
         claimedFlankTarget = chosen;
 
         Vector3 flankPoint = CombatEngagement.ComputeFlankPosition(chosen, side);
-        // Standing left of the target means facing right, toward it, and vice versa.
-        MoveToFlankPosition(flankPoint, faceRightOnArrival: side == FlankSide.Left);
+        // FlankSide.Left gets a NEGATIVE world-X offset in ComputeFlankPosition, and this project's
+        // world-X is inverted from screen space (bigger world-X = screen-left) — so "Left" actually lands
+        // the attacker on the target's screen-RIGHT, and it must face left (toward the target) from there.
+        // Confirmed empirically in Play mode: the un-flipped version had bunnies facing away from target.
+        MoveToFlankPosition(flankPoint, faceRightOnArrival: side != FlankSide.Left);
     }
 
     // Walks this bunny to an arbitrary world-space point within its current combat room, rather than a
