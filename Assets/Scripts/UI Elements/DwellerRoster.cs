@@ -115,6 +115,16 @@ public class DwellerRoster : MonoBehaviour
         return allBunnies.Where(b => b.DefendingRoom == room).ToList();
     }
 
+    // Every Fainted bunny still IsDefending ANYWHERE across the whole base, regardless of which room it
+    // fainted in — used by InvasionManager's whole-raid-cleared sweep, not the per-room recall. A room's
+    // own enemy group can empty out (die, or relocate elsewhere) while the raid as a whole is still very
+    // much ongoing, and a fainted bunny must stay down until every enemy across the whole raid is
+    // defeated, not just the ones that happened to be in its own room.
+    public List<NPCBunny> GetAllFaintedDefenders()
+    {
+        return allBunnies.Where(b => b.CurrentState == BunnyState.Fainted && b.IsDefending).ToList();
+    }
+
     // Used by RoomTransitionService's Evacuate step to gather everyone tied to any of the rooms being
     // replaced by a merge/upgrade — reuses the same per-bunny check RoomBase.CanBeDeleted relies on
     // (via IsRoomOccupied, below), just collecting names instead of only checking "any at all."

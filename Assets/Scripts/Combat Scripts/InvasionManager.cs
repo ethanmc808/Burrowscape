@@ -617,13 +617,22 @@ public class InvasionManager : MonoBehaviour
     {
         activeInvasions.Remove(room);
 
-        // Recall every defender (auto-defenders and any deployed guards) — ReturnToPreviousActivity
-        // (inside StopDefendingAndReturn) already knows how to walk each one back to whatever it was
-        // doing before, no special-case needed here.
+        // Recall every ACTIVE defender (auto-defenders and any deployed guards, including one still
+        // mid-walk to its CombatSpot) — ReturnToPreviousActivity (inside StopDefendingAndReturn) already
+        // knows how to walk each one back to whatever it was doing before, no special-case needed here.
+        // Deliberately skips Fainted bunnies: StopDefendingAndReturn revives a Fainted bunny the instant
+        // it's called, but this method fires per-ROOM (including when a group merely relocates elsewhere,
+        // still very much alive) — a fainted bunny must stay down until the WHOLE raid ends, not just
+        // until ITS room's enemies move on. CONFIRMED bug 2026-08-04: a fainted bunny got up immediately
+        // once the slimes relocated to a different room, well before the raid was actually over. See the
+        // OnSiegeFullyCleared branch below for where fainted bunnies actually get revived.
         if (DwellerRoster.Instance != null)
         {
             foreach (NPCBunny bunny in DwellerRoster.Instance.GetBunniesDefendingRoom(room))
+            {
+                if (bunny.CurrentState == BunnyState.Fainted) continue;
                 bunny.StopDefendingAndReturn();
+            }
         }
 
         OnInvasionCleared?.Invoke(room);
@@ -634,6 +643,16 @@ public class InvasionManager : MonoBehaviour
         if (activeInvasions.Count == 0 && gateSiegeGroup.Count == 0)
         {
             raidActive = false;
+
+            // Sweep EVERY fainted defender across the whole base, not just this room's — a bunny could
+            // have fainted in an earlier room the enemies already relocated away from (and were skipped
+            // above for exactly that reason), so this is the only place left that ever revives them.
+            if (DwellerRoster.Instance != null)
+            {
+                foreach (NPCBunny bunny in DwellerRoster.Instance.GetAllFaintedDefenders())
+                    bunny.StopDefendingAndReturn();
+            }
+
             OnSiegeFullyCleared?.Invoke();
         }
     }
