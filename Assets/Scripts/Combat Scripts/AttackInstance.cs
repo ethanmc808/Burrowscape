@@ -286,9 +286,33 @@ public class AttackInstance : MonoBehaviour
     private void Resolve()
     {
         resolved = true;
-        CombatResolver.ResolveHit(attacker, target);
-        // Floating damage numbers / hit-vs-miss look / hit-reaction animation trigger are not built yet —
-        // none of that UI exists. Whatever consumes CombatHitResult should hook in here once it does.
+        CombatHitResult result = CombatResolver.ResolveHit(attacker, target);
+        CombatBalanceConfig cfg = CombatBalanceConfig.Instance;
+        AudioManager audio = AudioManager.EnsureInstance();
+
+        if (!result.Hit)
+        {
+            SpawnComboEffect(cfg.missTextSprite);
+        }
+        else
+        {
+            // The flash represents the ATTACK's type (attacker.Type), not the target's own — a Fire
+            // attack flashes orange regardless of what type got hit.
+            target.PlayHitFlash(TypeHitFlashPalette.GetColor(attacker.Type));
+
+            if (result.Crit)
+            {
+                SpawnComboEffect(cfg.critTextSprite);
+                if (cfg.critSFX != null) audio.PlaySFXAtPosition(cfg.critSFX, transform.position);
+            }
+
+            // Not mutually exclusive with Crit above — a crit that's also super effective plays both
+            // sounds layered, per Ethan's ask (no priority/suppression between the two signals).
+            if (result.TypeMultiplier > TypeChart.Neutral && cfg.superEffectiveSFX != null)
+                audio.PlaySFXAtPosition(cfg.superEffectiveSFX, transform.position);
+            else if (result.TypeMultiplier < TypeChart.Neutral && cfg.notVeryEffectiveSFX != null)
+                audio.PlaySFXAtPosition(cfg.notVeryEffectiveSFX, transform.position);
+        }
 
         // Any travel VFX (e.g. Giga Drain's looping orb stream) needs to be told to stop emitting on
         // arrival — otherwise a looping particle system just keeps emitting for the entire lingerSeconds
@@ -315,6 +339,25 @@ public class AttackInstance : MonoBehaviour
             AudioManager.EnsureInstance().PlaySFXAtPosition(impactSFX, transform.position);
 
         Destroy(gameObject, impactLingerSeconds);
+    }
+
+    // Spawns CombatBalanceConfig.floatingComboTextPrefab as a child of the TARGET (not this AttackInstance,
+    // which is about to be destroyed) so it inherits the target's world position/scale — same parenting
+    // idea as the bunny rig's permanent Effect_Trigger_LevelUp child. Passes `target` itself (not just a
+    // one-time IsVisuallyMirrored snapshot) so FloatingComboEffect can keep resyncing against the target's
+    // ACTUAL current flip every frame — see that class's own comment for why a snapshot taken here isn't
+    // safe. No-ops if the prefab or sprite isn't assigned yet (art not made) or the target is already gone
+    // — FloatingComboEffect.Show has its own null-sprite guard too, this just avoids instantiating at all
+    // in the common "not authored yet" case.
+    private void SpawnComboEffect(Sprite sprite)
+    {
+        CombatBalanceConfig cfg = CombatBalanceConfig.Instance;
+        if (sprite == null || cfg.floatingComboTextPrefab == null) return;
+        if (target == null || target.CombatGameObject == null) return;
+
+        GameObject instance = Instantiate(cfg.floatingComboTextPrefab, target.CombatTransform);
+        FloatingComboEffect effect = instance.GetComponent<FloatingComboEffect>();
+        if (effect != null) effect.Show(sprite, target);
     }
 
     private void Fizzle()

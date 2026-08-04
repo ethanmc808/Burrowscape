@@ -55,6 +55,12 @@ public class EntranceGate : MonoBehaviour, ICombatant
     private int currentHP;
     private int defense;
     private Renderer[] visualRenderers;
+    // Separate from visualRenderers above (that one stays Renderer[] for ComputeVisualCenter's bounds
+    // calc) — PlayHitFlash needs .color, only present on SpriteRenderer, not the base Renderer type. Same
+    // shape as NPCBunny/EnemyInstance's own spriteRenderers/baseSpriteColors pair.
+    private SpriteRenderer[] spriteRenderers;
+    private Color[] baseSpriteColors;
+    private Coroutine hitFlashRoutine;
 
     public event System.Action OnDefeated;
 
@@ -81,6 +87,52 @@ public class EntranceGate : MonoBehaviour, ICombatant
     Vector3 ICombatant.AttackOrigin => CombatOrigin.position; // unused, gate never attacks
     Vector3 ICombatant.VisualCenter => CombatEngagement.ComputeVisualCenter(visualRenderers, CombatOrigin.position);
     bool ICombatant.IsFacingRight => true; // unused, gate never attacks
+    bool ICombatant.IsVisuallyMirrored => false; // gate never flips
+
+    // Mirrors NPCBunny.PlayHitFlash/HitFlashRoutine/ApplyHitFlashTint exactly — see those methods' own
+    // comments for why baseSpriteColors is captured once (Awake) rather than read live.
+    void ICombatant.PlayHitFlash(Color color)
+    {
+        if (spriteRenderers == null || spriteRenderers.Length == 0) return;
+        if (hitFlashRoutine != null) StopCoroutine(hitFlashRoutine);
+        hitFlashRoutine = StartCoroutine(HitFlashRoutine(color));
+    }
+
+    private IEnumerator HitFlashRoutine(Color flashColor)
+    {
+        CombatBalanceConfig cfg = CombatBalanceConfig.Instance;
+
+        float elapsed = 0f;
+        while (elapsed < cfg.hitFlashFadeInSeconds)
+        {
+            elapsed += Time.deltaTime;
+            ApplyHitFlashTint(flashColor, cfg.hitFlashFadeInSeconds > 0f ? elapsed / cfg.hitFlashFadeInSeconds : 1f);
+            yield return null;
+        }
+        ApplyHitFlashTint(flashColor, 1f);
+
+        elapsed = 0f;
+        while (elapsed < cfg.hitFlashFadeOutSeconds)
+        {
+            elapsed += Time.deltaTime;
+            ApplyHitFlashTint(flashColor, cfg.hitFlashFadeOutSeconds > 0f ? 1f - elapsed / cfg.hitFlashFadeOutSeconds : 0f);
+            yield return null;
+        }
+        ApplyHitFlashTint(flashColor, 0f);
+        hitFlashRoutine = null;
+    }
+
+    private void ApplyHitFlashTint(Color flashColor, float t)
+    {
+        for (int i = 0; i < spriteRenderers.Length; i++)
+        {
+            SpriteRenderer sr = spriteRenderers[i];
+            if (sr == null) continue;
+            Color blended = Color.Lerp(baseSpriteColors[i], flashColor, Mathf.Clamp01(t));
+            blended.a = sr.color.a;
+            sr.color = blended;
+        }
+    }
 
     public void TakeCombatDamage(int amount)
     {
@@ -134,6 +186,11 @@ public class EntranceGate : MonoBehaviour, ICombatant
 
         // From gateTransform's own hierarchy, not this manager GameObject's — see CombatOrigin's comment.
         visualRenderers = CombatOrigin.GetComponentsInChildren<Renderer>();
+        spriteRenderers = CombatOrigin.GetComponentsInChildren<SpriteRenderer>();
+        baseSpriteColors = new Color[spriteRenderers.Length];
+        for (int i = 0; i < spriteRenderers.Length; i++)
+            baseSpriteColors[i] = spriteRenderers[i] != null ? spriteRenderers[i].color : Color.white;
+
         ResolveStatsForGrade(); // grade-1 default until SetEntranceRoom provides the real Entrance instance
     }
 

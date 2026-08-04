@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -80,10 +81,20 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     // enemy — GetComponentsInChildren allocates, and the set of renderers a rig has never changes at
     // runtime.
     private Renderer[] visualRenderers;
+    // Separate from visualRenderers above (that one stays Renderer[] for ComputeVisualCenter's bounds
+    // calc) — PlayHitFlash needs .color, only present on SpriteRenderer, not the base Renderer type. Same
+    // shape as NPCBunny's own spriteRenderers/baseSpriteColors pair.
+    private SpriteRenderer[] spriteRenderers;
+    private Color[] baseSpriteColors;
+    private Coroutine hitFlashRoutine;
 
     private void Awake()
     {
         visualRenderers = GetComponentsInChildren<Renderer>();
+        spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        baseSpriteColors = new Color[spriteRenderers.Length];
+        for (int i = 0; i < spriteRenderers.Length; i++)
+            baseSpriteColors[i] = spriteRenderers[i] != null ? spriteRenderers[i].color : Color.white;
 
         // Records facingRight's TRUE starting state (matching whatever this prefab's art was actually
         // authored to show unflipped) rather than leaving it at its compile-time default of true — without
@@ -142,6 +153,62 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     Vector3 ICombatant.AttackOrigin => transform.position + new Vector3(facingRight ? -attackOriginOffset.x : attackOriginOffset.x, attackOriginOffset.y, attackOriginOffset.z);
     Vector3 ICombatant.VisualCenter => CombatEngagement.ComputeVisualCenter(visualRenderers, transform.position);
     bool ICombatant.IsFacingRight => facingRight;
+    // Raw scale-sign read, no facesLeftByDefault normalization — see ICombatant's own comment for why
+    // FloatingComboEffect needs this instead of IsFacingRight.
+    bool ICombatant.IsVisuallyMirrored => visualScaleRoot != null && visualScaleRoot.localScale.x < 0f;
+
+    // Mirrors NPCBunny.PlayHitFlash/HitFlashRoutine/ApplyHitFlashTint exactly — see those methods' own
+    // comments for why baseSpriteColors is captured once (Awake) rather than read live, and why alpha is
+    // preserved from each renderer's current value rather than the cached base.
+    void ICombatant.PlayHitFlash(Color color)
+    {
+        // TEMP — chasing "no visible tint on slimes hit by Neutral's melee Slash" bug.
+        Debug.Log($"[HitFlashDebug] {name} PlayHitFlash called, color={color}, spriteRenderers={(spriteRenderers != null ? spriteRenderers.Length : -1)}, activeRenderers={(spriteRenderers != null ? spriteRenderers.Count(sr => sr != null && sr.enabled) : -1)}");
+        if (spriteRenderers == null || spriteRenderers.Length == 0) return;
+        if (hitFlashRoutine != null) StopCoroutine(hitFlashRoutine);
+        hitFlashRoutine = StartCoroutine(HitFlashRoutine(color));
+    }
+
+    private IEnumerator HitFlashRoutine(Color flashColor)
+    {
+        CombatBalanceConfig cfg = CombatBalanceConfig.Instance;
+
+        float elapsed = 0f;
+        while (elapsed < cfg.hitFlashFadeInSeconds)
+        {
+            elapsed += Time.deltaTime;
+            ApplyHitFlashTint(flashColor, cfg.hitFlashFadeInSeconds > 0f ? elapsed / cfg.hitFlashFadeInSeconds : 1f);
+            yield return null;
+        }
+        ApplyHitFlashTint(flashColor, 1f);
+
+        elapsed = 0f;
+        while (elapsed < cfg.hitFlashFadeOutSeconds)
+        {
+            elapsed += Time.deltaTime;
+            ApplyHitFlashTint(flashColor, cfg.hitFlashFadeOutSeconds > 0f ? 1f - elapsed / cfg.hitFlashFadeOutSeconds : 0f);
+            yield return null;
+        }
+        ApplyHitFlashTint(flashColor, 0f);
+        hitFlashRoutine = null;
+    }
+
+    private void ApplyHitFlashTint(Color flashColor, float t)
+    {
+        for (int i = 0; i < spriteRenderers.Length; i++)
+        {
+            SpriteRenderer sr = spriteRenderers[i];
+            if (sr == null) continue;
+            Color blended = Color.Lerp(baseSpriteColors[i], flashColor, Mathf.Clamp01(t));
+            blended.a = sr.color.a;
+            sr.color = blended;
+
+            // TEMP — chasing "no visible tint on slimes hit by Neutral's melee Slash" bug. Logs only at
+            // peak (t~1) for renderer 0 to avoid spamming every frame of the fade.
+            if (i == 0 && t >= 0.99f)
+                Debug.Log($"[HitFlashDebug] {name} ApplyHitFlashTint peak: renderer={sr.name}, enabled={sr.enabled}, base={baseSpriteColors[i]}, flashColor={flashColor}, blended={blended}, finalColor={sr.color}, sortingOrder={sr.sortingOrder}");
+        }
+    }
 
     public event System.Action OnDefeated;
 
@@ -221,11 +288,28 @@ public class EnemyInstance : MonoBehaviour, ICombatant
         bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, candidatePool, out ICombatant attackTarget);
 
         // TryBeginAttack re-acquires the closest alive candidate into currentTarget EVERY call regardless
-        // of cooldown (see its own comment), so this stays accurate continuously — not just at wind-up
-        // start — and turns to face a newly-closer target immediately even mid-cooldown. Same world-X
-        // convention as ComputeFlankPosition/HandleMeleeUpdate's facing (higher world-X = screen-left).
+        // of cooldown (see its own comment) — correct for WHO to eventually shoot, but facing off that live
+        // value directly used to turn this enemy toward a newly-closer bunny mid-wind-up while its actual
+        // attack still fired at pendingAttackTarget (the one snapshotted at wind-up start) — confirmed root
+        // cause of "Slime sometimes faces the wrong way while attacking" (2026-08-03). CombatEngagement.
+        // ComputeFacing now prefers pendingAttackTarget whenever a wind-up is in flight, so the sprite always
+        // turns toward wherever the attack will actually land. NOT an Animator/baked-scale-keyframe issue —
+        // checked directly against the raw .anim files for this rig: Idle/Walking/Attacking only ever
+        // animate scale on child bones (Body/Eyes/bone_root), never on visualScaleRoot itself, so Write
+        // Defaults can't be the thing fighting this flip.
         if (currentTarget != null)
-            SetFacing(currentTarget.CombatTransform.position.x < transform.position.x);
+        {
+            bool? computedFacing = CombatEngagement.ComputeFacing(currentTarget, pendingAttackTarget, transform.position, CombatBalanceConfig.Instance.facingDeadzone);
+
+            // Logs every tick (not just on an applied flip) so a rapid true/false/true toggle from target
+            // churn or floating-point jitter shows up as repeated identical log lines, not just one applied
+            // flip. GetInstanceID disambiguates this exact object even when multiple slimes share the
+            // identical clone name.
+            Debug.Log($"[FacingDebug] {name} (id={GetInstanceID()}) attack-facing check: selfX={transform.position.x:F4}, liveTarget={(currentTarget.CombatGameObject != null ? currentTarget.CombatGameObject.name : "NULL")} (x={currentTarget.CombatTransform.position.x:F4}), pendingTarget={(pendingAttackTarget != null && pendingAttackTarget.CombatGameObject != null ? pendingAttackTarget.CombatGameObject.name : "NULL")}, computedFacing={(computedFacing.HasValue ? computedFacing.Value.ToString() : "SKIPPED(deadzone)")}, currentFacingRight={facingRight}, visualScaleRoot.x={(visualScaleRoot != null ? visualScaleRoot.localScale.x.ToString("F4") : "NULL")}");
+
+            if (computedFacing.HasValue)
+                SetFacing(computedFacing.Value);
+        }
 
         if (!startedWindUp) return;
 
@@ -299,8 +383,14 @@ public class EnemyInstance : MonoBehaviour, ICombatant
         List<ICombatant> candidatePool = new List<ICombatant> { gate };
         bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, candidatePool, out ICombatant attackTarget);
 
+        // Single-candidate pool (only ever the gate) so this can't actually hit the target-churn race
+        // Update() has to guard against, but routed through the same ComputeFacing helper for consistency.
         if (currentTarget != null)
-            SetFacing(currentTarget.CombatTransform.position.x < transform.position.x);
+        {
+            bool? computedFacing = CombatEngagement.ComputeFacing(currentTarget, pendingAttackTarget, transform.position, CombatBalanceConfig.Instance.facingDeadzone);
+            if (computedFacing.HasValue)
+                SetFacing(computedFacing.Value);
+        }
 
         if (!startedWindUp) return;
 
@@ -462,6 +552,12 @@ public class EnemyInstance : MonoBehaviour, ICombatant
             hasInitializedFacing = true;
         else if (facingRight == faceRight)
             return;
+
+        // TEMP — chasing "slime sometimes faces the wrong way, while moving AND while attacking" bug.
+        // Logs every APPLIED flip (mirrors NPCBunny's own [FacingDebug] placement, after the no-op
+        // guards) so a Play session's Editor.log shows exactly when/why/how often this fires. Remove once
+        // root-caused.
+Debug.Log($"[FacingDebug] {name} (id={GetInstanceID()}) SetFacing({faceRight}) applied — was facingRight={facingRight}, pos={transform.position}, phase={phase}, currentTarget={(currentTarget != null ? currentTarget.CombatGameObject?.name : "NULL")}, scaleX before={visualScaleRoot.localScale.x:F4}");
 
         facingRight = faceRight;
         bool flip = facesLeftByDefault ? faceRight : !faceRight;

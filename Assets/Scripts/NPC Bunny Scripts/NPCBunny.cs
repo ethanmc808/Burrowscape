@@ -434,6 +434,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // SpriteRenderer, not the base Renderer type.
     private SpriteRenderer[] spriteRenderers;
     private Coroutine faintFadeRoutine;
+    // Captured once here (see PlayHitFlash/HitFlashRoutine) so repeated/overlapping flashes always
+    // converge back to this bunny's TRUE original color, never a live snapshot that could itself already
+    // be mid-tint from an interrupted earlier flash.
+    private Color[] baseSpriteColors;
+    private Coroutine hitFlashRoutine;
 
     private void Awake()
     {
@@ -442,6 +447,9 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
         visualRenderers = GetComponentsInChildren<Renderer>();
         spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        baseSpriteColors = new Color[spriteRenderers.Length];
+        for (int i = 0; i < spriteRenderers.Length; i++)
+            baseSpriteColors[i] = spriteRenderers[i] != null ? spriteRenderers[i].color : Color.white;
 
         SetFacing(!bunnyFacesLeftByDefault);
     }
@@ -1501,6 +1509,60 @@ public class NPCBunny : MonoBehaviour, ICombatant
             if (bunnyScaleRoot == null) return !bunnyFacesLeftByDefault;
             bool flipped = bunnyScaleRoot.localScale.x < 0f;
             return bunnyFacesLeftByDefault ? flipped : !flipped;
+        }
+    }
+    // Raw scale-sign read, no facesLeftByDefault normalization — see ICombatant's own comment for why
+    // FloatingComboEffect needs this instead of IsFacingRight.
+    bool ICombatant.IsVisuallyMirrored => bunnyScaleRoot != null && bunnyScaleRoot.localScale.x < 0f;
+
+    // See HitFlashRoutine's own comment for why this lerps against baseSpriteColors (captured once in
+    // Awake) rather than each renderer's live color — a live capture would drift toward whatever an
+    // earlier, interrupted flash left behind instead of this bunny's true base color.
+    void ICombatant.PlayHitFlash(Color color)
+    {
+        if (spriteRenderers == null || spriteRenderers.Length == 0) return;
+        if (hitFlashRoutine != null) StopCoroutine(hitFlashRoutine);
+        hitFlashRoutine = StartCoroutine(HitFlashRoutine(color));
+    }
+
+    // Fade in fast, hold, fade out slower — Ethan's explicit ask, timing tunable via CombatBalanceConfig.
+    // hitFlashFadeInSeconds/hitFlashFadeOutSeconds so he can dial it in by eye without a code change.
+    private IEnumerator HitFlashRoutine(Color flashColor)
+    {
+        CombatBalanceConfig cfg = CombatBalanceConfig.Instance;
+
+        float elapsed = 0f;
+        while (elapsed < cfg.hitFlashFadeInSeconds)
+        {
+            elapsed += Time.deltaTime;
+            ApplyHitFlashTint(flashColor, cfg.hitFlashFadeInSeconds > 0f ? elapsed / cfg.hitFlashFadeInSeconds : 1f);
+            yield return null;
+        }
+        ApplyHitFlashTint(flashColor, 1f);
+
+        elapsed = 0f;
+        while (elapsed < cfg.hitFlashFadeOutSeconds)
+        {
+            elapsed += Time.deltaTime;
+            ApplyHitFlashTint(flashColor, cfg.hitFlashFadeOutSeconds > 0f ? 1f - elapsed / cfg.hitFlashFadeOutSeconds : 0f);
+            yield return null;
+        }
+        ApplyHitFlashTint(flashColor, 0f);
+        hitFlashRoutine = null;
+    }
+
+    // t=0 -> this renderer's own captured base color, t=1 -> flashColor. Alpha is read fresh from the
+    // renderer's CURRENT color (not the cached base) on every call so this never fights FaintFadeRoutine's
+    // own alpha fade if a bunny happens to faint mid-flash.
+    private void ApplyHitFlashTint(Color flashColor, float t)
+    {
+        for (int i = 0; i < spriteRenderers.Length; i++)
+        {
+            SpriteRenderer sr = spriteRenderers[i];
+            if (sr == null) continue;
+            Color blended = Color.Lerp(baseSpriteColors[i], flashColor, Mathf.Clamp01(t));
+            blended.a = sr.color.a;
+            sr.color = blended;
         }
     }
 
@@ -3319,12 +3381,20 @@ public class NPCBunny : MonoBehaviour, ICombatant
         bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentCombatTarget, ref attackCooldownRemaining, candidatePoolList, out ICombatant attackTarget);
 
         // TryBeginAttack re-acquires the closest alive candidate into currentCombatTarget EVERY call
-        // regardless of cooldown (see its own comment), so this stays accurate continuously, not just at
-        // wind-up start — a ranged defender never actually turned to face whichever enemy it was shooting
-        // at before this (confirmed in Play mode: stayed facing whichever way it was last walking,
-        // regardless of which side an enemy was actually on).
+        // regardless of cooldown (see its own comment) — correct for WHO to eventually shoot, but facing
+        // off that live value directly would turn this bunny toward a newly-closer enemy mid-wind-up while
+        // its actual attack still fires at pendingAttackTarget (the one snapshotted at wind-up start) —
+        // same race that caused "Slime sometimes faces the wrong way while attacking" on the enemy side
+        // (2026-08-03); structurally identical here even though it's far less likely to actually flip in
+        // practice, since a bunny usually only has 1-2 enemies to choose "closest" from versus a slime
+        // typically facing a whole room of defenders. CombatEngagement.ComputeFacing prefers
+        // pendingAttackTarget whenever a wind-up is in flight so this stays correct either way.
         if (currentCombatTarget != null)
-            SetFacing(currentCombatTarget.CombatTransform.position.x < transform.position.x);
+        {
+            bool? computedFacing = CombatEngagement.ComputeFacing(currentCombatTarget, pendingAttackTarget, transform.position, CombatBalanceConfig.Instance.facingDeadzone);
+            if (computedFacing.HasValue)
+                SetFacing(computedFacing.Value);
+        }
 
         // TEMP — chasing "second invasion, bunny reaches CombatSpot but never attacks" bug.
         if (Time.frameCount % 30 == 0 || startedWindUp)

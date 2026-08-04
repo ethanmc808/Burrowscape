@@ -41,10 +41,30 @@ public interface ICombatant
     // needing to know whether it's working with a bunny or an enemy.
     bool IsFacingRight { get; }
 
+    // Raw "is this combatant's rig art currently X-mirrored from its own authored default pose" signal —
+    // true exactly when the implementer's own scale-flip transform (bunnyScaleRoot / visualScaleRoot) has
+    // a negative local X scale right now. Distinct from IsFacingRight, which normalizes each rig's own
+    // facesLeftByDefault-style convention into a human-readable "facing screen-right" bool and therefore
+    // can't tell FloatingComboEffect which raw sign to counter. Needed because FloatingComboEffect is
+    // spawned as a child of CombatTransform (for correct world position/scale — the actual flip transform
+    // sits 1-2 levels deeper on every current rig and is scaled far smaller, e.g. bunnyScaleRoot at 0.075x),
+    // so it can never see the flip via ordinary Transform-hierarchy inheritance (Transform.lossyScale only
+    // ever composes ANCESTORS, never descendants) — confirmed backwards on slimes despite looking fine on
+    // bunnies (2026-08-03): both were actually rendering a constant, non-reactive orientation the whole
+    // time, since CombatTransform's own scale never changes for either rig. This is passed explicitly into
+    // FloatingComboEffect.Show instead of relying on that broken inference.
+    bool IsVisuallyMirrored { get; }
+
     // Reduces HP, can reach 0 (unlike NPCBunny.ApplyForagingDamage's floor-at-1 — that method is a
     // separate, deliberately-non-lethal Foraging placeholder, not reused here). Implementers fire
     // OnDefeated exactly once, the moment CurrentHP first reaches 0.
     void TakeCombatDamage(int amount);
+
+    // Briefly tints every sprite this combatant is made of to `color` (fade in, hold, fade out — see
+    // CombatBalanceConfig.hitFlashFadeInSeconds/hitFlashFadeOutSeconds) then restores the original color.
+    // Called by AttackInstance.Resolve() on a landed hit, passing TypeHitFlashPalette.GetColor(attacker.
+    // Type) — the flash represents the ATTACK's type, not the target's own.
+    void PlayHitFlash(Color color);
 
     event System.Action OnDefeated;
 }

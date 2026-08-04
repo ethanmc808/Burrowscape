@@ -7,6 +7,9 @@ public struct CombatHitResult
     public bool Hit;
     public bool Crit;
     public int Damage;
+    // TypeChart.SuperEffective/NotVeryEffective/ResistedMax/Neutral — only meaningful when Hit is true.
+    // Used by AttackInstance.Resolve to pick the super/not-very-effective SFX.
+    public float TypeMultiplier;
     public StatusEffectType? AppliedStatus;
 
     public static CombatHitResult Miss => new CombatHitResult { Hit = false };
@@ -71,6 +74,6 @@ public static class CombatResolver
             }
         }
 
-        return new CombatHitResult { Hit = true, Crit = crit, Damage = damage, AppliedStatus = appliedStatus };
+        return new CombatHitResult { Hit = true, Crit = crit, Damage = damage, TypeMultiplier = typeMult, AppliedStatus = appliedStatus };
     }
 }

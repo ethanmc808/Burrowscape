@@ -66,3 +66,6 @@ MonoBehaviour:
   invasionGroupSizeCapMax: 3
   invasionCooldownMinutes: 3
   gateSiegeInvasionChance: 0.5
+  floatingComboTextPrefab: {fileID: 7571258358838798336, guid: 30254f2ea9934f82a3d7ffbfb0913b1a, type: 3}
+  missTextSprite: {fileID: 21300000, guid: 0cdc4cef97471224db286610e165b001, type: 3}
+  critTextSprite: {fileID: 21300000, guid: 82d66e6fd08dd6e488ef3292ecfd86be, type: 3}

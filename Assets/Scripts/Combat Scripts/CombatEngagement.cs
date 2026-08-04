@@ -126,6 +126,31 @@ public static class CombatEngagement
         return best;
     }
 
+    // Shared by EnemyInstance.Update/HandleSiegeUpdate and NPCBunny.HandleDefending — both re-acquire the
+    // closest candidate into their own currentTarget-style field EVERY call (see TryBeginAttack's own
+    // comment), which is correct for WHO to eventually shoot but wrong for WHICH WAY TO FACE while a wind-up
+    // is already in flight: a wind-up's actual attack fires at pendingTarget (snapshotted once, held for the
+    // whole animation), so if a different candidate becomes momentarily closer mid-wind-up, facing off the
+    // live re-acquired target turns the attacker toward that new candidate while its attack still lands on
+    // the original one — confirmed bug (Slime "facing the wrong way while attacking," 2026-08-03), far more
+    // visible on the enemy side since a slime typically has many defending bunnies to churn through versus a
+    // ranged bunny's usual 1-2 enemies. Prefers pendingTarget whenever a wind-up is active so the visible
+    // facing always matches wherever the in-flight attack will actually fire; falls back to liveTarget the
+    // rest of the time (idle tracking between attacks). Returns null (caller should skip the SetFacing call
+    // entirely, not just no-op on a repeated value) when the chosen target's X is within deadzone of self's
+    // X — without this, two combatants sitting nearly vertically aligned flip-flop facing every frame purely
+    // from ordinary position jitter, since targetX < selfX has no hysteresis of its own.
+    public static bool? ComputeFacing(ICombatant liveTarget, ICombatant pendingTarget, Vector3 selfPosition, float deadzone)
+    {
+        ICombatant faceTarget = pendingTarget != null && pendingTarget.CombatGameObject != null ? pendingTarget : liveTarget;
+        if (faceTarget == null || faceTarget.CombatGameObject == null) return null;
+
+        float deltaX = faceTarget.CombatTransform.position.x - selfPosition.x;
+        if (Mathf.Abs(deltaX) <= deadzone) return null;
+
+        return deltaX < 0f; // higher world-X = screen-left convention — see AttackOrigin's own comment
+    }
+
     // Single lookup point for "the FlankSlots on this ICombatant" — a GetComponent call rather than an
     // ICombatant interface addition, since FlankSlots is optional per-prefab content (not every bunny/
     // enemy prefab has it added yet), same pattern StatusEffectController is already looked up by.

@@ -99,6 +99,8 @@ public class CombatBalanceConfig : ScriptableObject
     public float meleeStandingDistance = 1f;
     [Tooltip("Left + right slot, per target, both bunny-on-enemy and enemy-on-bunny.")]
     public int maxFlankersPerTarget = 2;
+    [Tooltip("Ranged combatants re-face their target continuously (see CombatEngagement.ComputeFacing) rather than just at wind-up start. Below this world-X distance from self, the facing decision is skipped instead of applied — otherwise a target sitting almost directly above/below self (X delta near zero) causes the sprite to flicker left/right every frame from ordinary movement jitter.")]
+    public float facingDeadzone = 0.15f;
 
     [Header("Guard Room Buffs")]
     [Tooltip("Grade 1+ — Attack multiplier applied via GuardBuffController while a bunny is posted at a Guard Room. Values TBD/tunable.")]
@@ -148,6 +150,26 @@ public class CombatBalanceConfig : ScriptableObject
     [Range(0f, 1f)]
     [Tooltip("Each invasion cycle rolls exactly ONE raid type — never both, per the single-active-raid rule above. Chance the roll picks a gate-siege invasion (walk up, besiege, breach, then raid the chokepoint room); the remainder picks a direct in-room spawn (enemies appear straight into a random room's EnemySpots, bypassing the gate entirely). 0.5 = 50/50, tunable.")]
     public float gateSiegeInvasionChance = 0.5f;
+
+    [Header("Hit Flash")]
+    [Tooltip("Fade-in should read as near-instant, fade-out noticeably slower — Ethan's explicit ask, exact numbers tuned by eye in Play mode.")]
+    public float hitFlashFadeInSeconds = 0.05f;
+    public float hitFlashFadeOutSeconds = 0.2f;
+
+    [Header("Combat Feedback — Floating Text")]
+    [Tooltip("Spawned as a child of whichever ICombatant got hit (see AttackInstance.Resolve) — CounterFlipX on the prefab keeps it unmirrored regardless of the target's facing, same mechanism as the bunny rig's Effect_Trigger_LevelUp.")]
+    public GameObject floatingComboTextPrefab;
+    [Tooltip("Left unassigned until the art exists — same 'null until content exists' convention as everywhere else. FloatingComboEffect no-ops with no sprite assigned.")]
+    public Sprite missTextSprite;
+    public Sprite critTextSprite;
+
+    [Header("Combat Feedback SFX")]
+    [Tooltip("Same sound across every type, per Ethan's ask. Left unassigned until real clips are sourced.")]
+    public AudioClip critSFX;
+    [Tooltip("Plays when TypeMultiplier > 1x.")]
+    public AudioClip superEffectiveSFX;
+    [Tooltip("Plays when TypeMultiplier < 1x — covers both 0.5x and 0.25x, per Ethan's ask (one sound for both, not two).")]
+    public AudioClip notVeryEffectiveSFX;
 
     [Header("Enemy Room Relocation")]
     [Tooltip("How often InvasionManager re-checks whether an enemy group's current room still has any bunnies to fight.")]

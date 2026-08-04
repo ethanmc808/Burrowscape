@@ -232,6 +232,18 @@ public class InvasionManager : MonoBehaviour
             enemy.BeginWalkToRoom(path, toRoom, spot); // releases fromSpot and adopts toRoom/spot as current immediately (see that method's own comment)
         }
 
+        // toRoom is registered BEFORE fromRoom's group is checked/cleared below — ClearRoomInvasion treats
+        // activeInvasions.Count == 0 as "the whole raid is over" and revives every fainted bunny base-wide
+        // (see its own comment). If fromRoom happened to be the ONLY entry (the common single-group case —
+        // nothing else active), removing it first would make the dictionary momentarily empty even though
+        // these same enemies are still alive and about to be re-added under toRoom, falsely tripping that
+        // whole-raid-cleared sweep mid-relocation. CONFIRMED bug 2026-08-03: a fainted bunny revived the
+        // instant a single slime group relocated to another room, well before any enemy had actually died.
+        if (activeInvasions.TryGetValue(toRoom, out List<EnemyInstance> toGroup))
+            toGroup.AddRange(moving);
+        else
+            activeInvasions[toRoom] = moving;
+
         if (activeInvasions.TryGetValue(fromRoom, out List<EnemyInstance> fromGroup))
         {
             fromGroup.RemoveAll(e => moving.Contains(e));
@@ -240,11 +252,6 @@ public class InvasionManager : MonoBehaviour
             // stranded there forever with nothing left to fight (see that method's own comment).
             if (fromGroup.Count == 0) ClearRoomInvasion(fromRoom);
         }
-
-        if (activeInvasions.TryGetValue(toRoom, out List<EnemyInstance> toGroup))
-            toGroup.AddRange(moving);
-        else
-            activeInvasions[toRoom] = moving;
 
         // Without this, a bunny already idling in toRoom BEFORE the relocation never gets diverted to
         // Defending at all — TriggerAutoDefend is the only thing that catches an already-Working/Relaxing
