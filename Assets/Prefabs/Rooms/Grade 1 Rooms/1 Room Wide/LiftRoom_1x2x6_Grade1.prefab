@@ -1229,6 +1229,7 @@ GameObject:
   - component: {fileID: 8467593509240001878}
   - component: {fileID: 7895280472661186210}
   - component: {fileID: 729123694169349665}
+  - component: {fileID: 1028627748140037326}
   m_Layer: 0
   m_Name: LiftRoom_1x2x6_Grade1
   m_TagString: Untagged
@@ -1324,15 +1325,22 @@ MonoBehaviour:
   carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 7353233977220136988}
   rightEntrance: {fileID: 2854808145472745687}
   middleLeft: {fileID: 1423003967682540139}
   middleRight: {fileID: 8333382802469087974}
   passThroughWaypoints: []
   paths: []
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 1
   grade: 1
   gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: LiftRoom
   landingSpot: {fileID: 5547709232855880916}
   boardingSpot: {fileID: 8368183023766265124}
@@ -1358,6 +1366,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomLightFlicker
   flickerDuration: 0.4
   flickerToggleCount: 5
+--- !u!114 &1028627748140037326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3716477364223810790}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &3727987186431524784
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,6 +1,12 @@
 using Unity.VisualScripting;
 using UnityEngine;
 
+// Present on every room prefab's root GameObject (see RoomClickHandlerAdder, which backfills it onto any
+// room prefab missing it — safe/expected to re-run). jobRoom being null is a legitimate, common case, NOT
+// a wiring mistake: Cafeteria/Bedroom/StorageRoom/LivingRoom (and any future non-job room) have no
+// IJobRoom at all, since they have nothing to manually assign a bunny to — this component still needs to
+// be present on them so GuardDeployUI/PatientUI below can open (Ethan's ask 2026-08-04: slimes spawning
+// in the Cafeteria had no way to be fought, since without a click handler at all nothing opened there).
 [RequireComponent(typeof(Collider))]
 public class RoomClickHandler : MonoBehaviour
 {
@@ -11,8 +17,6 @@ public class RoomClickHandler : MonoBehaviour
     {
         jobRoom = GetComponent<IJobRoom>();
         roomBase = GetComponent<RoomBase>();
-        if (jobRoom == null)
-            Debug.LogWarning($"{name}: RoomClickHandler requires an IJobRoom component on the same object.");
     }
 
     private void OnMouseDown()

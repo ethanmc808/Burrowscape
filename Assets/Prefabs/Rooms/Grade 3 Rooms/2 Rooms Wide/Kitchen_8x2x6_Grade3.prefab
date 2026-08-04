@@ -934,6 +934,7 @@ GameObject:
   - component: {fileID: 7168257509033202189}
   - component: {fileID: -2958588296113743204}
   - component: {fileID: 2660266310915884750}
+  - component: {fileID: 3927923128345547899}
   m_Layer: 0
   m_Name: Kitchen_8x2x6_Grade3
   m_TagString: Untagged
@@ -980,19 +981,30 @@ MonoBehaviour:
   producesPower: 0
   powerProductionAmount: 1
   powerProductionInterval: 1
+  powerRationingPoolAmount: 0
   consumesWater: 0
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 7780064237004574343}
   rightEntrance: {fileID: 3057355384917442124}
   middleLeft: {fileID: 2183189143861509360}
   middleRight: {fileID: 9103366826278921341}
   passThroughWaypoints: []
   paths: []
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 8
   grade: 3
+  gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: Kitchen
 --- !u!65 &-2958588296113743204
 BoxCollider:
@@ -1027,6 +1039,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
+--- !u!114 &3927923128345547899
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8566267086749515906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &9136680580093811639
 GameObject:
   m_ObjectHideFlags: 0

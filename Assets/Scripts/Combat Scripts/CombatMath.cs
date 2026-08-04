@@ -16,13 +16,16 @@ public static class CombatMath
     }
 
     // Every type has exactly one signature attack (see BunnyTypeDefinition.attackName) whose Base Power
-    // climbs every 10 levels: 1-9 -> 20, 10-19 -> 40, 20-29 -> 60, 30-39 -> 80, 40+ -> 100. A structural
-    // rule rather than a balance number anyone asked to retune, so it stays a plain function rather than
-    // living in CombatBalanceConfig.
-    public static int GetBasePower(int level)
+    // climbs every 10 levels: tier 0 (level 1-9) is startingBasePower x1, tier 1 (10-19) x2, ... tier 4
+    // (40+) x5. The TIER SHAPE is a structural rule nobody asked to retune, so it stays a plain function
+    // rather than living in CombatBalanceConfig — but the tier-0 starting value itself is per-type (see
+    // BunnyTypeDefinition.attackBasePower), since attack interval and base Attack stat both vary a lot by
+    // type and a shared flat 20 badly undersells slow-attacking types (Ethan's call, 2026-08-03: e.g. Plant
+    // attacking once per 5s vs. Fire once per 1s at the same Base Power was ~5x Fire's effective DPS).
+    public static int GetBasePower(int level, int startingBasePower)
     {
         int tier = Mathf.Clamp((level - 1) / 10, 0, 4);
-        return 20 * (tier + 1);
+        return startingBasePower * (tier + 1);
     }
 
     // Speed-based hit/evasion roll — gates whether an attack lands at ALL, resolved at the moment the

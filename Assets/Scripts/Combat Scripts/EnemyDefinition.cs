@@ -3,10 +3,11 @@ using UnityEngine;
 // One catalog entry per base-invasion pest enemy, mirroring BunnyTypeDefinition's one-asset-per-entry
 // pattern. Enemies are simple stat-sticks, not individual characters — no IV/EV/Nature/traits, just
 // flat stats. Attack power is NOT flat, though — enemies level (see Combat_DesignDoc.md's "Enemy
-// leveling by population"), so their attack's Base Power scales via CombatMath.GetBasePower(level) at
-// runtime exactly like a bunny's, using whatever level the spawned instance was given. Nothing on this
-// asset stores that level or a base power — there's no per-instance level field here because
-// EnemyDefinition is a shared template, same relationship BunnyTypeDefinition has to a bunny's own level.
+// leveling by population"), so their attack's Base Power scales via CombatMath.GetBasePower(level,
+// attackSource.attackBasePower) at runtime exactly like a bunny's, using whatever level the spawned
+// instance was given and attackSource's own per-type starting Base Power. Nothing on this asset stores
+// that level or a base power — there's no per-instance level field here because EnemyDefinition is a
+// shared template, same relationship BunnyTypeDefinition has to a bunny's own level.
 [CreateAssetMenu(fileName = "EnemyDefinition", menuName = "Burrowscape/Enemy Definition")]
 public class EnemyDefinition : ScriptableObject
 {

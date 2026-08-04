@@ -889,6 +889,7 @@ GameObject:
   - component: {fileID: -1003542549026725901}
   - component: {fileID: 5639500427751359404}
   - component: {fileID: -7614053349450045156}
+  - component: {fileID: 4943895721725547626}
   m_Layer: 0
   m_Name: LivingRoom_4x2x6_Grade2
   m_TagString: Untagged
@@ -940,11 +941,15 @@ MonoBehaviour:
   producesPower: 0
   powerProductionAmount: 1
   powerProductionInterval: 1
+  powerRationingPoolAmount: 0
   consumesWater: 0
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 7786926691018928847}
   rightEntrance: {fileID: 3280035756159107588}
   middleLeft: {fileID: 1847831922530222264}
@@ -987,8 +992,15 @@ MonoBehaviour:
   - entrance: {fileID: 3280035756159107588}
     targetSpot: {fileID: 2910053837223811349}
     waypoints: []
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 4
   grade: 2
+  gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: LivingRoom
   relaxingSpots:
   - {fileID: 4900263022155415585}
@@ -1030,6 +1042,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
+--- !u!114 &4943895721725547626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6621298121848127321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &8077443085342860352
 GameObject:
   m_ObjectHideFlags: 0

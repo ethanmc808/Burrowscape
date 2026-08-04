@@ -15,7 +15,7 @@ MonoBehaviour:
   displayName: Slime
   type: 9
   prefab: {fileID: 3794836812984047467, guid: 60ee000e6714d5944832e892f63126ef, type: 3}
-  baseHP: 40
+  baseHP: 60
   baseAttack: 20
   baseDefense: 10
   baseSpeed: 15

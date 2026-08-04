@@ -823,6 +823,7 @@ GameObject:
   - component: {fileID: 9202017302150733687}
   - component: {fileID: 7920680114952011023}
   - component: {fileID: 5432254126654300523}
+  - component: {fileID: 5088960343419709896}
   m_Layer: 0
   m_Name: Kitchen_8x2x6_Grade1
   m_TagString: Untagged
@@ -873,17 +874,26 @@ MonoBehaviour:
   consumesWater: 1
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 7780064237004574343}
   rightEntrance: {fileID: 3057355384917442124}
   middleLeft: {fileID: 2183189143861509360}
   middleRight: {fileID: 9103366826278921341}
   passThroughWaypoints: []
   paths: []
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 8
   grade: 1
   gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: Kitchen
 --- !u!65 &9202017302150733687
 BoxCollider:
@@ -932,6 +942,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomLightFlicker
   flickerDuration: 0.4
   flickerToggleCount: 5
+--- !u!114 &5088960343419709896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8566267086749515906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &9075893061138364634
 GameObject:
   m_ObjectHideFlags: 0

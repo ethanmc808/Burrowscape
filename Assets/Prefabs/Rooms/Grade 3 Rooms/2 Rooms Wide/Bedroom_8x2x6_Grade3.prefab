@@ -904,6 +904,7 @@ GameObject:
   - component: {fileID: 4853594216915700712}
   - component: {fileID: -2150092325950006145}
   - component: {fileID: -3017697191665642151}
+  - component: {fileID: 8792297502577285387}
   m_Layer: 0
   m_Name: Bedroom_8x2x6_Grade3
   m_TagString: Untagged
@@ -956,11 +957,15 @@ MonoBehaviour:
   producesPower: 0
   powerProductionAmount: 1
   powerProductionInterval: 1
+  powerRationingPoolAmount: 0
   consumesWater: 0
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 6281639359180812438}
   rightEntrance: {fileID: 1637447704237097053}
   middleLeft: {fileID: 2492940792754062049}
@@ -998,14 +1003,22 @@ MonoBehaviour:
     waypoints:
     - {fileID: 4792161374729624172}
     - {fileID: 983753710428284775}
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 8
   grade: 3
+  gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: Bedroom
   sleepingSpots:
   - {fileID: 3241529421114187268}
   - {fileID: 7559580664707311736}
   - {fileID: 7360681699525707467}
   - {fileID: 3855220082914236271}
+  populationCapContribution: 4
 --- !u!65 &-2150092325950006145
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1039,6 +1052,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
+--- !u!114 &8792297502577285387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7817451797394071272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &8387541333269600975
 GameObject:
   m_ObjectHideFlags: 0

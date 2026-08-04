@@ -36,6 +36,8 @@ public class BunnyTypeDefinition : ScriptableObject
     public GameObject attackVFXPrefab;
     [Tooltip("How often this type can fire its attack once engaged, in seconds — per-type rather than a shared global value, since attack animations run different lengths (Fire Ball is much quicker than Giga Drain). Speed does NOT affect this — Speed only affects hit/evasion chance (see CombatMath.GetHitChance); this is purely the animation-driven cadence.")]
     public float attackIntervalSeconds = 2f;
+    [Tooltip("This type's signature attack's Base Power at level 1-9 (tier 0) — see CombatMath.GetBasePower, which multiplies this by the level tier (x1 at 1-9, x2 at 10-19, ... x5 at 40+; same tier shape for every type). Per-type rather than a shared global 20, since attackIntervalSeconds varies a lot by type (Fire fires every 1s, Plant every 5s) — at equal Base Power a slow attacker does far less DPS than a fast one. Ethan's explicit call: hand-tune this per type rather than auto-deriving it from interval, since base Attack stat also differs by type. Tune directly here or via the Bunny Base Stats Editor grid.")]
+    public int attackBasePower = 20;
 
     [Header("Unlock")]
     [Tooltip("Organizational only (matches the design groupings) — actual gating is populationThreshold.")]

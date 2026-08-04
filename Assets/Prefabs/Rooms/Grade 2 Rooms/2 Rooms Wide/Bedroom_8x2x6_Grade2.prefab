@@ -844,6 +844,7 @@ GameObject:
   - component: {fileID: 4853594216915700712}
   - component: {fileID: 2808268587980978687}
   - component: {fileID: -3221589562569383588}
+  - component: {fileID: 7744129933275621135}
   m_Layer: 0
   m_Name: Bedroom_8x2x6_Grade2
   m_TagString: Untagged
@@ -889,6 +890,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65a8bfa1e290b564c81f49b527ae7f70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BedroomRoom
+  consumesPower: 0
+  powerConsumptionAmount: 1
+  powerConsumptionInterval: 1
+  producesPower: 0
+  powerProductionAmount: 1
+  powerProductionInterval: 1
+  powerRationingPoolAmount: 0
+  consumesWater: 0
+  waterConsumptionAmount: 1
+  waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
+  workerEnergyDecayPerSecond: 0.2
+  workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 6281639359180812438}
   rightEntrance: {fileID: 1637447704237097053}
   middleLeft: {fileID: 2492940792754062049}
@@ -926,14 +942,22 @@ MonoBehaviour:
     waypoints:
     - {fileID: 4792161374729624172}
     - {fileID: 4554832997178509165}
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 8
   grade: 2
+  gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: Bedroom
   sleepingSpots:
   - {fileID: 2951132303187656046}
   - {fileID: 5882726078522030120}
   - {fileID: 8994841633576259634}
   - {fileID: 8801667250341978871}
+  populationCapContribution: 4
 --- !u!65 &2808268587980978687
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -967,6 +991,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
+--- !u!114 &7744129933275621135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7817451797394071272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &7984976886714210712
 GameObject:
   m_ObjectHideFlags: 0

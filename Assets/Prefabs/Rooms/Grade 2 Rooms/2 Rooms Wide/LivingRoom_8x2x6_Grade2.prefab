@@ -753,6 +753,7 @@ GameObject:
   - component: {fileID: 7244856312514240383}
   - component: {fileID: 2363037984690097736}
   - component: {fileID: -5101858502451182270}
+  - component: {fileID: 4646779727903530386}
   m_Layer: 0
   m_Name: LivingRoom_8x2x6_Grade2
   m_TagString: Untagged
@@ -797,6 +798,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f864a118f6874b46bcb22d85837921a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LivingRoom
+  consumesPower: 0
+  powerConsumptionAmount: 1
+  powerConsumptionInterval: 1
+  producesPower: 0
+  powerProductionAmount: 1
+  powerProductionInterval: 1
+  powerRationingPoolAmount: 0
+  consumesWater: 0
+  waterConsumptionAmount: 1
+  waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
+  workerEnergyDecayPerSecond: 0.2
+  workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 2875324613928830616}
   rightEntrance: {fileID: 7382115800262063699}
   middleLeft: {fileID: 5932187693668644079}
@@ -839,8 +855,15 @@ MonoBehaviour:
   - entrance: {fileID: 7382115800262063699}
     targetSpot: {fileID: 460587497089833747}
     waypoints: []
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 8
   grade: 2
+  gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: LivingRoom
   relaxingSpots:
   - {fileID: 4269500597645674584}
@@ -882,6 +905,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
+--- !u!114 &4646779727903530386
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6621298121848127321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &6652554625874435488
 GameObject:
   m_ObjectHideFlags: 0

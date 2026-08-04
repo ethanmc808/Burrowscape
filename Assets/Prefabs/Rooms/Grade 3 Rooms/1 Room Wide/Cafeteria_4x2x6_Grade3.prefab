@@ -1027,6 +1027,7 @@ GameObject:
   - component: {fileID: 4472798844281746462}
   - component: {fileID: -1571685088626550981}
   - component: {fileID: -5169343822937779850}
+  - component: {fileID: 127303800224092601}
   m_Layer: 0
   m_Name: Cafeteria_4x2x6_Grade3
   m_TagString: Untagged
@@ -1080,11 +1081,15 @@ MonoBehaviour:
   producesPower: 0
   powerProductionAmount: 1
   powerProductionInterval: 1
+  powerRationingPoolAmount: 0
   consumesWater: 0
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 4210332918705664644}
   rightEntrance: {fileID: 8933915493372576335}
   middleLeft: {fileID: 5754037630407786739}
@@ -1133,8 +1138,15 @@ MonoBehaviour:
   - entrance: {fileID: 8933915493372576335}
     targetSpot: {fileID: 5056922321378981394}
     waypoints: []
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 4
   grade: 3
+  gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: Cafeteria
   eatingSpots:
   - {fileID: 2518894067146143134}
@@ -1144,6 +1156,7 @@ MonoBehaviour:
   - {fileID: 5127504078940945192}
   - {fileID: 5056922321378981394}
   eatingTickInterval: 7.5
+  maxConsecutiveFailedAttempts: 5
 --- !u!65 &-1571685088626550981
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1177,6 +1190,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c613ab426567d0640a7e0314a0aa48b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomUpgradeClickHandler
+--- !u!114 &127303800224092601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6810353138682788748}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &6941483137788430624
 GameObject:
   m_ObjectHideFlags: 0

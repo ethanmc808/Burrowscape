@@ -399,6 +399,7 @@ GameObject:
   - component: {fileID: 5348826546461619936}
   - component: {fileID: 8185225041428188564}
   - component: {fileID: 8324812240775286201}
+  - component: {fileID: 171556760259902647}
   m_Layer: 0
   m_Name: StorageRoom_12x2x6_Grade1
   m_TagString: Untagged
@@ -448,17 +449,26 @@ MonoBehaviour:
   consumesWater: 0
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 9051441193535944450}
   rightEntrance: {fileID: 4325868498133534665}
   middleLeft: {fileID: 588076033861109109}
   middleRight: {fileID: 7507743680317545976}
   passThroughWaypoints: []
   paths: []
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 12
   grade: 1
   gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: StorageRoom
 --- !u!65 &5348826546461619936
 BoxCollider:
@@ -507,6 +517,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomLightFlicker
   flickerDuration: 0.4
   flickerToggleCount: 5
+--- !u!114 &171556760259902647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2333422982187074136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &3778568357589102537
 GameObject:
   m_ObjectHideFlags: 0

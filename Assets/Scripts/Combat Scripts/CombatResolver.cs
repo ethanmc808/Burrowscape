@@ -46,7 +46,10 @@ public static class CombatResolver
 
         bool crit = Random.value < CombatMath.GetCritChance(attacker.Stats.Luck);
 
-        int power = CombatMath.GetBasePower(attacker.Level);
+        // Falls back to 20 (the old shared flat value) only if this attacker has no AttackSource at all
+        // (shouldn't happen for anything that actually attacks — see ICombatant.AttackSource).
+        int startingBasePower = attacker.AttackSource != null ? attacker.AttackSource.attackBasePower : 20;
+        int power = CombatMath.GetBasePower(attacker.Level, startingBasePower);
         int attackStat = attackerStatus != null ? attackerStatus.ModifyAttack(attacker.Stats.Attack) : attacker.Stats.Attack;
         if (attackerGuardBuff != null) attackStat = attackerGuardBuff.ModifyAttack(attackStat);
         int defenseStat = defenderStatus != null ? defenderStatus.ModifyDefense(defender.Stats.Defense) : defender.Stats.Defense;

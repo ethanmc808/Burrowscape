@@ -1014,6 +1014,7 @@ GameObject:
   - component: {fileID: 1077945449214007643}
   - component: {fileID: -1613790398120783733}
   - component: {fileID: 1590936433034089524}
+  - component: {fileID: 2802080817487686992}
   m_Layer: 0
   m_Name: Bedroom_12x2x6_Grade1
   m_TagString: Untagged
@@ -1070,8 +1071,11 @@ MonoBehaviour:
   consumesWater: 0
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 8777262705464394819}
   rightEntrance: {fileID: 4060740914761184392}
   middleLeft: {fileID: 899435882023958068}
@@ -1109,15 +1113,22 @@ MonoBehaviour:
     waypoints:
     - {fileID: 7810061144893402809}
     - {fileID: 5520456613444069801}
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 12
   grade: 1
   gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: Bedroom
   sleepingSpots:
   - {fileID: 1791326569986573161}
   - {fileID: 702187258442870109}
   - {fileID: 1801659259930794862}
   - {fileID: 8036104616688315007}
+  populationCapContribution: 4
 --- !u!65 &1077945449214007643
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1165,6 +1176,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomLightFlicker
   flickerDuration: 0.4
   flickerToggleCount: 5
+--- !u!114 &2802080817487686992
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7817451797394071272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &8508408003061137987
 GameObject:
   m_ObjectHideFlags: 0

@@ -699,6 +699,7 @@ GameObject:
   - component: {fileID: 6366829147298338992}
   - component: {fileID: 2730356481016050485}
   - component: {fileID: 1275007802342329037}
+  - component: {fileID: 2618738395672877327}
   m_Layer: 0
   m_Name: LivingRoom_12x2x6_Grade1
   m_TagString: Untagged
@@ -754,8 +755,11 @@ MonoBehaviour:
   consumesWater: 0
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 5914534907505738965}
   rightEntrance: {fileID: 1405432719538025502}
   middleLeft: {fileID: 2855510789169444514}
@@ -798,9 +802,15 @@ MonoBehaviour:
   - entrance: {fileID: 1405432719538025502}
     targetSpot: {fileID: 7959923864677018911}
     waypoints: []
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 12
   grade: 1
   gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: LivingRoom
   relaxingSpots:
   - {fileID: 4809642487935340429}
@@ -856,6 +866,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomLightFlicker
   flickerDuration: 0.4
   flickerToggleCount: 5
+--- !u!114 &2618738395672877327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6621298121848127321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &6733242781253461798
 GameObject:
   m_ObjectHideFlags: 0

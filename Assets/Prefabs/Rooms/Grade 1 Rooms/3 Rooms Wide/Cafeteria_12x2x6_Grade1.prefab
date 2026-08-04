@@ -838,6 +838,7 @@ GameObject:
   - component: {fileID: 1204241789642141633}
   - component: {fileID: 4533730514994210596}
   - component: {fileID: 8377322693271843682}
+  - component: {fileID: 3741892334577617159}
   m_Layer: 0
   m_Name: Cafeteria_12x2x6_Grade1
   m_TagString: Untagged
@@ -895,8 +896,11 @@ MonoBehaviour:
   consumesWater: 0
   waterConsumptionAmount: 1
   waterConsumptionInterval: 10
+  contributesToCarrotStorage: 0
+  carrotStorageCapacityAmount: 0
   workerEnergyDecayPerSecond: 0.2
   workerMoodDecayPerSecond: 0
+  workingAnimationKind: 0
   leftEntrance: {fileID: 8428415984092283796}
   rightEntrance: {fileID: 3846637149055808351}
   middleLeft: {fileID: 91152163437408739}
@@ -945,9 +949,15 @@ MonoBehaviour:
   - entrance: {fileID: 3846637149055808351}
     targetSpot: {fileID: 5056922321378981394}
     waypoints: []
+  enemySpots: []
+  combatSpots: []
   footprintWidth: 12
   grade: 1
   gradeMultiplier: 1
+  baseXPPerSecond: 0.25
+  typeMatchXPBonus: 0.25
+  xpGradeMultiplier: 1
+  xpRecommendedTypes: 
   roomTypeId: Cafeteria
   eatingSpots:
   - {fileID: 2518894067146143134}
@@ -957,6 +967,7 @@ MonoBehaviour:
   - {fileID: 5127504078940945192}
   - {fileID: 5056922321378981394}
   eatingTickInterval: 7.5
+  maxConsecutiveFailedAttempts: 5
 --- !u!65 &1204241789642141633
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1004,6 +1015,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomLightFlicker
   flickerDuration: 0.4
   flickerToggleCount: 5
+--- !u!114 &3741892334577617159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6810353138682788748}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &7375249824528235518
 GameObject:
   m_ObjectHideFlags: 0

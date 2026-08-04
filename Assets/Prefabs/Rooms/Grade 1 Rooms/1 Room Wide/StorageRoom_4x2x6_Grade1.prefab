@@ -241,6 +241,7 @@ GameObject:
   - component: {fileID: 872378519288315005}
   - component: {fileID: -8386061514160379709}
   - component: {fileID: -6881125229893072488}
+  - component: {fileID: 9127800835888444630}
   m_Layer: 0
   m_Name: StorageRoom_4x2x6_Grade1
   m_TagString: Untagged
@@ -402,6 +403,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomLightFlicker
   flickerDuration: 0.4
   flickerToggleCount: 5
+--- !u!114 &9127800835888444630
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2333422982187074136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd72f2ffd76f3934989aea255134e8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomClickHandler
 --- !u!1 &2581345505230933489
 GameObject:
   m_ObjectHideFlags: 0

@@ -122,6 +122,8 @@ public class BunnyBaseStatsWindow : EditorWindow
         GUILayout.Label("Speed", EditorStyles.boldLabel, GUILayout.Width(60));
         GUILayout.Label("Luck", EditorStyles.boldLabel, GUILayout.Width(60));
         GUILayout.Label("Total", EditorStyles.boldLabel, GUILayout.Width(60));
+        GUILayout.Label("Atk BP", EditorStyles.boldLabel, GUILayout.Width(50));
+        GUILayout.Label("Interval", EditorStyles.boldLabel, GUILayout.Width(50));
         GUILayout.Label("Group", EditorStyles.boldLabel, GUILayout.Width(50));
         GUILayout.Label("Unlocks At", EditorStyles.boldLabel, GUILayout.Width(70));
         GUILayout.Label("Prefab", EditorStyles.boldLabel, GUILayout.Width(60));
@@ -150,6 +152,22 @@ public class BunnyBaseStatsWindow : EditorWindow
         }
 
         GUILayout.Label(def.BaseTotal.ToString(), GUILayout.Width(60));
+
+        // Atk BP is editable here (this type's signature attack's Base Power at level 1-9 — see
+        // BunnyTypeDefinition.attackBasePower/CombatMath.GetBasePower). Interval is shown alongside as
+        // read-only reference ONLY (edit it on the asset/prefab directly) since it's exactly the number
+        // you need in view while retuning BP to compensate for a slow/fast attacker.
+        EditorGUI.BeginChangeCheck();
+        DrawIntField(so, "attackBasePower", 50);
+        if (EditorGUI.EndChangeCheck())
+        {
+            so.ApplyModifiedProperties();
+            EditorUtility.SetDirty(def);
+            dirtySinceLastSave = true;
+        }
+        GUI.enabled = false;
+        EditorGUILayout.FloatField(def.attackIntervalSeconds, GUILayout.Width(50));
+        GUI.enabled = true;
 
         // Group is organizational-only on the data itself (see BunnyTypeDefinition's own doc comment) —
         // populationThreshold is the real gate, read directly per-definition by BunnyTypeUnlockTracker,
