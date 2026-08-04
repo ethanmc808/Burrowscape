@@ -155,7 +155,7 @@ public class BuildModeController : MonoBehaviour
 
         if (GoldManager.Instance == null || !GoldManager.Instance.TrySpendGold(selectedDefinition.goldCost))
         {
-            NotificationToast.Instance?.Show("Not enough gold.");
+            NotificationManager.Instance?.Show(NotificationType.NotEnoughGold);
             Debug.Log($"[BuildDebug] Placement blocked by insufficient gold at floor {pendingFloorIndex}, x={pendingCenterX}.");
             return;
         }

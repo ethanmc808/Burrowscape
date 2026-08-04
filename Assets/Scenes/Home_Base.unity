@@ -1553,6 +1553,7 @@ MonoBehaviour:
   evaluationInterval: 1
   baseRationingPoolAmount: 50
   debugLogFloorArbitration: 0
+  lowPoolWarningFraction: 0.2
 --- !u!1 &101316474
 GameObject:
   m_ObjectHideFlags: 0
@@ -11375,8 +11376,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.0012207031, y: 0}
-  m_SizeDelta: {x: 355.75, y: 165.5}
+  m_AnchoredPosition: {x: -0.00071883, y: -0.0012894}
+  m_SizeDelta: {x: 678.62, y: 53.893}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &919876967
 MonoBehaviour:
@@ -11400,15 +11401,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: Room Full!
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 9d44df96b758d1d4fb89975b44ebc30b, type: 2}
+  m_sharedMaterial: {fileID: -2839842317562643754, guid: 9d44df96b758d1d4fb89975b44ebc30b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -11432,8 +11433,8 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
@@ -12259,6 +12260,220 @@ MonoBehaviour:
   dragSpeed: 0.05
   zoomSpeed: 10
   verticalSpeed: 5
+--- !u!1 &977470243
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 977470245}
+  - component: {fileID: 977470244}
+  m_Layer: 0
+  m_Name: NotificationManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &977470244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 977470243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31486b665d2a42d45b34752984964c56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NotificationManager
+  specialSlot:
+    root: {fileID: 1487551718}
+    text: {fileID: 1485055009}
+    icon: {fileID: 1442654096}
+    animator: {fileID: 0}
+  standardSlot:
+    root: {fileID: 1782911272}
+    text: {fileID: 919876967}
+    icon: {fileID: 0}
+    animator: {fileID: 0}
+  alertSlot:
+    root: {fileID: 1479376371}
+    text: {fileID: 1838345629}
+    icon: {fileID: 0}
+    animator: {fileID: 0}
+  definitions:
+  - type: 0
+    tier: 0
+    messageTemplate: 
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 1
+    tier: 0
+    messageTemplate: 'New foraging location unlocked: {0}!'
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: 463399b460b96f84ca92a8e1d539d03d, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 2
+    tier: 0
+    messageTemplate: 'New room type unlocked: {0}!'
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: 463399b460b96f84ca92a8e1d539d03d, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 3
+    tier: 0
+    messageTemplate: A {0} Bunny Appeared!
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: 463399b460b96f84ca92a8e1d539d03d, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 4
+    tier: 0
+    messageTemplate: 
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 5
+    tier: 1
+    messageTemplate: 
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 6
+    tier: 1
+    messageTemplate: '{0}, Level {1} has arrived at your base.'
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: aac602f70344aed45ad8feb095732a3d, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 7
+    tier: 1
+    messageTemplate: 
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 8
+    tier: 1
+    messageTemplate: '{0} returned from {1}.'
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 9
+    tier: 1
+    messageTemplate: '{0} is heading back from foraging.'
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 10
+    tier: 2
+    messageTemplate: '{0} has been defeated!'
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 11
+    tier: 2
+    messageTemplate: '{0} has fainted!'
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 12
+    tier: 2
+    messageTemplate: 
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 13
+    tier: 2
+    messageTemplate: 
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 14
+    tier: 2
+    messageTemplate: Invaders are approaching!
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: 9c82a59f63c2781429aa9bd2135f7737, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 15
+    tier: 2
+    messageTemplate: Enemies have appeared in {0}!
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: 9c82a59f63c2781429aa9bd2135f7737, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 16
+    tier: 2
+    messageTemplate: Low Power
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 17
+    tier: 2
+    messageTemplate: Low Water
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 18
+    tier: 2
+    messageTemplate: Carrot storage is full!
+    icon: {fileID: 0}
+    sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 19
+    tier: 2
+    messageTemplate: Carrot storage is full!
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: fe445e3a61f66a141840ad48a53651eb, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 25
+    tier: 2
+    messageTemplate: Carrot storage is full!
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: fe445e3a61f66a141840ad48a53651eb, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 20
+    tier: 2
+    messageTemplate: Carrot storage is full!
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: fe445e3a61f66a141840ad48a53651eb, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+--- !u!4 &977470245
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 977470243}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 845.5173, y: 551.0412, z: 0.14568}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &987871209
 GameObject:
   m_ObjectHideFlags: 0
@@ -12728,6 +12943,50 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &998974822
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 998974824}
+  - component: {fileID: 998974823}
+  m_Layer: 0
+  m_Name: RoomTypeUnlockAnnouncer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &998974823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 998974822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a193e67ffa572a439d220c2a2408e3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomTypeUnlockAnnouncer
+--- !u!4 &998974824
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 998974822}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 845.5173, y: 551.0412, z: 0.14568}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -13543,7 +13802,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1095234657}
-  - component: {fileID: 1095234658}
   m_Layer: 0
   m_Name: New Bunny Type Notification
   m_TagString: Untagged
@@ -13568,25 +13826,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 16, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1095234658
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1095234656}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68d1121ac83c0c741951d1448a371571, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NewBunnyTypeNotification
-  notificationRoot: {fileID: 1487551718}
-  notificationText: {fileID: 1485055009}
-  typeIconImage: {fileID: 1442654096}
-  displayDuration: 3
 --- !u!1 &1100449202
 GameObject:
   m_ObjectHideFlags: 0
@@ -18665,7 +18907,6 @@ GameObject:
   - component: {fileID: 1435706036}
   - component: {fileID: 1435706039}
   - component: {fileID: 1435706038}
-  - component: {fileID: 1435706040}
   m_Layer: 5
   m_Name: Can't Delete Room Notification
   m_TagString: Untagged
@@ -18690,8 +18931,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 47.90332, y: 0}
-  m_SizeDelta: {x: 347.5, y: 129.25}
+  m_AnchoredPosition: {x: 622.3301, y: -320.8543}
+  m_SizeDelta: {x: 358.8398, y: 55.5414}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1435706038
 MonoBehaviour:
@@ -18793,21 +19034,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1435706035}
   m_CullTransparentMesh: 1
---- !u!114 &1435706040
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1435706035}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b26e040f8e072644882c962c45ebaaec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoomDeletionNotification
-  notificationRoot: {fileID: 1479376371}
-  notificationText: {fileID: 1838345629}
-  displayDuration: 2
 --- !u!1 &1441946174
 GameObject:
   m_ObjectHideFlags: 0
@@ -19869,8 +20095,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 6.375, y: 0}
-  m_SizeDelta: {x: 355.75, y: 165.5}
+  m_AnchoredPosition: {x: 1.6, y: -14}
+  m_SizeDelta: {x: 680.0624, y: 55.8958}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1479376373
 MonoBehaviour:
@@ -22629,8 +22855,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 6.375, y: 0}
-  m_SizeDelta: {x: 355.75, y: 165.5}
+  m_AnchoredPosition: {x: 576.007, y: -270.8045}
+  m_SizeDelta: {x: 678.619, y: 53.8909}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1782911274
 MonoBehaviour:
@@ -22645,7 +22871,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9150943, g: 0.34100214, b: 0.3685276, a: 1}
+  m_Color: {r: 0.3411765, g: 0.61286074, b: 0.9137255, a: 0.8235294}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -22681,7 +22907,6 @@ GameObject:
   - component: {fileID: 1787572871}
   - component: {fileID: 1787572874}
   - component: {fileID: 1787572873}
-  - component: {fileID: 1787572872}
   m_Layer: 5
   m_Name: Room Full Notification
   m_TagString: Untagged
@@ -22706,24 +22931,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 47.90332, y: 0}
+  m_AnchoredPosition: {x: 47.90332, y: 6}
   m_SizeDelta: {x: 347.5, y: 129.25}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1787572872
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1787572870}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0f0f2b2e6e28c2647a2b669163284195, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NotificationToast
-  toastRoot: {fileID: 1782911272}
-  toastText: {fileID: 919876967}
-  displayDuration: 2
 --- !u!114 &1787572873
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23632,8 +23842,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.0012207031, y: 0}
-  m_SizeDelta: {x: 355.75, y: 165.5}
+  m_AnchoredPosition: {x: -0.000076296, y: 0.52082}
+  m_SizeDelta: {x: 672.6, y: 64.399}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1838345629
 MonoBehaviour:
@@ -23657,15 +23867,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: Can't Delete Room
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 9d44df96b758d1d4fb89975b44ebc30b, type: 2}
+  m_sharedMaterial: {fileID: -2839842317562643754, guid: 9d44df96b758d1d4fb89975b44ebc30b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -23688,9 +23898,9 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_fontStyle: 1
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
@@ -27823,6 +28033,8 @@ SceneRoots:
   - {fileID: 961739753}
   - {fileID: 203844589}
   - {fileID: 995728564}
+  - {fileID: 977470245}
+  - {fileID: 998974824}
   - {fileID: 223234166}
   - {fileID: 1945512141}
   - {fileID: 934702268}

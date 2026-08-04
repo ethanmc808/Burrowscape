@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-// Two independent, indefinite-duration banners (unlike NotificationToast's single auto-dismissing slot)
+// Two independent, indefinite-duration banners (unlike NotificationManager's single auto-dismissing slot)
 // telling the player a triggered upgrade/merge is still waiting on a bunny to physically arrive before
 // RoomTransitionService can swap the room — without this, the delay between clicking Upgrade and the
 // room actually changing looks like nothing happened. Upgrade and Merge each get their own slot (shown
@@ -33,7 +33,7 @@ public class RoomTransitionNotice : MonoBehaviour
         upgradeNoticeRoot.SetActive(false);
         mergeNoticeRoot.SetActive(false);
 
-        // Same reasoning as NotificationToast's own CanvasGroup — purely informational, must never
+        // Same reasoning as NotificationManager's own CanvasGroup — purely informational, must never
         // intercept a click meant for whatever's underneath (e.g. a build-placement click on a floor
         // one of these banners happens to be covering).
         CanvasGroup group = GetComponent<CanvasGroup>();

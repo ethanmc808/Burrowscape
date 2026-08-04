@@ -179,7 +179,7 @@ public class ForagingScreenUI : MonoBehaviour
 
         // Recall itself has no other feedback — the bunny keeps walking/ticking exactly as before until
         // its return countdown starts, so without this the player has no sign the click did anything.
-        NotificationToast.Instance?.Show($"{selectedForagingBunny.BunnyName} is heading back from foraging.");
+        NotificationManager.Instance?.Show(NotificationType.QuestRecalled, selectedForagingBunny.BunnyName);
 
         ForagingManager.Instance.RecallBunny(selectedForagingBunny);
         selectedForagingBunny = null;

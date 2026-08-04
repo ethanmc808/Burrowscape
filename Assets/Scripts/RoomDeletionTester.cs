@@ -16,7 +16,7 @@ public class RoomDeletionTester : MonoBehaviour
         if (!roomToDelete.CanBeDeleted(out string reason))
         {
             Debug.LogWarning($"Can't delete {roomToDelete.name}: {reason}");
-            RoomDeletionNotification.Instance.Show($"Can't delete room: {reason}.");
+            NotificationManager.Instance.Show(NotificationType.CantDeleteRoom, reason);
             return;
         }
 

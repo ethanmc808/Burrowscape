@@ -10,19 +10,19 @@ public class WildBunnySpawner : MonoBehaviour
     [SerializeField] private float offscreenSpawnOffsetX = 15f; // positive X = further left (visually) in this project
 
     [Header("Starting Population")]
-    [Tooltip("Exact ordered list of the opening bunnies, spawned in Start() via the same path as a normal wild arrival. Any entry whose type is NOT one of the base 4 (Neutral/Water/Plant/Shock) is treated as a 'new type reveal' (e.g. Fire) — it's held back with a real wait (see startMinWaitMinutes/startMaxWaitMinutes below) instead of the tight starting spacing, and triggers NewBunnyTypeNotification the first time it spawns.")]
+    [Tooltip("Exact ordered list of the opening bunnies, spawned in Start() via the same path as a normal wild arrival. Any entry whose type is NOT one of the base 4 (Neutral/Water/Plant/Shock) is treated as a 'new type reveal' (e.g. Fire) — it's held back with a real wait (see startMinWaitMinutes/startMaxWaitMinutes below) instead of the tight starting spacing, and triggers NotificationType.NewBunnyType the first time it spawns.")]
     [SerializeField] private List<BunnyTypeDefinition> startingBunnyOrder;
     [SerializeField] private float startingSpawnDelaySeconds = 0.3f; // gap between each starting bunny so they spawn in a visible line instead of a cluster
 
     // The 4 types every playthrough starts with (BunnyTypeSystem_DesignDoc.md Group 1 minus Fire) —
-    // spawns of these never trigger NewBunnyTypeNotification, since they're not a "new type" reveal.
+    // spawns of these never trigger NotificationType.NewBunnyType, since they're not a "new type" reveal.
     private static readonly HashSet<BunnyType> baseStartingTypes = new HashSet<BunnyType>
     {
         BunnyType.Neutral, BunnyType.Water, BunnyType.Plant, BunnyType.Shock
     };
 
     // Every type that has ever spawned this session — first-time entries outside baseStartingTypes
-    // fire NewBunnyTypeNotification (see SpawnBunnyOfType).
+    // fire NotificationType.NewBunnyType (see SpawnBunnyOfType).
     private readonly HashSet<BunnyType> typesEverSpawned = new HashSet<BunnyType>();
 
     [Header("Timed Auto-Spawning")]
@@ -253,11 +253,14 @@ public class WildBunnySpawner : MonoBehaviour
         newBunny.MoveToQueueSpot(queueSpot);
         DebugLog.Log($"Spawned wild {chosenType.type} bunny {newBunny.name} (Level {level}) and sent it to the queue.");
 
+        NotificationManager.Instance?.Show(NotificationType.WildBunnyArrived, newBunny.BunnyName, level);
+
         // First-ever spawn of a type outside the base 4 (e.g. Fire) — a "new type" reveal moment.
+        // NotificationManager plays the reveal's own SFX (see its NotificationDefinition) — no separate
+        // AudioManager.PlayNewBunnyTypeRevealed() call needed here anymore.
         if (typesEverSpawned.Add(chosenType.type) && !baseStartingTypes.Contains(chosenType.type))
         {
-            NewBunnyTypeNotification.Instance?.Show(chosenType);
-            AudioManager.EnsureInstance().PlayNewBunnyTypeRevealed();
+            NotificationManager.Instance?.ShowWithIcon(NotificationType.NewBunnyType, chosenType.icon, chosenType.displayName);
         }
     }
 }

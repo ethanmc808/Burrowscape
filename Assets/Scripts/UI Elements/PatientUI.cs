@@ -140,7 +140,7 @@ public class PatientUI : MonoBehaviour
         RoomSpot spot = currentRoom.RequestBed(bunny);
         if (spot == null)
         {
-            NotificationToast.Instance.Show("No free beds.");
+            NotificationManager.Instance.Show(NotificationType.NoFreeBeds);
             PopulateLists(); // refresh — someone else likely filled the last bed
             return;
         }

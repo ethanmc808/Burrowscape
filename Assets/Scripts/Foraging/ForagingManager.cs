@@ -155,7 +155,7 @@ public class ForagingManager : MonoBehaviour
 
         if (!bunny.CanDepartForForaging())
         {
-            NotificationToast.Instance?.Show($"{bunny.BunnyName} can't be sent foraging right now.");
+            NotificationManager.Instance?.Show(NotificationType.CantDepartForaging, bunny.BunnyName);
             return false;
         }
 
@@ -163,7 +163,7 @@ public class ForagingManager : MonoBehaviour
 
         if (ForagingLocationUnlockTracker.Instance != null && !ForagingLocationUnlockTracker.Instance.IsUnlocked(location))
         {
-            NotificationToast.Instance?.Show($"{location.displayName} isn't unlocked yet.");
+            NotificationManager.Instance?.Show(NotificationType.LocationNotUnlocked, location.displayName);
             return false;
         }
 
@@ -182,7 +182,7 @@ public class ForagingManager : MonoBehaviour
 
         if (!ForagingInventoryManager.Instance.TryWithdrawPotions(potionCount))
         {
-            NotificationToast.Instance?.Show("Not enough potions in stock.");
+            NotificationManager.Instance?.Show(NotificationType.NotEnoughPotions);
             return false;
         }
 
@@ -190,7 +190,7 @@ public class ForagingManager : MonoBehaviour
         if (!departed)
         {
             ForagingInventoryManager.Instance.ReturnPotions(potionCount);
-            NotificationToast.Instance?.Show($"{bunny.BunnyName} has no route to the gate right now.");
+            NotificationManager.Instance?.Show(NotificationType.NoRouteToGate, bunny.BunnyName);
             return false;
         }
 
@@ -563,6 +563,6 @@ public class ForagingManager : MonoBehaviour
         float finalXP = trip.xpAccumulator * (typeMatch ? typeMatchXPMultiplier : 1f);
         bunny.AddExperience(finalXP);
 
-        NotificationToast.Instance?.Show($"{bunny.BunnyName} returned from {trip.location.displayName}.");
+        NotificationManager.Instance?.Show(NotificationType.QuestReturned, bunny.BunnyName, trip.location.displayName);
     }
 }

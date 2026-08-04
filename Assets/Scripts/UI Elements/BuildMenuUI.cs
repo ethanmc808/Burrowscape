@@ -11,6 +11,10 @@ public class BuildMenuUI : MonoBehaviour
     [Tooltip("Only 4x2x6 ('1 Room Wide') RoomDefinitions belong here, including LiftRoom. The 8x2x6/12x2x6 merged-size prefabs are reserved for a future merge system.")]
     [SerializeField] private List<RoomDefinition> catalog = new List<RoomDefinition>();
 
+    // Read by RoomTypeUnlockAnnouncer — same catalog this menu itself filters in RefreshList(), reused
+    // rather than duplicated so there's only ever one Inspector-authored list of build-menu rooms.
+    public IReadOnlyList<RoomDefinition> Catalog => catalog;
+
     [Header("Panel")]
     [SerializeField] private GameObject panelRoot;
     [SerializeField] private Transform listContainer;

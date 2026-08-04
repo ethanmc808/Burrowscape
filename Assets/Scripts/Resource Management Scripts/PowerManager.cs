@@ -108,6 +108,10 @@ public class PowerManager : MonoBehaviour
     public float RationingPoolCurrent => rationingPoolCurrent;
     public float RationingPoolMax => rationingPoolMax;
 
+    // Mirrors Evaluate()'s own local reserveHealthy — exposed so NotificationManager's LowPower alert
+    // (below) can edge-detect the healthy->unhealthy transition without duplicating the arbitration math.
+    public bool ReserveHealthy { get; private set; } = true;
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -224,6 +228,12 @@ public class PowerManager : MonoBehaviour
         float reserveThreshold = totalDemand * reserveBufferSeconds;
         bool reserveHealthy = rationingPoolCurrent >= reserveThreshold;
         float arbitrationCeiling = reserveHealthy ? totalDemand : activeProduction;
+
+        // Edge-detected (not fired every tick while unhealthy) — only the falling transition is a
+        // "just started running low" moment worth alerting the player about.
+        if (ReserveHealthy && !reserveHealthy)
+            NotificationManager.Instance?.Show(NotificationType.LowPower);
+        ReserveHealthy = reserveHealthy;
 
         if (debugLogFloorArbitration)
         {

@@ -18,6 +18,22 @@ public class ForagingLocationUnlockTracker : MonoBehaviour
         Instance = this;
     }
 
+    private void Start()
+    {
+        // Silently seeds unlockedLocations with whatever the STARTING population already clears (e.g. a
+        // populationThreshold of 0) — these were never genuinely "new," so the very first IsUnlocked()
+        // call on them (as soon as the foraging dispatch UI opens) must not fire a reveal notification.
+        // Only a location crossed by population growth AFTER this point goes through IsUnlocked's normal
+        // notify-on-first-unlock path below.
+        if (ForagingManager.Instance == null) return;
+        int population = PopulationManager.Instance != null ? PopulationManager.Instance.TotalResidents : 0;
+        foreach (ForagingLocationDefinition location in ForagingManager.Instance.Locations)
+        {
+            if (location != null && population >= location.populationThreshold)
+                unlockedLocations.Add(location);
+        }
+    }
+
     public bool IsUnlocked(ForagingLocationDefinition location)
     {
         if (unlockedLocations.Contains(location)) return true;
@@ -26,6 +42,9 @@ public class ForagingLocationUnlockTracker : MonoBehaviour
         if (population >= location.populationThreshold)
         {
             unlockedLocations.Add(location);
+            // Fires exactly once per location — the moment it self-latches into unlockedLocations above,
+            // never again for that location afterward.
+            NotificationManager.Instance?.Show(NotificationType.ForagingLocationUnlocked, location.displayName);
             return true;
         }
         return false;

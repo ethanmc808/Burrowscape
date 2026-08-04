@@ -83,7 +83,7 @@ public class DeleteModeController : MonoBehaviour
 
         if (!room.CanBeDeleted(out string blockedReason))
         {
-            RoomDeletionNotification.Instance?.Show($"Can't delete room: {blockedReason}.");
+            NotificationManager.Instance?.Show(NotificationType.CantDeleteRoom, blockedReason);
             return;
         }
 

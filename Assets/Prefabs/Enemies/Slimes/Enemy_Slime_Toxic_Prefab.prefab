@@ -268,6 +268,7 @@ MonoBehaviour:
   attackOriginOffset: {x: 0.3, y: 0.45, z: 0}
   meleeMoveSpeed: 3
   visualScaleRoot: {fileID: 4294209199311311408}
+  facesLeftByDefault: 0
   walkInMoveSpeed: 1
   isMovingParam: IsMoving
 --- !u!114 &8242884225445179976
@@ -305,7 +306,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a054963f2734af9847eabb119dd7dc2, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyDepthSorter
   sortingResolution: 0.1
 --- !u!1001 &3222271145176706030

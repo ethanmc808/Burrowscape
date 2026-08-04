@@ -72,6 +72,10 @@ public class WaterRationingManager : MonoBehaviour
     public float RationingPoolCurrent => rationingPoolCurrent;
     public float RationingPoolMax => rationingPoolMax;
 
+    [Tooltip("Fraction of RationingPoolMax below which a LowWater notification fires (edge-detected — only on the falling transition, not every tick).")]
+    [SerializeField] private float lowPoolWarningFraction = 0.2f;
+    private bool poolHealthy = true;
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -252,6 +256,13 @@ public class WaterRationingManager : MonoBehaviour
                 Debug.Log($"[Water]   floor {floor}: dist={DistanceToNearestProducerFloor(floor):F0} unitsNeeded={unitsNeeded} -> {(watered ? "WATERED" : "DRY")}");
             }
         }
+
+        // Edge-detected (not fired every tick while low) — only the falling transition is a "just
+        // started running low" moment worth alerting the player about.
+        bool healthyNow = rationingPoolMax <= 0f || rationingPoolCurrent >= rationingPoolMax * lowPoolWarningFraction;
+        if (poolHealthy && !healthyNow)
+            NotificationManager.Instance?.Show(NotificationType.LowWater);
+        poolHealthy = healthyNow;
 
         OnAnyWaterRationingChanged?.Invoke();
     }

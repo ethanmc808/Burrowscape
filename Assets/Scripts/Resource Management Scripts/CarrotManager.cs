@@ -32,6 +32,10 @@ public class CarrotManager : MonoBehaviour
     private int storageMax;
     public int CarrotStorageMax => storageMax;
 
+    // Edge-detection latch for the StorageFull alert below — starts true so a fresh scene load (storage
+    // already full, e.g. from a save) doesn't immediately fire; only a LIVE crossing into "full" does.
+    private bool wasBelowCap = true;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -73,6 +77,11 @@ public class CarrotManager : MonoBehaviour
     {
         currentCarrots = Mathf.Min(currentCarrots + amount, storageMax);
         OnCarrotCountChanged?.Invoke(currentCarrots);
+
+        bool isFull = storageMax > 0 && currentCarrots >= storageMax;
+        if (isFull && wasBelowCap)
+            NotificationManager.Instance?.Show(NotificationType.StorageFull);
+        wasBelowCap = !isFull;
     }
 
     // Returns true if successful, false if not enough carrots
@@ -80,6 +89,7 @@ public class CarrotManager : MonoBehaviour
     {
         if (currentCarrots <= 0) return false;
         currentCarrots -= 1;
+        wasBelowCap = true; // re-arms the StorageFull edge-detection above now that it's no longer full
         OnCarrotCountChanged?.Invoke(currentCarrots);
         return true;
     }

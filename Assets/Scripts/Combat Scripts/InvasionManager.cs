@@ -383,6 +383,7 @@ public class InvasionManager : MonoBehaviour
         // still stands just reinforces the existing siege, bounded by remaining free spots.
         gateSiegeGroup.AddRange(spawnedGroup);
         DebugLog.Log($"InvasionManager: spawned {spawnedGroup.Count} enemy(ies) into the gate siege.");
+        NotificationManager.Instance?.Show(NotificationType.InvasionSiege);
 
         if (!gateBreachSubscribed)
         {
@@ -576,6 +577,7 @@ public class InvasionManager : MonoBehaviour
             activeInvasions[targetRoom] = spawnedGroup;
 
         DebugLog.Log($"InvasionManager: spawned {spawnedGroup.Count} enemy(ies) directly into {targetRoom.name}.");
+        NotificationManager.Instance?.Show(NotificationType.InvasionSpawn, targetRoom.name);
 
         TriggerAutoDefend(targetRoom);
         OnEnemyGroupSpawned?.Invoke(targetRoom, spawnedGroup);
@@ -604,6 +606,9 @@ public class InvasionManager : MonoBehaviour
         // Gameplay bookkeeping (spot release, invasion tracking) happens immediately — EnemyInstance
         // itself handles the delayed self-destruct so its Dying animation has time to play out.
         spot.Release(enemy);
+
+        string defeatedName = enemy.Definition != null ? enemy.Definition.displayName : "An enemy";
+        NotificationManager.Instance?.Show(NotificationType.EnemyDefeated, defeatedName);
 
         if (!activeInvasions.TryGetValue(room, out List<EnemyInstance> group)) return;
 

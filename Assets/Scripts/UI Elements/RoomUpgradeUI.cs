@@ -105,7 +105,7 @@ public class RoomUpgradeUI : MonoBehaviour
 
         if (GoldManager.Instance == null || !GoldManager.Instance.TrySpendGold(targetDefinition.goldCost))
         {
-            NotificationToast.Instance?.Show("Not enough gold.");
+            NotificationManager.Instance?.Show(NotificationType.NotEnoughGold);
             return;
         }
 

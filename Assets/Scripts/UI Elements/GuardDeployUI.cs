@@ -119,7 +119,7 @@ public class GuardDeployUI : MonoBehaviour
         RoomSpot spot = currentRoom.ClaimCombatSpot(bunny);
         if (spot == null)
         {
-            NotificationToast.Instance.Show("Room full.");
+            NotificationManager.Instance.Show(NotificationType.GuardRoomFull);
             PopulateList(); // refresh — someone else likely filled the last spot
             return;
         }

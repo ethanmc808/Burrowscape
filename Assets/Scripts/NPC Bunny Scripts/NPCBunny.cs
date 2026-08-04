@@ -120,6 +120,15 @@ public class NPCBunny : MonoBehaviour, ICombatant
     [SerializeField] private float energyThresholdLow = 35f;
     [SerializeField] private float energyGainPerSecondSleeping = 5f; // regen only goes up to 100, never past
 
+    // Edge-detection latches for CheckLowNeedNotifications — each starts true (not-yet-low) so a bunny
+    // spawning already below a threshold doesn't immediately spam a notification; only a LIVE crossing
+    // (was fine, now isn't) fires one. Reset to true once the stat recovers above its threshold, so a
+    // later re-crossing fires again. No Mood equivalent — Mood has no defined "low" threshold anywhere
+    // in the codebase yet (TickMood's own comment: "no room, no travel, no interrupt of its own").
+    private bool wasHungryOk = true;
+    private bool wasThirstyOk = true;
+    private bool wasTiredOk = true;
+
     [Header("HP (Foraging's encounter resolver and base-defense combat both spend this — see Foraging_DesignDoc.md / Combat_DesignDoc.md)")]
     [Tooltip("Current HP. Initialized to Stats.HP whenever Stats changes (spawn, LevelUp) and never exceeds it. Foraging's placeholder encounter resolver floors at 1 and never reduces this to 0; base-defense combat (TakeCombatDamage) is the only thing that can, at which point the bunny faints (BunnyState.Fainted) until revived to 1 HP once the invasion clears.")]
     [SerializeField] private int currentHP = 1;
@@ -509,6 +518,8 @@ public class NPCBunny : MonoBehaviour, ICombatant
             // revive) are excluded.
             if (CurrentState != BunnyState.Sleeping && CurrentState != BunnyState.Fainted)
                 RegeneratePassiveHP();
+
+            CheckLowNeedNotifications();
         }
 
         switch (CurrentState)
@@ -1588,6 +1599,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
         OnDefeated?.Invoke();
         CurrentState = BunnyState.Fainted; // UpdateAnimator's per-frame SetBool(isFaintedParam, ...) picks this up next frame
+        NotificationManager.Instance?.Show(NotificationType.BunnyFainted, BunnyName);
 
         if (faintFadeRoutine != null) StopCoroutine(faintFadeRoutine);
         faintFadeRoutine = StartCoroutine(FaintFadeRoutine());
@@ -1847,7 +1859,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
         if (wanderTimer >= wanderPauseDuration)
         {
             wanderTimer = 0f;
-            NotificationToast.Instance?.Show($"{BunnyName} has no relaxing spot available.");
+            NotificationManager.Instance?.Show(NotificationType.NoRelaxSpot, BunnyName);
             PickNewWanderDestination();
         }
     }
@@ -2761,25 +2773,43 @@ public class NPCBunny : MonoBehaviour, ICombatant
             LeaveSleepingForWaterRoom();
     }
 
+    // Proactive early warning — distinct from WarnNoEatSpot/WarnNoDrinkSpot/WarnNoSleepSpot below, which
+    // only fire once a need is already unmet AND no spot is available. This fires the moment a need
+    // crosses below its normal "low" threshold (IsHungry/IsThirsty/IsTired), regardless of whether a
+    // spot is free, so the player gets a heads-up before it becomes an availability problem.
+    private void CheckLowNeedNotifications()
+    {
+        CheckLowNeedNotification(IsHungry, ref wasHungryOk, NotificationType.GettingHungry);
+        CheckLowNeedNotification(IsThirsty, ref wasThirstyOk, NotificationType.GettingThirsty);
+        CheckLowNeedNotification(IsTired, ref wasTiredOk, NotificationType.GettingTired);
+    }
+
+    private void CheckLowNeedNotification(bool isLow, ref bool wasOk, NotificationType type)
+    {
+        if (isLow && wasOk)
+            NotificationManager.Instance?.Show(type, BunnyName);
+        wasOk = !isLow;
+    }
+
     private void WarnNoEatSpot()
     {
         if (Time.time - lastNoEatSpotWarningTime < noSpotWarningCooldown) return;
         lastNoEatSpotWarningTime = Time.time;
-        NotificationToast.Instance?.Show($"{BunnyName} is hungry, but there are no eating spots available.");
+        NotificationManager.Instance?.Show(NotificationType.NoEatSpot, BunnyName);
     }
 
     private void WarnNoDrinkSpot()
     {
         if (Time.time - lastNoDrinkSpotWarningTime < noSpotWarningCooldown) return;
         lastNoDrinkSpotWarningTime = Time.time;
-        NotificationToast.Instance?.Show($"{BunnyName} is thirsty, but there are no drinking spots available.");
+        NotificationManager.Instance?.Show(NotificationType.NoDrinkSpot, BunnyName);
     }
 
     private void WarnNoSleepSpot()
     {
         if (Time.time - lastNoSleepSpotWarningTime < noSpotWarningCooldown) return;
         lastNoSleepSpotWarningTime = Time.time;
-        NotificationToast.Instance?.Show($"{BunnyName} is tired, but there are no sleeping spots available.");
+        NotificationManager.Instance?.Show(NotificationType.NoSleepSpot, BunnyName);
     }
 
     private void LeaveWorkForCafeteria()

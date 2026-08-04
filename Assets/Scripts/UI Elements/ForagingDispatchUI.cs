@@ -181,7 +181,7 @@ public class ForagingDispatchUI : MonoBehaviour
         bool dispatched = ForagingManager.Instance.TryDispatch(currentBunny, selectedLocation, selectedPotionCount);
         if (dispatched)
             Close(false); // click sound already fired above — don't also play the close cue
-        // On failure, ForagingManager.TryDispatch already surfaces a NotificationToast explaining why —
+        // On failure, ForagingManager.TryDispatch already surfaces a NotificationManager Error explaining why —
         // leave the panel open so the player can adjust and retry rather than losing their selections.
     }
 }

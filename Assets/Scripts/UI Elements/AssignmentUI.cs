@@ -137,7 +137,7 @@ public class AssignmentUI : MonoBehaviour
     {
         if (!currentRoom.HasAvailableSpot())
         {
-            NotificationToast.Instance.Show("This room is full.");
+            NotificationManager.Instance.Show(NotificationType.RoomFull);
             return; // don't assign, don't close the panel — let them pick a different bunny or cancel
         }
 
