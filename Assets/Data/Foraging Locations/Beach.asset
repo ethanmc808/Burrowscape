@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ForagingLocationDefinition
   displayName: Beach
   icon: {fileID: 21300000, guid: 4ac98b7b58861c34f86939efa6a474af, type: 3}
-  populationThreshold: 10
+  populationThreshold: 8
   difficultyTier: 0
   recommendedTypes: 02000000
   lootTable:

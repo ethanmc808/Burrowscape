@@ -301,9 +301,15 @@ public class LiftRoom : RoomBase
         DebugLog.Log($"{lead.name}: shaft formed spanning floor(s) {string.Join(", ", run.Select(s => s.DetectedFloorIndex))}.");
     }
 
+    // Routes through the coordinator regardless of which segment this is called on — shaftSegments is
+    // only ever populated on the coordinator (see FinalizeShaft), so calling this (or any of the public
+    // Get*/ServicesFloor helpers below, which all go through this) directly on some OTHER segment (e.g.
+    // a bunny's saved currentRoom, which points at whichever segment it boarded from — see
+    // SaveManager.SaveBunnies) used to silently return null instead of finding a sibling floor.
     private LiftRoom FindSegment(int floorIndex)
     {
-        return shaftSegments?.FirstOrDefault(s => s.DetectedFloorIndex == floorIndex);
+        LiftRoom shaftCoordinator = coordinator != null ? coordinator : this;
+        return shaftCoordinator.shaftSegments?.FirstOrDefault(s => s.DetectedFloorIndex == floorIndex);
     }
 
     public LiftRoom GetSegmentForFloor(int floorIndex) => FindSegment(floorIndex);

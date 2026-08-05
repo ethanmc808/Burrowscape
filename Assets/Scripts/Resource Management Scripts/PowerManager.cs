@@ -114,6 +114,10 @@ public class PowerManager : MonoBehaviour
     {
         rationingPoolCurrent = Mathf.Clamp(amount, 0f, rationingPoolMax);
         rationingPoolInitialized = true;
+        // Without this, PowerCountDisplay (which only refreshes on this event, not every frame) keeps
+        // showing whatever it displayed before load — typically 0 — until the next natural Evaluate()
+        // tick fires, up to a full evaluationInterval later.
+        OnAnyPowerChanged?.Invoke();
     }
     public float RationingPoolMax => rationingPoolMax;
 

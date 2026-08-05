@@ -77,6 +77,9 @@ public class WaterRationingManager : MonoBehaviour
     {
         rationingPoolCurrent = Mathf.Clamp(amount, 0f, rationingPoolMax);
         rationingPoolInitialized = true;
+        // Same reasoning as PowerManager.SetRationingPoolCurrent — without this, any UI listening only on
+        // this event shows a stale value (typically 0) until the next natural Evaluate() tick.
+        OnAnyWaterRationingChanged?.Invoke();
     }
 
     [Tooltip("Fraction of RationingPoolMax below which a LowWater notification fires (edge-detected — only on the falling transition, not every tick).")]

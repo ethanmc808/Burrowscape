@@ -67,6 +67,15 @@ public class RoomSaveData
     public int grade;
     public int gridX;
     public int floorIndex;
+
+    // The room's TRUE world X, distinct from gridX above (which is gridX's own ROUNDED int — see
+    // RoomBase.GridX). Round-tripping only gridX silently shifts any odd-footprint room by 0.5 units,
+    // since its true center deliberately sits exactly halfway between two integer grid lines (see
+    // BuildGridUtility.SnapCenterX's own comment) — every other room type has an even footprint width,
+    // so this was never noticeable until LiftRoom (footprint 1). NaN sentinel (not a field JsonUtility
+    // will ever overwrite from an older save that lacks this field) lets that older save fall back to
+    // the previous gridX-only reconstruction instead of every one of its rooms snapping to X=0.
+    public float worldX = float.NaN;
 }
 
 // ---------- Bunnies ----------

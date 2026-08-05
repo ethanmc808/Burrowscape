@@ -243,6 +243,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // update — read by SaveManager as the save-time fallback room for any state that isn't Working/
     // Sleeping/Relaxing (see SavedBunnyRole).
     public RoomBase CurrentRoom => currentRoom;
+    // The floor this bunny is ACTUALLY physically standing on right now — distinct from CurrentRoom's
+    // own FloorIndex, which is meaningless for a LiftRoom segment (see currentFloorIndex's own field
+    // comment). Read by SaveManager to resolve a mid-lift bunny's saved room forward to the correct
+    // floor's segment instead of the one it originally boarded from.
+    public int CurrentFloorIndex => currentFloorIndex;
     // True once the bunny has actually passed through the entrance gate (set in EnterBaseAndWander,
     // which only ever runs from OnArrivedAtGateExit). False while spawned-but-queued or still awaiting
     // approval — a bunny in that state has no currentRoom yet, so routing it to a job would build a
@@ -798,6 +803,14 @@ public class NPCBunny : MonoBehaviour, ICombatant
         // Currently working: stop immediately and go idle right where we're standing.
         if (CurrentState == BunnyState.Working)
         {
+            // Without this, an unassign landing mid-hop of the local work-wander loop leaves
+            // workWanderPath/workWanderWaypointTarget stale non-null — UpdateAnimator OR's that into
+            // isMovingParam (forces the Walk animation even once truly idle/relaxing) and pins
+            // animator.speed at WorkWanderConfig's slow work-wander rate while real movement is back to
+            // normal moveSpeed, i.e. exactly a slow-motion walk cycle that doesn't match her actual
+            // travel speed. Same cleanup StopWorkWander's own comment already documents for the other
+            // two interrupts (leaving work for needs, BeginDefending) — this call site was just missing it.
+            StopWorkWander();
             CurrentState = BunnyState.Idle;
         }
         // Still walking toward the (now-released) work spot: let the bunny finish that walk rather
@@ -1751,8 +1764,23 @@ public class NPCBunny : MonoBehaviour, ICombatant
     public void RestoreRoomAssignment(SavedBunnyRole role, RoomBase room)
     {
         currentRoom = room;
-        currentFloorIndex = room != null ? room.FloorIndex : 0;
-        currentWanderPoint = null; // mirrors every OnArrivedAt* method's own reset of this field
+        // EffectiveFloorIndex, not FloorIndex — a LiftRoom segment never populates the latter at all (see
+        // RoomBase.EffectiveFloorIndex's own comment). room CAN legitimately be a LiftRoom here now —
+        // SaveManager.SaveBunnies resolves a mid-lift bunny's stale currentRoom forward to the segment
+        // for whichever floor it's actually on before saving, rather than nulling it out — so this must
+        // handle that case correctly, not just defensively. When room is null (no lift trip in progress,
+        // and no job/sleep/relax room either), derive the real floor from wherever this bunny's saved
+        // transform position actually put it, rather than defaulting to a bogus 0.
+        currentFloorIndex = room != null
+            ? room.EffectiveFloorIndex
+            : (BaseLayoutManager.Instance != null ? BaseLayoutManager.Instance.GetFloorIndexForY(transform.position.y) : 0);
+
+        // A LiftRoom `room` only ever means "idle, no claim, physically standing at this floor's landing
+        // spot" (the only thing SaveManager ever resolves a lift-mid-trip bunny's room to) — mirrors
+        // ResumeTripAfterLift's own currentWanderPoint = landingSpot assignment for the live equivalent of
+        // this state, so this bunny's next path calculation (GetRouteToSpot/GetRouteToWanderPoint) starts
+        // from the landing spot instead of finding no wander point and no claimed spot to start from.
+        currentWanderPoint = room is LiftRoom restoredLiftRoom ? restoredLiftRoom.GetLandingSpot(currentFloorIndex) : null;
 
         if (role == SavedBunnyRole.Working && room is IJobRoom jobRoom)
         {
@@ -1804,7 +1832,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
         CurrentState = BunnyState.Idle;
         currentSpot = null;
-        if (room != null) transform.position = room.transform.position;
+        // A LiftRoom is the one case where Instantiate's saved position is already exactly right (the
+        // landing spot it was saved at) — room.transform is that segment's grid-alignment pivot, not the
+        // landing spot, so snapping to it here would visibly nudge the bunny away from where it actually
+        // was for no reason.
+        if (room != null && !(room is LiftRoom)) transform.position = room.transform.position;
     }
 
     private void RequestNewJobSpot()

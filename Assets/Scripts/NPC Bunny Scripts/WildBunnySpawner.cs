@@ -69,6 +69,17 @@ public class WildBunnySpawner : MonoBehaviour
         // untouched — arrivals should keep happening normally whether the game started fresh or loaded.
         bool loadingFromSave = SaveManager.HasSaveFile();
 
+        // Only seed when actually RESUMING a previous session, never on a brand-new game — IsUnlocked()
+        // self-latches the moment population meets a type's threshold, regardless of whether a bunny of
+        // that type has actually spawned yet. On a fresh game, population can already satisfy a
+        // threshold (e.g. from the starting bunnies about to be spawned below) before the starting
+        // sequence has gotten around to actually spawning that reveal — seeding unconditionally here
+        // marked it "already revealed" before it was ever really revealed, silently swallowing the real
+        // first-time notification. On an actual reload this is exactly what we want (see
+        // SeedAlreadyRevealedTypes' own comment); on a fresh game there's nothing to seed from yet.
+        if (loadingFromSave)
+            SeedAlreadyRevealedTypes();
+
         if (spawnOnStart && !loadingFromSave)
         {
             SpawnWildBunny();
@@ -161,6 +172,32 @@ public class WildBunnySpawner : MonoBehaviour
         int minLevel = Mathf.RoundToInt(Mathf.Lerp(startMinLevel, capMinLevel, t));
         int maxLevel = Mathf.RoundToInt(Mathf.Lerp(startMaxLevel, capMaxLevel, t));
         return Mathf.Clamp(Random.Range(minLevel, maxLevel + 1), 1, 50);
+    }
+
+    // Silently seeds typesEverSpawned with whatever's already unlocked (a type unlocked in a PREVIOUS
+    // session, restored via BunnyTypeUnlockTracker.ImportUnlockedTypes before this runs) — these were
+    // never genuinely "new" THIS session, so a bunny of that type spawning again must NOT re-fire the
+    // reveal notification. Mirrors RoomTypeUnlockAnnouncer.SeedAlreadyUnlocked's exact pattern for the
+    // identical class of bug (see its own comment) — deliberately NOT solved by adding typesEverSpawned
+    // to SaveData directly, since BunnyTypeUnlockTracker.unlockedBunnyTypes already IS the correctly-
+    // persisted source of truth this can re-derive from; a second parallel saved set would just be the
+    // same state duplicated.
+    //
+    // Public — also called explicitly by SaveManager.LoadGame() right after it restores the real
+    // BunnyTypeUnlockTracker state, for the same Start()-ordering reason RoomTypeUnlockAnnouncer's own
+    // version documents: Unity gives no ordering guarantee between two different components' Start()
+    // methods, so if THIS Start() ran before SaveManager's own Start() restored unlocks, the seed below
+    // would under-seed against a still-empty unlock set. Calling this twice is harmless — HashSet.Add on
+    // an already-present entry is a no-op.
+    public void SeedAlreadyRevealedTypes()
+    {
+        if (bunnyTypes == null || BunnyTypeUnlockTracker.Instance == null) return;
+
+        foreach (BunnyTypeDefinition def in bunnyTypes)
+        {
+            if (def != null && BunnyTypeUnlockTracker.Instance.IsUnlocked(def))
+                typesEverSpawned.Add(def.type);
+        }
     }
 
     // Equal-weight among types that are both population-unlocked and have art (prefab != null) — types

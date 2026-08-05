@@ -56,6 +56,12 @@ public class RoomTypeUnlockAnnouncer : MonoBehaviour
 
     private void CheckForNewUnlocks()
     {
+        // SaveManager.LoadGame's own LoadPopulation fires OnPopulationChanged synchronously, before its
+        // explicit SeedAlreadyUnlocked() call (further down the same method) has corrected
+        // announcedUnlocks — without this guard, this live check would run against still-under-seeded
+        // bookkeeping and spuriously re-announce every already-unlocked room the instant population gets
+        // restored. See SaveManager.IsLoading's own comment.
+        if (SaveManager.IsLoading) return;
         if (BuildMenuUI.Instance == null) return;
 
         foreach (RoomDefinition definition in BuildMenuUI.Instance.Catalog)

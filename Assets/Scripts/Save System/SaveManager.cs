@@ -124,6 +124,7 @@ public class SaveManager : MonoBehaviour
                 footprintWidth = room.FootprintWidth,
                 grade = room.Grade,
                 gridX = room.GridX,
+                worldX = room.transform.position.x,
                 floorIndex = room.EffectiveFloorIndex,
             });
         }
@@ -161,6 +162,23 @@ public class SaveManager : MonoBehaviour
                 // Eating/Drinking/hospital state all snap down to Idle — see SavedBunnyRole's own comment.
                 role = SavedBunnyRole.Idle;
                 room = bunny.CurrentRoom;
+
+                // currentRoom is set once on boarding (to the ORIGIN lift segment) and not updated again
+                // until the bunny's post-disembark walk-out coroutine finishes — so a bunny saved anywhere
+                // from boarding through "doors just opened at the destination" still has currentRoom
+                // pointing at the origin segment, nowhere near its actual physical position. Resolve
+                // forward to the segment for whichever floor the bunny is ACTUALLY on right now instead:
+                // bunny.CurrentFloorIndex is already the destination floor by this exact window (set
+                // synchronously in DisembarkFromLift, well before the post-disembark walk-out delay even
+                // starts — see its own comment), and stays correctly at the ORIGIN floor for the
+                // WaitingForLift/RidingLift states too (where the bunny really is still physically on/at
+                // the origin floor — see BoardLift's own comment), so this one lookup covers all three
+                // states uniformly. This is exactly the same "arrivalSegment" a live (non-restored)
+                // disembark settles into once nothing else claims a room — see ResumeTripAfterLift's own
+                // currentRoom = arrivalSegment fallback — just computed early so it survives a save/load
+                // round-trip instead of being read fresh off pendingLift, which doesn't survive one.
+                if (room is LiftRoom originSegment)
+                    room = originSegment.GetSegmentForFloor(bunny.CurrentFloorIndex);
             }
 
             Vector3 pos = bunny.transform.position;
@@ -250,6 +268,17 @@ public class SaveManager : MonoBehaviour
     // LOAD
     // ================================================================================================
 
+    // True for the whole duration of a LoadGame() call. RoomTypeUnlockAnnouncer/ForagingLocationUnlockTracker's
+    // own CheckForNewUnlocks (both subscribed to PopulationManager.OnPopulationChanged, active well before
+    // any Start() runs) check this and skip entirely while true — without it, LoadPopulation below fires
+    // that event SYNCHRONOUSLY with each tracker's bookkeeping still seeded from ITS OWN Start() (which may
+    // have run against the still-default population, before this load restored the real one), so the live
+    // check would spuriously re-fire a reveal notification for content the player already had, before the
+    // explicit SeedAlreadyUnlocked()/SeedAlreadyRevealedTypes() calls further down ever get a chance to
+    // correct that bookkeeping. Those explicit calls still fully reconcile state either way; this flag only
+    // stops a live notification from firing during the reconciliation itself.
+    public static bool IsLoading { get; private set; }
+
     public void LoadGame()
     {
         string json = File.ReadAllText(SavePath);
@@ -260,30 +289,50 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
-        InvasionManager.Instance?.ForceClearAllInvasions();
+        IsLoading = true;
+        try
+        {
+            InvasionManager.Instance?.ForceClearAllInvasions();
 
-        Dictionary<string, RoomBase> roomsByInstanceId = LoadRooms(data);
-        LoadPopulation(data);
-        LoadUnlocks(data);
+            Dictionary<string, RoomBase> roomsByInstanceId = LoadRooms(data);
+            LoadPopulation(data);
+            LoadUnlocks(data);
 
-        // Must run AFTER LoadPopulation, and explicitly (not just left to RoomTypeUnlockAnnouncer's own
-        // Start()) — Unity gives no ordering guarantee between two different components' Start() methods,
-        // so if that Start() ran before the line above restored the real population, its own silent seed
-        // would have run against the still-default population and every already-unlocked room would fire
-        // a spurious "New room type unlocked!" the instant LoadPopulation's OnPopulationChanged fires.
-        // Safe to call twice (idempotent) regardless of whether its own Start() already ran correctly.
-        FindAnyObjectByType<RoomTypeUnlockAnnouncer>()?.SeedAlreadyUnlocked();
-        if (GameSpeedManager.Instance != null)
-            GameSpeedManager.Instance.SetSpeedIndex(data.gameSpeed.speedIndex);
+            // Must run AFTER LoadPopulation, and explicitly (not just left to RoomTypeUnlockAnnouncer's own
+            // Start()) — Unity gives no ordering guarantee between two different components' Start() methods,
+            // so if that Start() ran before the line above restored the real population, its own silent seed
+            // would have run against the still-default population and every already-unlocked room would fire
+            // a spurious "New room type unlocked!" the instant LoadPopulation's OnPopulationChanged fires —
+            // IsLoading (above) is what actually stops that notification from firing live in the meantime;
+            // this call is what makes the tracker's bookkeeping correct once loading finishes.
+            // Safe to call twice (idempotent) regardless of whether its own Start() already ran correctly.
+            FindAnyObjectByType<RoomTypeUnlockAnnouncer>()?.SeedAlreadyUnlocked();
+            // Same reasoning, same ordering race, for the bunny-type equivalent — see
+            // WildBunnySpawner.SeedAlreadyRevealedTypes' own comment. Must run after LoadUnlocks (above),
+            // which is what actually restores BunnyTypeUnlockTracker's real unlocked-types set this reads.
+            FindAnyObjectByType<WildBunnySpawner>()?.SeedAlreadyRevealedTypes();
+            // Same reasoning again for foraging locations — see ForagingLocationUnlockTracker.SeedAlreadyUnlocked's
+            // own comment. Must also run after LoadUnlocks, which restores its real unlockedLocations set.
+            ForagingLocationUnlockTracker.Instance?.SeedAlreadyUnlocked();
+            if (GameSpeedManager.Instance != null)
+                GameSpeedManager.Instance.SetSpeedIndex(data.gameSpeed.speedIndex);
 
-        List<NPCBunny> loadedBunnies = LoadBunnies(data, roomsByInstanceId);
-        LoadResources(data); // after rooms so every *Max is already correctly recomputed
-        LoadForagingTrips(data, loadedBunnies);
+            List<NPCBunny> loadedBunnies = LoadBunnies(data, roomsByInstanceId);
+            LoadResources(data); // after rooms so every *Max is already correctly recomputed
+            LoadForagingTrips(data, loadedBunnies);
 
-        if (WildBunnyNames.Instance != null)
-            WildBunnyNames.Instance.ImportUsedNames(data.bunnyNames.usedNames);
+            if (WildBunnyNames.Instance != null)
+                WildBunnyNames.Instance.ImportUsedNames(data.bunnyNames.usedNames);
 
-        Debug.Log("SaveManager: load complete.");
+            Debug.Log("SaveManager: load complete.");
+        }
+        finally
+        {
+            // finally, not just a trailing statement — an exception partway through the block above must
+            // not leave every room/bunny-type/foraging reveal notification permanently suppressed for the
+            // rest of the session.
+            IsLoading = false;
+        }
     }
 
     private Dictionary<string, RoomBase> LoadRooms(SaveData data)
@@ -319,7 +368,10 @@ public class SaveManager : MonoBehaviour
                 }
 
                 float y = BaseLayoutManager.Instance.GetWorldYForFloor(roomData.floorIndex);
-                Vector3 position = new Vector3(roomData.gridX, y, BaseLayoutManager.Instance.EntranceWorldZ);
+                // worldX over gridX — see RoomSaveData.worldX's own comment; gridX alone would silently
+                // shift an odd-footprint room (currently only LiftRoom) by 0.5 units off its true position.
+                float x = float.IsNaN(roomData.worldX) ? roomData.gridX : roomData.worldX;
+                Vector3 position = new Vector3(x, y, BaseLayoutManager.Instance.EntranceWorldZ);
                 GameObject instance = Instantiate(definition.prefab, position, Quaternion.Euler(0f, 180f, 0f));
                 resolvedRoom = instance.GetComponent<RoomBase>();
                 resolvedRoom?.SetInstanceId(roomData.instanceId);
