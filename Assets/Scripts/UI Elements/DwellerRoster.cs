@@ -25,6 +25,11 @@ public class DwellerRoster : MonoBehaviour
         allBunnies.Remove(bunny);
     }
 
+    // Read by SaveManager — every resident bunny, unfiltered (including ones out Foraging, mid-transit,
+    // etc.) since a save needs to capture all of them, not just whichever subset some other query cares
+    // about.
+    public List<NPCBunny> GetAllBunnies() => new List<NPCBunny>(allBunnies);
+
     // Candidate pool for the Patient UI — any resident bunny below max HP, excluding ones not currently
     // controllable: still queued/awaiting approval (mirrors GetUnassignedBunnies' HasEnteredBase guard),
     // out Foraging (parked offscreen), already claimed by a Hospital bed, and Fainted (mid-battle, can't

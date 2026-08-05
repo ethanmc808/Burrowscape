@@ -300,13 +300,6 @@ public class EnemyInstance : MonoBehaviour, ICombatant
         if (currentTarget != null)
         {
             bool? computedFacing = CombatEngagement.ComputeFacing(currentTarget, pendingAttackTarget, transform.position, CombatBalanceConfig.Instance.facingDeadzone);
-
-            // Logs every tick (not just on an applied flip) so a rapid true/false/true toggle from target
-            // churn or floating-point jitter shows up as repeated identical log lines, not just one applied
-            // flip. GetInstanceID disambiguates this exact object even when multiple slimes share the
-            // identical clone name.
-            Debug.Log($"[FacingDebug] {name} (id={GetInstanceID()}) attack-facing check: selfX={transform.position.x:F4}, liveTarget={(currentTarget.CombatGameObject != null ? currentTarget.CombatGameObject.name : "NULL")} (x={currentTarget.CombatTransform.position.x:F4}), pendingTarget={(pendingAttackTarget != null && pendingAttackTarget.CombatGameObject != null ? pendingAttackTarget.CombatGameObject.name : "NULL")}, computedFacing={(computedFacing.HasValue ? computedFacing.Value.ToString() : "SKIPPED(deadzone)")}, currentFacingRight={facingRight}, visualScaleRoot.x={(visualScaleRoot != null ? visualScaleRoot.localScale.x.ToString("F4") : "NULL")}");
-
             if (computedFacing.HasValue)
                 SetFacing(computedFacing.Value);
         }
@@ -537,13 +530,16 @@ public class EnemyInstance : MonoBehaviour, ICombatant
         SetFacing(side != FlankSide.Left);
     }
 
-    // No-op if visualScaleRoot isn't wired. Mirrors NPCBunny.SetFacing exactly — a hardcoded
-    // faceRight?1:-1 ternary (the original version of this method) is what caused the Slime's movement
-    // facing to never visibly update in Play mode: its art's unflipped pose actually reads as facing left,
-    // and once facingRight's compile-time default (true) already matched the first requested direction,
-    // the old early-return guard skipped the flip entirely with no way to recover. facesLeftByDefault +
-    // Awake's SetFacing(!facesLeftByDefault) call together fix both the wrong-sign-for-this-rig problem
-    // AND the stale-default-never-applies problem, exactly the way NPCBunny already solved it.
+    // No-op if visualScaleRoot isn't wired. Mirrors NPCBunny.SetFacing exactly.
+    //
+    // facesLeftByDefault is per-prefab data, NOT a safe compile-time assumption — confirmed 2026-08-03:
+    // Enemy_Slime_Toxic_Prefab had never actually been re-saved since this field was added to the script,
+    // so it was silently running on the C# default (true) instead of this rig's real unflipped-pose
+    // direction (which is actually right-facing, i.e. false). The bug was invisible in interior combat
+    // (slimes are near-symmetric blobs in a cramped room, easy to not notice a mirrored sprite) but
+    // unmistakable during the gate-siege approach walk (a slime visibly moonwalking backward across open
+    // floor toward the gate). If a future enemy prefab silently inverts like this again, check whether
+    // this field is actually serialized on the prefab (grep the .prefab YAML) before trusting the Inspector.
     private void SetFacing(bool faceRight)
     {
         if (visualScaleRoot == null) return;
@@ -552,12 +548,6 @@ public class EnemyInstance : MonoBehaviour, ICombatant
             hasInitializedFacing = true;
         else if (facingRight == faceRight)
             return;
-
-        // TEMP — chasing "slime sometimes faces the wrong way, while moving AND while attacking" bug.
-        // Logs every APPLIED flip (mirrors NPCBunny's own [FacingDebug] placement, after the no-op
-        // guards) so a Play session's Editor.log shows exactly when/why/how often this fires. Remove once
-        // root-caused.
-Debug.Log($"[FacingDebug] {name} (id={GetInstanceID()}) SetFacing({faceRight}) applied — was facingRight={facingRight}, pos={transform.position}, phase={phase}, currentTarget={(currentTarget != null ? currentTarget.CombatGameObject?.name : "NULL")}, scaleX before={visualScaleRoot.localScale.x:F4}");
 
         facingRight = faceRight;
         bool flip = facesLeftByDefault ? faceRight : !faceRight;

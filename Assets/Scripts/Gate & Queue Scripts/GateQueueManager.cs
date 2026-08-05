@@ -182,6 +182,38 @@ public class GateQueueManager : MonoBehaviour
         EntranceGate.Instance.RequestPassage();
     }
 
+    // Save-load only — called right before writing a save so no bunny is ever mid-queue at save time
+    // (queue position, front-bunny clearance, and backlog ordering are all transient bookkeeping this
+    // project deliberately doesn't try to serialize). Walks every queued/waiting bunny straight through
+    // instantly (EnterBaseAndWander — the same non-walking arrival path a room-transition resettle
+    // already uses) and applies whatever population-bucket transition its ArrivalType implies, exactly
+    // as Update() above would have done once each bunny actually reached the front.
+    public void ResolveQueueForSave()
+    {
+        List<NPCBunny> allQueued = new List<NPCBunny>(currentQueue);
+        allQueued.AddRange(waitingBunnies);
+
+        foreach (NPCBunny bunny in allQueued)
+        {
+            if (bunny == null) continue;
+
+            if (bunny.ArrivalType == BunnyArrivalType.Wild)
+                PopulationManager.Instance?.AddNewResident(ResidentCategory.InBase);
+            else if (bunny.ArrivalType == BunnyArrivalType.ReturningFromQuest)
+                PopulationManager.Instance?.MoveResident(ResidentCategory.Questing, ResidentCategory.InBase);
+            else if (bunny.ArrivalType == BunnyArrivalType.ReturningFromForaging)
+                PopulationManager.Instance?.MoveResident(ResidentCategory.Foraging, ResidentCategory.InBase);
+
+            bunny.SetAwaitingApproval(false);
+            bunny.EnterBaseAndWander(entranceRoom, gateExitPoint);
+        }
+
+        currentQueue.Clear();
+        waitingBunnies.Clear();
+        pendingRequestBunny = null;
+        frontBunnyCleared = false;
+    }
+
     public void RejectFrontBunny(NPCBunny bunny)
     {
         NPCBunny front = GetFrontOfQueue();

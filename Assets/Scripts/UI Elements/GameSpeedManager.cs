@@ -52,6 +52,16 @@ public class GameSpeedManager : MonoBehaviour
         }
     }
 
+    public int CurrentIndex => currentIndex;
+
+    // Save-load only — restores whatever fast-forward step was active when the game was saved. Clamped
+    // in case speedSteps.Length ever shrinks between a save and a later load.
+    public void SetSpeedIndex(int index)
+    {
+        currentIndex = Mathf.Clamp(index, 0, speedSteps.Length - 1);
+        ApplySpeed();
+    }
+
     // Future combat/enemy-spawn system: call once per enemy, when it dies/leaves. Speed stays at 1x
     // even after the last enemy is gone — the player has to press the button again to resume
     // fast-forward, same as if they'd pressed it themselves.

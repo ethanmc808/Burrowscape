@@ -30,4 +30,14 @@ public class BunnyTypeUnlockTracker : MonoBehaviour
         }
         return false;
     }
+
+    // ---------- Save/load ----------
+    public IEnumerable<BunnyType> ExportUnlockedTypes() => unlockedTypes;
+
+    public void ImportUnlockedTypes(IEnumerable<BunnyType> types)
+    {
+        unlockedTypes.Clear();
+        if (types == null) return;
+        foreach (BunnyType t in types) unlockedTypes.Add(t);
+    }
 }

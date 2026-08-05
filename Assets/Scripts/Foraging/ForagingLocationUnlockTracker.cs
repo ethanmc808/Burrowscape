@@ -49,4 +49,27 @@ public class ForagingLocationUnlockTracker : MonoBehaviour
         }
         return false;
     }
+
+    // ---------- Save/load ----------
+    // Saved by displayName (the HashSet holds direct asset references, which can't round-trip through
+    // JSON) — resolved back against ForagingManager.Instance.Locations on import, same source Start()
+    // already reads from.
+    public IEnumerable<string> ExportUnlockedLocationNames()
+    {
+        foreach (ForagingLocationDefinition location in unlockedLocations)
+            if (location != null) yield return location.displayName;
+    }
+
+    public void ImportUnlockedLocationNames(IEnumerable<string> names)
+    {
+        unlockedLocations.Clear();
+        if (names == null || ForagingManager.Instance == null) return;
+
+        HashSet<string> nameSet = new HashSet<string>(names);
+        foreach (ForagingLocationDefinition location in ForagingManager.Instance.Locations)
+        {
+            if (location != null && nameSet.Contains(location.displayName))
+                unlockedLocations.Add(location);
+        }
+    }
 }

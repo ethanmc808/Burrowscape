@@ -116,4 +116,16 @@ public class PopulationManager : MonoBehaviour
         counts[fromCategory] = Mathf.Max(0, counts[fromCategory] - 1);
         OnPopulationChanged?.Invoke();
     }
+
+    // Save-load only — this ledger is independent, explicitly-maintained state (see class comment), not
+    // derivable by counting live bunnies, so a load has to overwrite every bucket directly rather than
+    // replaying Add/Move/Remove calls.
+    public void SetCounts(int inBase, int questing, int foraging, int egg)
+    {
+        counts[ResidentCategory.InBase] = Mathf.Max(0, inBase);
+        counts[ResidentCategory.Questing] = Mathf.Max(0, questing);
+        counts[ResidentCategory.Foraging] = Mathf.Max(0, foraging);
+        counts[ResidentCategory.Egg] = Mathf.Max(0, egg);
+        OnPopulationChanged?.Invoke();
+    }
 }

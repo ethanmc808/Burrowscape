@@ -95,6 +95,14 @@ public class WaterManager : MonoBehaviour
         }
     }
 
+    // Save-load only — bypasses AddWater's overflow-into-rationing-pool behavior since the rationing
+    // pool's own current value is restored independently (see WaterRationingManager.SetRationingPoolCurrent).
+    public void SetCurrentWater(int amount)
+    {
+        currentWater = Mathf.Clamp(amount, 0, storageMax);
+        OnWaterCountChanged?.Invoke(currentWater);
+    }
+
     // Returns true if successful, false if not enough water
     public bool TryConsumeWater()
     {

@@ -6,6 +6,9 @@ public class WildBunnySpawner : MonoBehaviour
 {
     [Tooltip("All BunnyTypeDefinition assets this spawner can choose from. Filtered at spawn time to those with a prefab assigned AND currently unlocked (see BunnyTypeUnlockTracker) — types without art simply never get picked, no code change needed once art ships.")]
     [SerializeField] private List<BunnyTypeDefinition> bunnyTypes;
+    // Read by SaveManager to resolve a saved BunnyType enum value back to its BunnyTypeDefinition asset
+    // on load — the only list of every type asset that exists anywhere in the project today.
+    public IReadOnlyList<BunnyTypeDefinition> BunnyTypes => bunnyTypes;
     [SerializeField] private bool spawnOnStart = false;
     [SerializeField] private float offscreenSpawnOffsetX = 15f; // positive X = further left (visually) in this project
 
@@ -59,12 +62,19 @@ public class WildBunnySpawner : MonoBehaviour
 
     private void Start()
     {
-        if (spawnOnStart)
+        // A loaded save already has every bunny it needs — the opening spawn sequence below exists only
+        // to seed a BRAND NEW game. SaveManager.HasSaveFile() is a pure file-existence check (no
+        // dependency on any other singleton's Awake/Start ordering having already run), so this is safe
+        // to call unconditionally regardless of script execution order. Ongoing auto-spawn (below) is
+        // untouched — arrivals should keep happening normally whether the game started fresh or loaded.
+        bool loadingFromSave = SaveManager.HasSaveFile();
+
+        if (spawnOnStart && !loadingFromSave)
         {
             SpawnWildBunny();
         }
 
-        if (startingBunnyOrder != null && startingBunnyOrder.Count > 0)
+        if (!loadingFromSave && startingBunnyOrder != null && startingBunnyOrder.Count > 0)
         {
             // AutoSpawnLoop is deliberately NOT started here — it waits until the starting sequence
             // (including the held-back Fire reveal) fully finishes. Both use the same

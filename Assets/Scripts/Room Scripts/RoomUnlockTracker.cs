@@ -25,4 +25,14 @@ public class RoomUnlockTracker : MonoBehaviour
     {
         return permanentlyUnlockedIds.Contains(roomDefinitionId);
     }
+
+    // ---------- Save/load ----------
+    public IEnumerable<string> ExportUnlockedIds() => permanentlyUnlockedIds;
+
+    public void ImportUnlockedIds(IEnumerable<string> ids)
+    {
+        permanentlyUnlockedIds.Clear();
+        if (ids == null) return;
+        foreach (string id in ids) permanentlyUnlockedIds.Add(id);
+    }
 }

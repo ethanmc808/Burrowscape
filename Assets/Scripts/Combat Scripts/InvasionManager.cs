@@ -57,6 +57,10 @@ public class InvasionManager : MonoBehaviour
     // fires (both call sites below). InvasionLoop blocks on this before it'll even begin the next
     // cooldown-then-population-wait cycle.
     private bool raidActive;
+    // Read by SaveManager — saving mid-raid isn't supported (live EnemyInstance GameObjects, in-flight
+    // walk paths, and per-enemy OnDefeated closures don't survive a JSON round-trip), so Save is blocked
+    // outright while this is true.
+    public bool RaidActive => raidActive;
     // False only until the very first invasion of the playthrough spawns — keeps invasionCooldownMinutes
     // from delaying game-start's first raid on top of its own already-tuned invasionStartMinWaitMinutes
     // wait; the fixed cooldown is meant to space raids apart from EACH OTHER, not from game start.
@@ -666,6 +670,32 @@ public class InvasionManager : MonoBehaviour
             }
 
             OnSiegeFullyCleared?.Invoke();
+        }
+    }
+
+    // Defensive safety net for SaveManager.LoadGame — SaveGame() already refuses to save while
+    // RaidActive is true (see that property's comment), so this should normally be a no-op, but forcibly
+    // clears any leftover invasion state anyway in case a save file somehow still contains one. Destroys
+    // every stray EnemyInstance and resets every raid-tracking field, then revives/recalls any bunny
+    // still Defending/Fainted — same recall path the real raid-cleared branch above already uses.
+    public void ForceClearAllInvasions()
+    {
+        foreach (List<EnemyInstance> group in activeInvasions.Values)
+            foreach (EnemyInstance enemy in group)
+                if (enemy != null) Destroy(enemy.gameObject);
+        activeInvasions.Clear();
+
+        foreach (EnemyInstance enemy in gateSiegeGroup)
+            if (enemy != null) Destroy(enemy.gameObject);
+        gateSiegeGroup.Clear();
+
+        wanderDeadlineByRoom.Clear();
+        raidActive = false;
+
+        if (DwellerRoster.Instance != null)
+        {
+            foreach (NPCBunny bunny in DwellerRoster.Instance.GetAllFaintedDefenders())
+                bunny.StopDefendingAndReturn();
         }
     }
 }

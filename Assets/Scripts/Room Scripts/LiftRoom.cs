@@ -87,6 +87,10 @@ public class LiftRoom : RoomBase
     [SerializeField] private float dropoffDwellTime = .5f; // seconds doors stay open at a drop-off before moving on, once actually open
 
     public int DetectedFloorIndex { get; private set; }
+    // See RoomBase.EffectiveFloorIndex's own comment — FloorIndex itself is never populated on a lift
+    // segment (OnEnable below deliberately skips base.OnEnable()), so save/load and anything else that
+    // needs this segment's real floor generically must go through this instead.
+    public override int EffectiveFloorIndex => DetectedFloorIndex;
 
     // True only once Start() has actually set DetectedFloorIndex and registered with BaseLayoutManager —
     // guards OnDisable() against unregistering using the bogus default value (0) if this instance is
@@ -206,12 +210,7 @@ public class LiftRoom : RoomBase
 
     private void Start()
     {
-        DetectedFloorIndex = BaseLayoutManager.Instance != null
-            ? BaseLayoutManager.Instance.GetFloorIndexForY(transform.position.y)
-            : FloorIndex;
-
-        BaseLayoutManager.Instance?.RegisterRoomOnFloor(this, DetectedFloorIndex);
-        hasRegisteredFloor = true;
+        RegisterFloorIfNeeded();
 
         // Deferred by a frame via BaseLayoutManager (see RequestLiftColumnRegroup): Unity only
         // guarantees every Awake() runs before any Start(), not that Start() itself runs in any
@@ -224,6 +223,27 @@ public class LiftRoom : RoomBase
         // whenever a segment is later added or removed at runtime (plopped/demolished rooms), not
         // just at scene load — see BaseLayoutManager.RequestLiftColumnRegroup and OnDestroy below.
         BaseLayoutManager.Instance?.RequestLiftColumnRegroup(GridX);
+    }
+
+    // Save-load only — SaveManager reconstructs every room (including lift segments) synchronously in
+    // one pass, well before any of THIS frame's normal Start() calls (let alone the coroutine-deferred
+    // regroup one frame after that) would naturally run. A bunny reconstructed and resumed in that same
+    // synchronous pass could hit HandleIdle before a lift it needs has even registered its own floor,
+    // let alone joined a shaft — so SaveManager calls this immediately after Instantiate to do the
+    // floor-detection/registration half of Start() early, then calls LiftRoom.RegroupColumn directly
+    // once every segment in the save has done the same, skipping the deferred-coroutine wait entirely.
+    // Safe to call even though the segment's own Start() will still also run later and repeat this —
+    // RegisterRoomOnFloor already no-ops on a duplicate add.
+    public void RegisterFloorIfNeeded()
+    {
+        if (hasRegisteredFloor) return;
+
+        DetectedFloorIndex = BaseLayoutManager.Instance != null
+            ? BaseLayoutManager.Instance.GetFloorIndexForY(transform.position.y)
+            : FloorIndex;
+
+        BaseLayoutManager.Instance?.RegisterRoomOnFloor(this, DetectedFloorIndex);
+        hasRegisteredFloor = true;
     }
 
     // Splits every LiftRoom segment CURRENTLY sharing this X position into contiguous floor runs —

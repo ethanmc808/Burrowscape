@@ -28,10 +28,24 @@ public class RoomTypeUnlockAnnouncer : MonoBehaviour
 
     private void Start()
     {
-        // Silently seeds announcedUnlocks with whatever's already unlocked at scene start (starting
-        // rooms with no unlock conditions, or ones the starting population already clears) — these were
-        // never genuinely "new," so they must NOT trigger a notification. Only unlocks that happen from
-        // here on (population growing past a threshold) go through CheckForNewUnlocks' normal path below.
+        SeedAlreadyUnlocked();
+    }
+
+    // Silently seeds announcedUnlocks with whatever's already unlocked — starting rooms with no unlock
+    // conditions, or ones the current population already clears — these were never genuinely "new," so
+    // they must NOT trigger a notification. Only unlocks that happen from here on (population growing
+    // past a threshold) go through CheckForNewUnlocks' normal path below.
+    //
+    // Public — also called explicitly by SaveManager.LoadGame() right after it restores the real
+    // population, because Unity gives no ordering guarantee between two different components' own
+    // Start() methods. Without this second call, if THIS Start() happened to run before SaveManager's
+    // own Start() got around to restoring population, the seed above would run against the population's
+    // still-default (0) value, under-seed announcedUnlocks, and then the very next OnPopulationChanged
+    // (fired by SaveManager restoring the real count) would wrongly treat every already-unlocked room as
+    // brand new and spam a reveal notification for content the player unlocked in a previous session.
+    // Calling this twice is harmless — Add() on an already-present entry is a no-op.
+    public void SeedAlreadyUnlocked()
+    {
         if (BuildMenuUI.Instance == null) return;
         foreach (RoomDefinition definition in BuildMenuUI.Instance.Catalog)
         {

@@ -94,6 +94,15 @@ public class CarrotManager : MonoBehaviour
         return true;
     }
 
+    // Save-load only — sets the raw value directly (clamped to the already-recomputed storageMax) with
+    // no notification and no wasBelowCap edge-fire, since a load isn't a live "just became full" moment.
+    public void SetCurrentCarrots(int amount)
+    {
+        currentCarrots = Mathf.Clamp(amount, 0, storageMax);
+        wasBelowCap = currentCarrots < storageMax;
+        OnCarrotCountChanged?.Invoke(currentCarrots);
+    }
+
     // ---------- Balance-tuning instrumentation (ResourceBalanceDebugPanel) ----------
     // Purely additive logging alongside AddCarrots/TryConsumeCarrot above — doesn't replace or change any
     // existing behavior. Production past the storage cap still gets recorded here even though AddCarrots

@@ -238,6 +238,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
     public bool IsAssignedToJob => assignedJobRoom != null;
     public IJobRoom AssignedJobRoom => assignedJobRoom;
     public LivingRoom ClaimedRelaxRoom => claimedRelaxRoom;
+    public Bedroom ClaimedSleepRoom => claimedSleepRoom;
+    // Wherever this bunny is currently standing/heading, per its own last OnArrivedAt*/RequestNewJobSpot
+    // update — read by SaveManager as the save-time fallback room for any state that isn't Working/
+    // Sleeping/Relaxing (see SavedBunnyRole).
+    public RoomBase CurrentRoom => currentRoom;
     // True once the bunny has actually passed through the entrance gate (set in EnterBaseAndWander,
     // which only ever runs from OnArrivedAtGateExit). False while spawned-but-queued or still awaiting
     // approval — a bunny in that state has no currentRoom yet, so routing it to a job would build a
@@ -259,6 +264,9 @@ public class NPCBunny : MonoBehaviour, ICombatant
     public ForagingAccessoryDefinition EquippedAccessory { get; private set; }
     public void SetEquippedAccessory(ForagingAccessoryDefinition accessory) => EquippedAccessory = accessory;
     public int Level { get; private set; } = 1;
+    // Read by SaveManager — experience itself has no other public accessor since nothing outside
+    // AddExperience/the level-curve check ever needed to read it before now.
+    public float Experience => experience;
     public BunnyStats Stats { get; private set; }
     public IReadOnlyList<BunnyTraitDefinition> Traits { get; private set; } = new List<BunnyTraitDefinition>();
     public IReadOnlyList<BunnyPassiveDefinition> ActivePassives { get; private set; } = new List<BunnyPassiveDefinition>();
@@ -1681,6 +1689,122 @@ public class NPCBunny : MonoBehaviour, ICombatant
         thirst = Random.Range(min, max);
         energy = Random.Range(min, max);
         mood = Random.Range(min, max);
+    }
+
+    // ---------- SAVE/LOAD RESTORATION ----------
+    // Load-time counterpart to WildBunnySpawner's own roll-based spawn sequence (SetIdentity/
+    // RollIndividuality/SetTypeAndProgression/RandomizeStartingNeeds) — called once by SaveManager right
+    // after Instantiate, except every value here is restored EXACTLY from the save file instead of
+    // randomized. Reuses SetTypeAndProgression as-is (still re-applies traits/nature fresh via
+    // ApplyTraitEffects/ApplyNatureEffects — see that method's own comment on why the already-mutated
+    // decay rates are never saved directly) then overwrites the two fields it doesn't know about
+    // (experience, and its own currentHP = Stats.HP default).
+    public void RestoreFromSave(BunnyGender gender, string bunnyName, BunnyArrivalType arrivalType,
+        BunnyTypeDefinition def, int level, float experience,
+        BunnyNature nature, int ivHP, int ivAttack, int ivDefense, int ivSpeed, int ivLuck,
+        int evHP, int evAttack, int evDefense, int evSpeed, int evLuck,
+        List<BunnyTraitDefinition> traits, List<BunnyPassiveDefinition> passives,
+        ForagingAccessoryDefinition accessory,
+        float hunger, float thirst, float energy, float mood, int currentHP)
+    {
+        SetIdentity(gender, bunnyName);
+        SetArrivalType(arrivalType);
+        HasEnteredBase = true;
+
+        Nature = nature;
+        IVHP = ivHP; IVAttack = ivAttack; IVDefense = ivDefense; IVSpeed = ivSpeed; IVLuck = ivLuck;
+        EVHP = evHP; EVAttack = evAttack; EVDefense = evDefense; EVSpeed = evSpeed; EVLuck = evLuck;
+
+        BunnyStats stats = BunnyStatCalculator.Resolve(def, level,
+            ivHP, ivAttack, ivDefense, ivSpeed, ivLuck, evHP, evAttack, evDefense, evSpeed, evLuck);
+        SetTypeAndProgression(def, level, stats, traits, passives);
+
+        this.experience = experience;
+        this.currentHP = Mathf.Clamp(currentHP, 1, Stats.HP);
+
+        this.hunger = hunger;
+        this.thirst = thirst;
+        this.energy = energy;
+        this.mood = mood;
+
+        SetEquippedAccessory(accessory);
+    }
+
+    // Save-load only — a resumed foraging trip's bunny needs to already BE in the Foraging state (parked
+    // off-screen, needs frozen — see Update()'s switch, which has no case for Foraging at all) rather
+    // than walking there, since ForagingManager.ResumeTrip skips the normal staging-point WaitUntil.
+    // Also re-clears HasEnteredBase, mirroring DepartForForaging — RestoreFromSave (called just before
+    // this, earlier in the same load pass) unconditionally sets it true, but a genuinely-away bunny needs
+    // it false for the whole trip (see DepartForForaging's own comment on why), and this is the one place
+    // that puts a reconstructed bunny back into that state.
+    public void SetForagingStateDirect(Vector3 stagingPosition)
+    {
+        CurrentState = BunnyState.Foraging;
+        HasEnteredBase = false;
+        transform.position = stagingPosition;
+    }
+
+    // Restores this bunny's job/relax/sleep claim directly (no walking there — a loaded bunny is
+    // resuming, not arriving) by claiming a real spot via the same RequestSpot every room type already
+    // exposes. Falls back to Idle-with-no-claim if the room no longer has a free spot (e.g. the save is
+    // stale relative to some other change) or role/room don't match a claimable combination.
+    public void RestoreRoomAssignment(SavedBunnyRole role, RoomBase room)
+    {
+        currentRoom = room;
+        currentFloorIndex = room != null ? room.FloorIndex : 0;
+        currentWanderPoint = null; // mirrors every OnArrivedAt* method's own reset of this field
+
+        if (role == SavedBunnyRole.Working && room is IJobRoom jobRoom)
+        {
+            RoomSpot spot = jobRoom.RequestSpot(this);
+            if (spot != null)
+            {
+                assignedJobRoom = jobRoom;
+                claimedWorkSpot = spot;
+                currentSpot = spot; // read by GetRouteToSpot the next time this bunny needs to path anywhere — see OnArrivedAtWorkSpot's identical assignment
+                CurrentState = BunnyState.Working;
+                transform.position = spot.transform.position;
+                jobRoom.NotifyBunnyReadyToWork(this);
+                BeginWorkWander();
+                return;
+            }
+        }
+        else if (role == SavedBunnyRole.Sleeping && room is Bedroom bedroom)
+        {
+            RoomSpot spot = bedroom.RequestSpot(this);
+            if (spot != null)
+            {
+                claimedSleepSpot = spot;
+                claimedSleepRoom = bedroom;
+                currentSpot = spot;
+                CurrentState = BunnyState.Sleeping;
+                transform.position = spot.transform.position;
+                return;
+            }
+        }
+        else if (role == SavedBunnyRole.Relaxing && room is LivingRoom livingRoom)
+        {
+            RoomSpot spot = livingRoom.RequestSpot(this);
+            if (spot != null)
+            {
+                claimedRelaxSpot = spot;
+                claimedRelaxRoom = livingRoom;
+                currentSpot = spot;
+                CurrentState = BunnyState.Relaxing;
+                transform.position = spot.transform.position;
+                return;
+            }
+        }
+
+        // Idle, or the claim above failed — park at the room's own position (or wherever Instantiate
+        // already placed it if no room at all) with no claim, same fallback every other "spot
+        // unavailable" path in this class already uses.
+        if (role != SavedBunnyRole.Idle && room != null)
+            Debug.LogWarning($"{BunnyName}: save said {role} in {room.name}, but couldn't reclaim a spot there (room type mismatch or no free spot) — falling back to Idle.");
+
+        CurrentState = BunnyState.Idle;
+        currentSpot = null;
+        if (room != null) transform.position = room.transform.position;
     }
 
     private void RequestNewJobSpot()

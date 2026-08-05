@@ -106,6 +106,15 @@ public class PowerManager : MonoBehaviour
     public float TotalDemandRate { get; private set; }
 
     public float RationingPoolCurrent => rationingPoolCurrent;
+
+    // Save-load only. Forces rationingPoolInitialized true — without this, the very next Evaluate() tick
+    // would see it false and silently refill the pool to full, clobbering the loaded value (see that
+    // flag's own guard at the top of Evaluate()).
+    public void SetRationingPoolCurrent(float amount)
+    {
+        rationingPoolCurrent = Mathf.Clamp(amount, 0f, rationingPoolMax);
+        rationingPoolInitialized = true;
+    }
     public float RationingPoolMax => rationingPoolMax;
 
     // Mirrors Evaluate()'s own local reserveHealthy — exposed so NotificationManager's LowPower alert

@@ -125,6 +125,8 @@ public class ForagingManager : MonoBehaviour
     private static readonly NatureStat[] GateCheckStats = { NatureStat.Attack, NatureStat.Defense, NatureStat.Speed, NatureStat.Luck };
 
     public IReadOnlyList<ForagingLocationDefinition> Locations => locations;
+    // Read by SaveManager.ResumeTrip's caller to position a resumed bunny back at the staging point.
+    public Transform StagingPoint => foragingStagingPoint;
 
     private void Awake()
     {
@@ -242,6 +244,38 @@ public class ForagingManager : MonoBehaviour
         yield return new WaitUntil(() => bunny == null || bunny.CurrentState == BunnyState.Foraging);
         if (bunny == null) { activeTrips.Remove(bunny); yield break; }
 
+        yield return RunTripToCompletion(bunny, trip, HandleLevelUpDuringTrip);
+    }
+
+    // Save-load only — resumes a trip snapshotted mid-flight (see ForagingTripSaveData) by skipping
+    // straight to the active-tick phase instead of waiting for the normal walk-to-staging-point leg a
+    // fresh dispatch goes through. Caller (SaveManager) is responsible for having already restored the
+    // bunny into BunnyState.Foraging at the staging point before calling this — see
+    // NPCBunny.SetForagingStateDirect.
+    public void ResumeTrip(NPCBunny bunny, ForagingTripState trip)
+    {
+        if (bunny == null || trip == null) return;
+        activeTrips[bunny] = trip;
+        StartCoroutine(RunResumedTripRoutine(bunny, trip));
+    }
+
+    private IEnumerator RunResumedTripRoutine(NPCBunny bunny, ForagingTripState trip)
+    {
+        void HandleLevelUpDuringTrip(int newLevel)
+        {
+            if (bunny != null && bunny.CurrentState == BunnyState.Foraging)
+                trip.AddLogEntry($"<b>Level Up! Reached Level {newLevel}</b>");
+        }
+        bunny.OnLevelUp += HandleLevelUpDuringTrip;
+
+        yield return RunTripToCompletion(bunny, trip, HandleLevelUpDuringTrip);
+    }
+
+    // Shared tail for both a fresh dispatch (after its own staging-point WaitUntil) and a resumed trip
+    // (which skips straight here) — active ticking through to loot deposit. onLevelUp is unsubscribed
+    // here since this is the one place both callers eventually converge regardless of how the trip began.
+    private IEnumerator RunTripToCompletion(NPCBunny bunny, ForagingTripState trip, System.Action<int> onLevelUp)
+    {
         yield return RunActiveTripPhase(bunny, trip);
         yield return RunReturnCountdownPhase(bunny, trip);
 
@@ -254,7 +288,7 @@ public class ForagingManager : MonoBehaviour
         if (bunny != null)
         {
             DepositTripResults(bunny, trip);
-            bunny.OnLevelUp -= HandleLevelUpDuringTrip;
+            bunny.OnLevelUp -= onLevelUp;
         }
 
         activeTrips.Remove(bunny);

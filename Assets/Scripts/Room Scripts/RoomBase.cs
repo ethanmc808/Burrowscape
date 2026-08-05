@@ -218,6 +218,14 @@ public class RoomBase : MonoBehaviour
     // vertically snapped to a consistent floorHeight grid for this to line up (same requirement
     // LiftRoom already has for stacking its segments).
     public int FloorIndex { get; private set; }
+
+    // Save-load (and anything else that needs a room's REAL floor generically) should read this, not
+    // FloorIndex directly — LiftRoom deliberately never populates FloorIndex at all (see its own
+    // OnEnable override: it can't derive its floor from OnEnable the way every other room does, since
+    // Unity gives no ordering guarantee across segments' Start() calls yet), tracking its true floor in
+    // a separate DetectedFloorIndex property instead and overriding this to expose it. Every other room
+    // just returns the normal FloorIndex.
+    public virtual int EffectiveFloorIndex => FloorIndex;
     public int GridX => Mathf.RoundToInt(transform.position.x);
 
     // How wide this room's footprint is in world-X units. Tracked per-instance (not just read off a
@@ -323,6 +331,20 @@ public class RoomBase : MonoBehaviour
     [SerializeField] protected string roomTypeId;
     public string RoomTypeId => roomTypeId;
 
+    // Stable per-INSTANCE identifier (distinct from roomTypeId above, which identifies the room's TYPE,
+    // shared by every room built from the same definition). Nothing needed this before the save system —
+    // rooms were only ever referenced by live object reference at runtime. Generated once, the first time
+    // it's empty (a fresh build), and never regenerated afterward so it survives re-serialization. A
+    // save file uses this to let a bunny's room/spot assignment round-trip ("bunny X works in THIS
+    // specific Garden Room"), and to key a room's own save record.
+    [SerializeField] protected string instanceId;
+    public string InstanceId => instanceId;
+
+    // Save-load only — overwrites whatever Awake() just auto-generated with the exact id from a save
+    // file, so a reconstructed room keeps the same identity a bunny's save record may reference. Safe to
+    // call any time after Instantiate; nothing reads instanceId before SaveManager does.
+    public void SetInstanceId(string id) => instanceId = id;
+
     // Floor-aware entrance/waypoint lookups. A normal room only has one set of these regardless of
     // floor (the floorIndex parameter is ignored), but LiftRoom overrides all three to return the
     // correct set for whichever floor is actually being routed through — a lift spans multiple floors
@@ -344,6 +366,9 @@ public class RoomBase : MonoBehaviour
 
     protected virtual void Awake()
     {
+        if (string.IsNullOrEmpty(instanceId))
+            instanceId = System.Guid.NewGuid().ToString();
+
         ResolveDoorwayPieces();
         ApplyRoomTheme();
     }

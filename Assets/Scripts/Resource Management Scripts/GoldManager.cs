@@ -20,6 +20,13 @@ public class GoldManager : MonoBehaviour
         Instance = this;
     }
 
+    // Save-load only.
+    public void SetCurrentGold(int amount)
+    {
+        currentGold = Mathf.Max(0, amount);
+        OnGoldChanged?.Invoke(currentGold);
+    }
+
     public void AddGold(int amount)
     {
         currentGold += amount;

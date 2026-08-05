@@ -49,7 +49,9 @@ public enum NotificationType
     NoSleepSpot,
     GettingHungry,
     GettingThirsty,
-    GettingTired
+    GettingTired,
+    SaveFailedInvasionActive,
+    GameSaved
 }
 
 public enum NotificationTier

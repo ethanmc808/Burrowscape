@@ -72,6 +72,13 @@ public class WaterRationingManager : MonoBehaviour
     public float RationingPoolCurrent => rationingPoolCurrent;
     public float RationingPoolMax => rationingPoolMax;
 
+    // Save-load only — same rationingPoolInitialized gotcha as PowerManager.SetRationingPoolCurrent.
+    public void SetRationingPoolCurrent(float amount)
+    {
+        rationingPoolCurrent = Mathf.Clamp(amount, 0f, rationingPoolMax);
+        rationingPoolInitialized = true;
+    }
+
     [Tooltip("Fraction of RationingPoolMax below which a LowWater notification fires (edge-detected — only on the falling transition, not every tick).")]
     [SerializeField] private float lowPoolWarningFraction = 0.2f;
     private bool poolHealthy = true;
