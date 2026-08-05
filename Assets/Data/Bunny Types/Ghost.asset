@@ -21,6 +21,11 @@ MonoBehaviour:
   baseDefense: 50
   baseSpeed: 110
   baseLuck: 70
+  attackName: 
+  isMelee: 0
+  attackVFXPrefab: {fileID: 0}
+  attackIntervalSeconds: 2
+  attackBasePower: 20
   group: 6
-  populationThreshold: 150
+  populationThreshold: 125
   passives: []

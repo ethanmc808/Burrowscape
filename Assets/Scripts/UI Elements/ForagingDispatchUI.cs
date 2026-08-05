@@ -69,8 +69,17 @@ public class ForagingDispatchUI : MonoBehaviour
         panelRoot.SetActive(true);
         AudioManager.EnsureInstance().PlayUIOpen();
 
+        // OrderBy populationThreshold, not the Inspector-authored order of ForagingManager.Locations —
+        // that list has no guaranteed relationship to unlock progression (whichever order someone dragged
+        // entries into it), so without this, a location with a HIGHER threshold listed earlier in the
+        // Inspector would wrongly display/default (index 0, see below) ahead of the actual first-unlocked
+        // one. Sorting here derives the correct order from the one thing that actually defines "which
+        // unlocks first" instead of relying on it being hand-kept in sync forever.
         unlockedLocations = ForagingManager.Instance != null && ForagingLocationUnlockTracker.Instance != null
-            ? ForagingManager.Instance.Locations.Where(l => l != null && ForagingLocationUnlockTracker.Instance.IsUnlocked(l)).ToList()
+            ? ForagingManager.Instance.Locations
+                .Where(l => l != null && ForagingLocationUnlockTracker.Instance.IsUnlocked(l))
+                .OrderBy(l => l.populationThreshold)
+                .ToList()
             : new List<ForagingLocationDefinition>();
 
         selectedLocationIndex = 0;

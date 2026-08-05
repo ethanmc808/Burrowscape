@@ -475,16 +475,16 @@ public class InvasionManager : MonoBehaviour
         OnEnemyGroupSpawned?.Invoke(targetRoom, walkingGroup);
     }
 
-    // Chokepoint targeting (Combat_DesignDoc.md's Guard Room section) — whatever room (of any type) sits
-    // immediately next to the Entrance always absorbs the raid first, as long as it still has an open
-    // EnemySpot. Purely positional, not Guard-Room-specific: placement is the strategic decision, not
-    // what's built there. Falls back to today's random pick — now restricted to floor 1 only, since
-    // raiders don't reach upper floors yet (lifts/multi-floor raider pathing explicitly deferred).
+    // Gate-siege survivors' first stop is always the literal Entrance Room itself — they walked in from
+    // the gate right next to it, so that's genuinely the first room they reach, and RoomAbandonWatchRoutine
+    // already handles moving them onward room-to-room afterward if it turns out empty. Falls back to
+    // today's random pick (restricted to floor 1, since raiders don't reach upper floors yet) only if the
+    // Entrance Room's own EnemySpots are all occupied.
     private RoomBase PickTargetRoom()
     {
-        RoomBase chokepoint = BaseLayoutManager.Instance.GetRoomAdjacentToEntrance();
-        if (chokepoint != null && chokepoint.EnemySpots != null && chokepoint.EnemySpots.Any(s => !s.IsOccupied))
-            return chokepoint;
+        RoomBase entranceRoom = BaseLayoutManager.Instance.EntranceRoom;
+        if (entranceRoom != null && entranceRoom.EnemySpots != null && entranceRoom.EnemySpots.Any(s => !s.IsOccupied))
+            return entranceRoom;
 
         return PickRandomRoomWithFreeEnemySpot(restrictToEntranceFloor: true);
     }
