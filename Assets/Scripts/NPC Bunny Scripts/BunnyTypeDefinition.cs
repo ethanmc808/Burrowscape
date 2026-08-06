@@ -13,6 +13,8 @@ public class BunnyTypeDefinition : ScriptableObject
     public string displayName;
     [Tooltip("Shown next to the Type label in BunnyInfoUI. Null until custom type-symbol art exists for this type — the icon Image just hides itself in that case.")]
     public Sprite icon;
+    [Tooltip("Egg.cs's SpriteRenderer for this type — a litter's shared Type selects which color egg shows in the Hatchery (see the Breeding System plan). Null until this type's egg art exists; Egg falls back to whatever sprite is already on its prefab's SpriteRenderer if unset, same 'not yet authored isn't an error state' philosophy as icon above.")]
+    public Sprite eggSprite;
 
     [Header("Prefab")]
     [Tooltip("Null until this type's art/rig exists — WildBunnySpawner skips types with no prefab even if population-unlocked.")]

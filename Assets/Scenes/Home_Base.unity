@@ -3656,6 +3656,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f9f41574887536c47a022af202be3913, type: 2}
   - {fileID: 11400000, guid: ea20fd1bd248b5685cd1f92b3a10a288, type: 2}
   - {fileID: 11400000, guid: 8b935b91b7dbb829d10f5b1df89157b0, type: 2}
+  - {fileID: 11400000, guid: 9a083a358463e344c963bd8ac257a32d, type: 2}
   panelRoot: {fileID: 282330184}
   listContainer: {fileID: 27536204}
   roomListItemPrefab: {fileID: 7630879028902250852, guid: 02f12ef8da883264796cf083b7969da5, type: 3}
@@ -12681,13 +12682,6 @@ MonoBehaviour:
     icon: {fileID: 0}
     animator: {fileID: 0}
   definitions:
-  - type: 0
-    tier: 0
-    messageTemplate: 
-    icon: {fileID: 0}
-    sfxClip: {fileID: 0}
-    displayDuration: 3
-    animationTrigger: 
   - type: 1
     tier: 0
     messageTemplate: 'New foraging location unlocked: {0}!'
@@ -12828,18 +12822,39 @@ MonoBehaviour:
     sfxClip: {fileID: 8300000, guid: fe445e3a61f66a141840ad48a53651eb, type: 3}
     displayDuration: 3
     animationTrigger: 
-  - type: 36
-    tier: 2
-    messageTemplate: Game Saved!
-    icon: {fileID: 0}
-    sfxClip: {fileID: 8300000, guid: 398ecdd0e2f674247a92d5f3be5ef628, type: 3}
-    displayDuration: 3
-    animationTrigger: 
   - type: 5
     tier: 2
     messageTemplate: Game Saved!
     icon: {fileID: 0}
     sfxClip: {fileID: 0}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 22
+    tier: 2
+    messageTemplate: Hatchery Is Full
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: fe445e3a61f66a141840ad48a53651eb, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 23
+    tier: 2
+    messageTemplate: Base At Max Capacity.
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: fe445e3a61f66a141840ad48a53651eb, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 0
+    tier: 0
+    messageTemplate: '{0} Was Born!'
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: 6c8e9c0dcfe18cb40916e5a2214e2569, type: 3}
+    displayDuration: 3
+    animationTrigger: 
+  - type: 38
+    tier: 0
+    messageTemplate: Game Saved!
+    icon: {fileID: 0}
+    sfxClip: {fileID: 8300000, guid: 398ecdd0e2f674247a92d5f3be5ef628, type: 3}
     displayDuration: 3
     animationTrigger: 
 --- !u!4 &977470245
@@ -20818,6 +20833,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 64d41dec285df6e4c892544deba0ec8a, type: 2}
   - {fileID: 11400000, guid: fe9edf1aefbdba14b88ceaece2299805, type: 2}
   - {fileID: 11400000, guid: ea20fd1bd248b5685cd1f92b3a10a288, type: 2}
+  - {fileID: 11400000, guid: 8b935b91b7dbb829d10f5b1df89157b0, type: 2}
+  - {fileID: 11400000, guid: 9a083a358463e344c963bd8ac257a32d, type: 2}
   maxMergedWidth: 12
 --- !u!4 &1497502854
 Transform:

@@ -81,6 +81,7 @@ public class SaveManager : MonoBehaviour
         Dictionary<NPCBunny, int> bunnyIndices = SaveBunnies(data);
         SaveUnlocks(data);
         SaveForagingTrips(data, bunnyIndices);
+        SaveEggs(data);
         data.gameSpeed.speedIndex = GameSpeedManager.Instance != null ? GameSpeedManager.Instance.CurrentIndex : 0;
         if (WildBunnyNames.Instance != null)
             data.bunnyNames.usedNames = WildBunnyNames.Instance.ExportUsedNames();
@@ -154,6 +155,13 @@ public class SaveManager : MonoBehaviour
             SavedBunnyRole role;
             RoomBase room;
             if (bunny.CurrentState == BunnyState.Working) { role = SavedBunnyRole.Working; room = bunny.AssignedJobRoom as RoomBase; }
+            // Confirmed real gap this branch fixes: without it, a save landing during the few-second
+            // mating animation fell into the generic Idle catch-all below, which does NOT reclaim
+            // AssignedJobRoom/claimedWorkSpot on load (only the Working branch above does) — the breeding
+            // pair would silently lose their Bedroom assignment on any save landing in that narrow window.
+            // Treating Mating as Working here is correct: she's still logically assigned to the Bedroom
+            // the whole time, just mid-animation (see NPCBunny.isBreedingBlocked's own comment).
+            else if (bunny.CurrentState == BunnyState.Mating) { role = SavedBunnyRole.Working; room = bunny.AssignedJobRoom as RoomBase; }
             else if (bunny.CurrentState == BunnyState.Sleeping) { role = SavedBunnyRole.Sleeping; room = bunny.ClaimedSleepRoom; }
             else if (bunny.CurrentState == BunnyState.Relaxing) { role = SavedBunnyRole.Relaxing; room = bunny.ClaimedRelaxRoom; }
             else
@@ -212,6 +220,15 @@ public class SaveManager : MonoBehaviour
                 // Independent of role/room above — see BunnySaveData's own comment. Populated whenever a
                 // job is currently held, regardless of what the bunny's CurrentState happens to be right now.
                 underlyingJobRoomInstanceId = bunny.AssignedJobRoom != null ? ((RoomBase)bunny.AssignedJobRoom).InstanceId : "",
+
+                isPregnant = bunny.IsPregnant,
+                pregnancyElapsed = bunny.PregnancyElapsed,
+                pregnancyDuration = bunny.PregnancyDuration,
+                litterType = bunny.LitterType,
+                litterMembers = bunny.LitterMembers.ToList(),
+                claimedHatcheryRoomInstanceId = bunny.ClaimedHatcheryRoom != null ? bunny.ClaimedHatcheryRoom.InstanceId : "",
+
+                isKidBunny = bunny.IsKidBunny,
             };
 
             data.bunnies.Add(saved);
@@ -264,6 +281,34 @@ public class SaveManager : MonoBehaviour
             };
 
             data.activeTrips.Add(saved);
+        }
+    }
+
+    // See the Breeding System plan. Eggs don't reference live bunny objects (the parents already forgot
+    // about them the moment the egg was laid — see NPCBunny.TryLayEgg's ClearPregnancyState), so unlike
+    // SaveForagingTrips above this needs no bunnyIndices cross-reference at all.
+    private void SaveEggs(SaveData data)
+    {
+        if (BaseManager.Instance == null) return;
+
+        foreach (HatcheryRoom hatchery in BaseManager.Instance.Hatcheries)
+        {
+            if (hatchery == null) continue;
+
+            foreach (Egg egg in hatchery.ActiveEggs.ToList())
+            {
+                if (egg == null) continue;
+
+                data.eggs.Add(new EggSaveData
+                {
+                    hatcheryRoomInstanceId = hatchery.InstanceId,
+                    spotIndex = hatchery.IndexOfSpot(egg.ClaimedSpot),
+                    type = egg.Type,
+                    litterMembers = egg.LitterMembers.ToList(),
+                    incubationElapsed = egg.IncubationElapsed,
+                    incubationDuration = egg.IncubationDuration,
+                });
+            }
         }
     }
 
@@ -323,6 +368,10 @@ public class SaveManager : MonoBehaviour
             List<NPCBunny> loadedBunnies = LoadBunnies(data, roomsByInstanceId);
             LoadResources(data); // after rooms so every *Max is already correctly recomputed
             LoadForagingTrips(data, loadedBunnies);
+            // Eggs don't reference live bunny objects, so order relative to LoadBunnies doesn't matter —
+            // kept adjacent to LoadForagingTrips stylistically (both are "in-flight, non-bunny-keyed
+            // state reconstructed after rooms"). See the Breeding System plan.
+            LoadEggs(data, roomsByInstanceId);
 
             if (WildBunnyNames.Instance != null)
                 WildBunnyNames.Instance.ImportUsedNames(data.bunnyNames.usedNames);
@@ -481,10 +530,44 @@ public class SaveManager : MonoBehaviour
                 bunny.RestoreUnderlyingJobAssignment(underlyingJobRoom);
             }
 
+            // See the Breeding System plan. Deliberately does NOT call HatcheryRoom.ReserveCapacity again
+            // here — reservedCount isn't persisted as a raw number at all (see its own comment); each
+            // HatcheryRoom instead recomputes it once, after every bunny in this loop has been restored
+            // (see the ResyncReservedCounts call at the end of LoadBunnies below), by counting how many
+            // just-restored bunnies are isPregnant and point at it. This avoids a second source of truth
+            // that could drift from the actual restored bunny states.
+            if (bunnyData.isPregnant
+                && !string.IsNullOrEmpty(bunnyData.claimedHatcheryRoomInstanceId)
+                && roomsByInstanceId.TryGetValue(bunnyData.claimedHatcheryRoomInstanceId, out RoomBase hatcheryRoomBase)
+                && hatcheryRoomBase is HatcheryRoom hatcheryRoom)
+            {
+                bunny.BeginPregnancy(bunnyData.litterType, bunnyData.litterMembers, bunnyData.pregnancyDuration, hatcheryRoom, bunnyData.pregnancyElapsed);
+            }
+
+            if (bunnyData.isKidBunny)
+                bunny.SetIsKidBunny(true);
+
             loaded.Add(bunny);
         }
 
+        ResyncHatcheryReservedCounts(loaded);
+
         return loaded;
+    }
+
+    // See the Breeding System plan / BeginPregnancy's own comment above. Every HatcheryRoom's
+    // reservedCount is recomputed from scratch here — after every bunny above has been restored, so this
+    // reflects the real, final set of pregnant bunnies rather than a raw saved number that could drift.
+    private void ResyncHatcheryReservedCounts(List<NPCBunny> loadedBunnies)
+    {
+        if (BaseManager.Instance == null) return;
+
+        foreach (HatcheryRoom hatchery in BaseManager.Instance.Hatcheries)
+        {
+            if (hatchery == null) continue;
+            int count = loadedBunnies.Count(b => b != null && b.IsPregnant && b.ClaimedHatcheryRoom == hatchery);
+            hatchery.SetReservedCountForLoad(count);
+        }
     }
 
     private void LoadForagingTrips(SaveData data, List<NPCBunny> loadedBunnies)
@@ -543,6 +626,50 @@ public class SaveManager : MonoBehaviour
 
             bunny.SetForagingStateDirect(stagingPosition);
             ForagingManager.Instance.ResumeTrip(bunny, trip);
+        }
+    }
+
+    // See the Breeding System plan. Reconstructs each saved egg at its EXACT saved spot index (via
+    // ClaimSpecificSpot, not ClaimAnyFreeSpot) so a reloaded egg doesn't visibly shuffle to a different
+    // position for no reason, with incubationElapsed restored rather than reset to 0.
+    private void LoadEggs(SaveData data, Dictionary<string, RoomBase> roomsByInstanceId)
+    {
+        GameObject eggPrefab = BreedingConfig.Instance.eggPrefab;
+        if (eggPrefab == null)
+        {
+            if (data.eggs.Count > 0)
+                Debug.LogWarning("SaveManager: save has eggs but BreedingConfig has no eggPrefab assigned — every saved egg dropped.");
+            return;
+        }
+
+        foreach (EggSaveData eggData in data.eggs)
+        {
+            if (string.IsNullOrEmpty(eggData.hatcheryRoomInstanceId)
+                || !roomsByInstanceId.TryGetValue(eggData.hatcheryRoomInstanceId, out RoomBase roomBase)
+                || !(roomBase is HatcheryRoom hatchery))
+            {
+                Debug.LogWarning($"SaveManager: saved egg's Hatchery ({eggData.hatcheryRoomInstanceId}) no longer exists — egg dropped.");
+                continue;
+            }
+
+            GameObject eggObject = Instantiate(eggPrefab);
+            Egg egg = eggObject.GetComponent<Egg>();
+            if (egg == null)
+            {
+                Debug.LogWarning("SaveManager: eggPrefab has no Egg component — saved egg dropped.");
+                Destroy(eggObject);
+                continue;
+            }
+
+            RoomSpot spot = hatchery.ClaimSpecificSpot(eggData.spotIndex, egg);
+            if (spot == null)
+            {
+                Debug.LogWarning($"SaveManager: saved egg's spot index {eggData.spotIndex} in {hatchery.name} is no longer available — egg dropped.");
+                Destroy(eggObject);
+                continue;
+            }
+
+            egg.Initialize(eggData.type, eggData.litterMembers, hatchery, spot, eggData.incubationDuration, eggData.incubationElapsed);
         }
     }
 

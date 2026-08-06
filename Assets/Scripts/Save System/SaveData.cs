@@ -147,6 +147,38 @@ public class BunnySaveData
     // records the job so it survives a reload that happens to land mid-interruption. Empty when the bunny
     // has no job assigned, or (harmlessly) duplicates roomInstanceId when savedState is already Working.
     public string underlyingJobRoomInstanceId;
+
+    // ---------- Breeding (see the Breeding System plan) ----------
+    public bool isPregnant;
+    public float pregnancyElapsed;
+    public float pregnancyDuration;
+    // The whole litter, already fully resolved at conception — see LitterMemberData's own comment for why
+    // nothing here is ever re-rolled on load (that's what keeps a hatch save-scum-proof). Empty/default
+    // when isPregnant is false.
+    public BunnyType litterType;
+    public List<LitterMemberData> litterMembers = new List<LitterMemberData>();
+    // Room only — no spot index, since nothing is reserved at a specific spot at conception, only counted
+    // capacity (see HatcheryRoom.ReserveCapacity's own comment). Empty when isPregnant is false.
+    public string claimedHatcheryRoomInstanceId;
+
+    public bool isKidBunny;
+}
+
+// ---------- Eggs (see the Breeding System plan) ----------
+
+// One entry per live, unhatched Egg across every registered HatcheryRoom (see SaveManager.SaveEggs/
+// LoadEggs). Unlike a pregnant bunny above, an egg IS physically claimed to a specific RoomSpot — spotIndex
+// here is real, resolved against the reconstructed HatcheryRoom's own spot list on load, same convention
+// every other physically-claimed occupant in this file would use if any currently needed one.
+[System.Serializable]
+public class EggSaveData
+{
+    public string hatcheryRoomInstanceId;
+    public int spotIndex;
+    public BunnyType type;
+    public List<LitterMemberData> litterMembers = new List<LitterMemberData>();
+    public float incubationElapsed;
+    public float incubationDuration;
 }
 
 // ---------- Unlocks ----------
@@ -230,4 +262,5 @@ public class SaveData
     public List<ForagingTripSaveData> activeTrips = new List<ForagingTripSaveData>();
     public GameSpeedSaveData gameSpeed = new GameSpeedSaveData();
     public WildBunnyNamesSaveData bunnyNames = new WildBunnyNamesSaveData();
+    public List<EggSaveData> eggs = new List<EggSaveData>();
 }

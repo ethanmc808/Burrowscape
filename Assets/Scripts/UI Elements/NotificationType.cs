@@ -5,9 +5,12 @@
 // rather than sharing a generic "Error" bucket, precisely so each can have its own tier and wording
 // authored independently instead of fighting over one shared definition.
 //
-// EggHatched, SpecialVisitor, BunnyDeath, and BunnyBanished have no underlying game system yet (no
-// egg/breeding, merchant/visitor, or death/banish mechanic exists) — stubbed here so NotificationManager
-// is ready the moment those features land, but nothing currently fires them.
+// EggHatched is now wired (see HatcheryRoom.HatchEgg — Breeding System plan, Phase 4); SpecialVisitor,
+// BunnyDeath, and BunnyBanished still have no underlying game system yet (no merchant/visitor or
+// death/banish mechanic exists) — stubbed here so NotificationManager is ready the moment those features
+// land, but nothing currently fires them. HatcheryFull/PopulationCapFull are new (Phase 1/2 of the same
+// plan) — like every value here, each needs its own Inspector-authored NotificationDefinition on
+// NotificationManager before it actually shows anything; the enum value alone is just the tag.
 public enum NotificationType
 {
     // Special/Reveal
@@ -37,6 +40,8 @@ public enum NotificationType
     RoomFull,
     GuardRoomFull,
     NoFreeBeds,
+    HatcheryFull,
+    PopulationCapFull,
     NotEnoughGold,
     NotEnoughPotions,
     NoRouteToGate,

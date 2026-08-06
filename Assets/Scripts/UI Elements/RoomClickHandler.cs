@@ -3,10 +3,13 @@ using UnityEngine;
 
 // Present on every room prefab's root GameObject (see RoomClickHandlerAdder, which backfills it onto any
 // room prefab missing it — safe/expected to re-run). jobRoom being null is a legitimate, common case, NOT
-// a wiring mistake: Cafeteria/Bedroom/StorageRoom/LivingRoom (and any future non-job room) have no
-// IJobRoom at all, since they have nothing to manually assign a bunny to — this component still needs to
-// be present on them so GuardDeployUI/PatientUI below can open (Ethan's ask 2026-08-04: slimes spawning
-// in the Cafeteria had no way to be fought, since without a click handler at all nothing opened there).
+// a wiring mistake: Cafeteria/StorageRoom/LivingRoom (and any future non-job room) have no IJobRoom at
+// all, since they have nothing to manually assign a bunny to — this component still needs to be present
+// on them so GuardDeployUI/PatientUI below can open (Ethan's ask 2026-08-04: slimes spawning in the
+// Cafeteria had no way to be fought, since without a click handler at all nothing opened there). Bedroom
+// USED to be in that null-jobRoom list too, until the Breeding System plan gave it an IJobRoom side
+// (breeding pairs only — its passive autonomous sleep side is untouched) — GetComponent<IJobRoom>() below
+// now returns non-null for Bedroom, which is exactly what auto-opens AssignmentUI on a Bedroom click.
 [RequireComponent(typeof(Collider))]
 public class RoomClickHandler : MonoBehaviour
 {

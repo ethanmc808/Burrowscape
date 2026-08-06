@@ -102,6 +102,13 @@ public class AssignmentUI : MonoBehaviour
         if (currentRoom is GuardRoom)
             unassigned = unassigned.OrderByDescending(b => b.Level).ToList();
 
+        // Bedroom (breeding) is the one room type that actually HIDES ineligible candidates rather than
+        // just re-sorting — a bunny whose gender's slot is already filled can't be assigned here at all
+        // (see Bedroom.IsEligibleForBreeding), so there's no reason to let the player click one and
+        // silently fail. See the Breeding System plan.
+        if (currentRoom is Bedroom bedroom)
+            unassigned = unassigned.Where(b => bedroom.IsEligibleForBreeding(b)).ToList();
+
         foreach (NPCBunny bunny in unassigned)
         {
             GameObject buttonObj = Instantiate(bunnyButtonPrefab, buttonContainer);
@@ -161,7 +168,11 @@ public class AssignmentUI : MonoBehaviour
 
         selectedAssignedBunny = bunny;
         selectedAssignedButton = btn;
-        unassignButton.interactable = true;
+        // Disabled while mid-mating-animation (see NPCBunny.IsMidMatingSequence's own comment) — the
+        // player CAN still select the bunny to see it highlighted, just can't confirm the unassign yet.
+        // UnassignFromJob() itself also guards this (see its own check), so this is UX polish, not the
+        // only thing standing between a click and a stranded reservation.
+        unassignButton.interactable = !bunny.IsMidMatingSequence;
 
         SetButtonColor(btn, selectedColor);
     }

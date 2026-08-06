@@ -19,9 +19,11 @@ public class BunnyTraitCatalog : MonoBehaviour
         Instance = this;
     }
 
-    // Kid bunnies (future egg/breeding system) roll count=1; adult wild spawns roll count=2. Degrades
-    // gracefully to fewer than `count` traits if the pool is empty or incompatibilities exhaust it —
-    // not an error state, just means nothing (or not enough) has been authored yet.
+    // Adult wild spawns roll count=2. Kid bunnies (see the Breeding System plan) don't call this directly
+    // — they go through RollInheritedTrait below instead, which rolls exactly one trait but weights it
+    // toward the parents' own traits. Degrades gracefully to fewer than `count` traits if the pool is
+    // empty or incompatibilities exhaust it — not an error state, just means nothing (or not enough) has
+    // been authored yet.
     public List<BunnyTraitDefinition> RollTraits(int count)
     {
         List<BunnyTraitDefinition> pool = new List<BunnyTraitDefinition>(traits);
@@ -39,5 +41,27 @@ public class BunnyTraitCatalog : MonoBehaviour
             if (!conflicts) chosen.Add(candidate);
         }
         return chosen;
+    }
+
+    // A kid bunny's single trait: 20% chance drawn uniformly from mom's own traits, 20% from dad's, 60%
+    // (or whenever the rolled-favorite parent has no traits of their own to draw from) fully random from
+    // the whole catalog via RollTraits(1) — see decision #4 in the Breeding System plan. Called once per
+    // sibling independently for a multi-kid litter, so twins/triplets can still end up with different
+    // traits from each other despite sharing a Type and their inherited IV stat(s).
+    //
+    // Returns null only if the whole catalog is empty (mirrors RollTraits' own graceful degradation) —
+    // callers should treat that the same way a wild spawn's empty-catalog RollTraits(1) result would be.
+    public BunnyTraitDefinition RollInheritedTrait(IReadOnlyList<BunnyTraitDefinition> momTraits, IReadOnlyList<BunnyTraitDefinition> dadTraits)
+    {
+        float roll = Random.value;
+
+        if (roll < 0.2f && momTraits != null && momTraits.Count > 0)
+            return momTraits[Random.Range(0, momTraits.Count)];
+
+        if (roll < 0.4f && dadTraits != null && dadTraits.Count > 0)
+            return dadTraits[Random.Range(0, dadTraits.Count)];
+
+        List<BunnyTraitDefinition> fallback = RollTraits(1);
+        return fallback.Count > 0 ? fallback[0] : null;
     }
 }

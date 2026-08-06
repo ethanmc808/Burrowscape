@@ -42,6 +42,16 @@ public enum BunnyState
     // HospitalRoom itself raises currentHP each tick; HandleRecovering just watches for full HP and walks
     // the bunny back out via ReturnFromHospital once it's healed.
     Recovering,
+    // Standing at a Bedroom's shared MatingSpot, sprites hidden, playing the one-shot mating
+    // animation/VFX — driven externally by a short coroutine on arrival (see OnArrivedAtMatingSpot), same
+    // "no-op in Update()'s switch" shape as Eating/Drinking/WaitingForLift. See the Breeding System plan.
+    Mating,
+    // Arrival marker only (same shape as DepartingThroughGate above, and for the same reason — not a
+    // persistent state anything sits in). OnArrivedAtHatcherySpot handles it fully synchronously the
+    // instant she arrives (places the Egg, clears pregnancy, calls ReturnToPreviousActivity), so
+    // CurrentState never actually holds this value across an Update() tick boundary — no case needed in
+    // Update()'s own switch. See TryLayEgg / the Breeding System plan.
+    LayingEgg,
 }
 public enum BunnyArrivalType
 {
@@ -143,6 +153,166 @@ public class NPCBunny : MonoBehaviour, ICombatant
     [SerializeField] private float hpPassiveRegenPercentPerSecond = 0.005f;
     private float hpRegenRemainder; // fractional carry-over so a slow regen rate isn't rounded away to 0 every frame
 
+    // ---------- Breeding (see the Breeding System plan doc) ----------
+    // Plain fields directly on NPCBunny, not a StatusEffectController-style add-on component — pregnancy
+    // is bunny-specific and isn't a combat stat modifier "consulted at point of use," it's a boolean
+    // gate (CanDepartForForaging) plus a save-relevant timer plus a locked-in litter payload, which is
+    // exactly the shape currentShieldHP/GrantShield/ClearShield above already use directly on NPCBunny.
+    private bool isPregnant;
+    private float pregnancyElapsed;
+    private float pregnancyDuration;
+    // The one Type shared by every sibling in the litter (rolled once at conception, not per sibling —
+    // see decision #6 in the plan). litterMembers holds each sibling's individually-resolved IVs/
+    // Trait/Gender/name — everything here is locked at conception and only ever revealed, never re-rolled,
+    // at hatch (see decision #4/point 4 in the plan — this is what makes hatching save-scum-proof).
+    private BunnyType litterType;
+    private List<LitterMemberData> litterMembers = new List<LitterMemberData>();
+    // Just the room — no specific RoomSpot is reserved at conception, only counted capacity (see
+    // HatcheryRoom.ReserveCapacity/CancelReservation's own comments for why).
+    private HatcheryRoom claimedHatcheryRoom;
+
+    public bool IsPregnant => isPregnant;
+    // Read-only accessors for SaveManager (Phase 5) — mirror the pattern every other save-relevant private
+    // field in this class already uses (e.g. Experience => experience above).
+    public float PregnancyElapsed => pregnancyElapsed;
+    public float PregnancyDuration => pregnancyDuration;
+    public BunnyType LitterType => litterType;
+    public IReadOnlyList<LitterMemberData> LitterMembers => litterMembers;
+    public HatcheryRoom ClaimedHatcheryRoom => claimedHatcheryRoom;
+
+    // Deliberately does NOT itself call TryLayEgg() — it's polled by the needs-priority chains
+    // (HandleNeedsCheckWhileWorking/Relaxing/HandleCriticalNeedsCheckWhileSleeping, HandleIdle) so
+    // egg-laying competes for priority the same way hunger/thirst/tired already do (see decision #7 —
+    // preempts needs, never preempts active combat, which sits at a layer above all of those chains).
+    private bool IsEggReadyToLay => isPregnant && pregnancyElapsed >= pregnancyDuration;
+
+    // Called by Bedroom.TriggerMatingSequence the instant a mating roll succeeds — that's also where the
+    // whole litter (litterType + every LitterMemberData) is actually rolled, this method just locks it in.
+    // elapsedSoFar defaults to 0 for a live conception; SaveManager.LoadBunnies (Phase 5) passes the saved
+    // pregnancyElapsed instead when restoring a bunny who was already partway through a pregnancy.
+    public void BeginPregnancy(BunnyType newLitterType, List<LitterMemberData> newLitterMembers, float duration, HatcheryRoom hatchery, float elapsedSoFar = 0f)
+    {
+        isPregnant = true;
+        pregnancyElapsed = elapsedSoFar;
+        pregnancyDuration = duration;
+        litterType = newLitterType;
+        litterMembers = newLitterMembers;
+        claimedHatcheryRoom = hatchery;
+    }
+
+    // She only needs to reach the Hatchery room, not a pre-assigned spot — no specific spot was reserved
+    // at conception, only counted capacity (see HatcheryRoom.ReserveCapacity's own comment). Routes to
+    // GetAnyHatcherySpot() purely as a navigation destination (see that method's own comment for why it's
+    // safe that the real placement, OnArrivedAtHatcherySpot below, may resolve to a different actual spot).
+    private void TryLayEgg()
+    {
+        if (claimedHatcheryRoom == null)
+        {
+            Debug.LogWarning($"{BunnyName}: egg is ready to lay but claimedHatcheryRoom is null — this shouldn't happen (BeginPregnancy always sets it).");
+            return;
+        }
+
+        RoomSpot walkTarget = claimedHatcheryRoom.GetAnyHatcherySpot();
+        if (walkTarget == null)
+        {
+            Debug.LogWarning($"{claimedHatcheryRoom.name}: no HatcherySpot authored — {BunnyName} can't path there to lay.");
+            return;
+        }
+
+        if (currentFloorIndex != claimedHatcheryRoom.FloorIndex)
+        {
+            // TryBeginCrossFloorTripToSpot itself retries via the same lift-trip machinery every other
+            // cross-floor trip in this class uses — if it fails (no lift connects these floors right
+            // now), IsEggReadyToLay just stays true and the very next needs-check tick tries again, same
+            // graceful-degradation shape as WarnNoSleepSpot's callers elsewhere.
+            TryBeginCrossFloorTripToSpot(claimedHatcheryRoom, walkTarget, BunnyState.LayingEgg);
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, claimedHatcheryRoom, walkTarget, currentFloorIndex);
+        MoveAlongPath(path, walkTarget, BunnyState.LayingEgg);
+    }
+
+    // Arrival callback for BunnyState.LayingEgg. Instantiates the Egg, hands litterType/litterMembers over
+    // verbatim (already fully resolved from conception — nothing rolled here either), physically claims a
+    // spot for it (ClaimAnyFreeSpot may resolve to a different spot than the one she walked toward — see
+    // GetAnyHatcherySpot's own comment), converts the conception-time reservation into that real claim
+    // (CancelReservation), then clears pregnancy state and resumes whatever she was doing before.
+    private void OnArrivedAtHatcherySpot()
+    {
+        currentRoom = claimedHatcheryRoom;
+        currentWanderPoint = null;
+
+        GameObject eggPrefab = BreedingConfig.Instance.eggPrefab;
+        if (eggPrefab == null)
+        {
+            Debug.LogWarning($"{BunnyName}: BreedingConfig has no eggPrefab assigned — can't lay. Litter lost.");
+            ClearPregnancyState();
+            ReturnToPreviousActivity();
+            return;
+        }
+
+        RoomSpot claimSpot = claimedHatcheryRoom.GetAnyHatcherySpot();
+        GameObject eggObject = Instantiate(eggPrefab, transform.position, Quaternion.identity);
+        Egg egg = eggObject.GetComponent<Egg>();
+        if (egg == null)
+        {
+            Debug.LogWarning($"{BunnyName}: eggPrefabForHatching has no Egg component — litter lost.");
+            Destroy(eggObject);
+            ClearPregnancyState();
+            ReturnToPreviousActivity();
+            return;
+        }
+
+        RoomSpot claimedSpot = claimedHatcheryRoom.ClaimAnyFreeSpot(egg);
+        if (claimedSpot == null)
+        {
+            // Shouldn't happen — the conception-time reservation guarantees room — but degrade gracefully
+            // (same philosophy as every other "spot unavailable" fallback in this class) rather than
+            // leave an unplaced Egg sitting mid-room forever.
+            Debug.LogWarning($"{claimedHatcheryRoom.name}: reservation existed but no physical spot was free at lay time — litter lost.");
+            Destroy(eggObject);
+            ClearPregnancyState();
+            ReturnToPreviousActivity();
+            return;
+        }
+
+        BreedingConfig cfg = BreedingConfig.Instance;
+        float incubationDuration = Random.Range(cfg.eggIncubationMinSeconds, cfg.eggIncubationMaxSeconds);
+        egg.Initialize(litterType, litterMembers, claimedHatcheryRoom, claimedSpot, incubationDuration);
+
+        claimedHatcheryRoom.CancelReservation();
+        ClearPregnancyState();
+        ReturnToPreviousActivity();
+    }
+
+    private void ClearPregnancyState()
+    {
+        isPregnant = false;
+        pregnancyElapsed = 0f;
+        pregnancyDuration = 0f;
+        litterType = default;
+        litterMembers = new List<LitterMemberData>();
+        claimedHatcheryRoom = null;
+    }
+
+    // ---------- Kid Bunny (see the Breeding System plan doc) ----------
+    // Set once at hatch (HatcheryRoom.HatchEgg), never cleared — growth-to-adult is explicitly out of
+    // scope for this pass (see the plan's "Explicitly out of scope" section). Gates job assignment and
+    // foraging/questing below; falls back to ordinary idle/relax routing otherwise (no School/Play Room
+    // yet, so a kid bunny behaves like any other unassigned adult except for those two gates).
+    private const float KidBunnyScale = 0.5f;
+    private bool isKidBunny;
+    public bool IsKidBunny => isKidBunny;
+    // Also scales the sprite/rig down to read as visibly smaller than an adult — same prefab, no separate
+    // kid art. Centralized here (rather than at the HatchEgg call site) so a future growth-to-adult system
+    // can just call SetIsKidBunny(false) and get the adult scale back for free, symmetrically.
+    public void SetIsKidBunny(bool value)
+    {
+        isKidBunny = value;
+        transform.localScale = value ? Vector3.one * KidBunnyScale : Vector3.one;
+    }
+
     [Header("Mood")]
     [SerializeField] private float mood = 100f; // 0-100, pure passive stat, no room/travel of its own
     [SerializeField] private float moodDecayPerSecondWorking = 0.05f;
@@ -171,6 +341,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // transition duration) so it falls back into whatever IsWorking/IsEating/etc. already say once the
     // clip finishes, with no code ever touching CurrentState.
     [SerializeField] private string isCheeringParam = "IsCheering";
+    // Same one-shot TRIGGER shape as isCheeringParam — Any State -> Mating (no exit time) -> falls back to
+    // whatever IsWorking/etc. already says once the clip finishes. Fired from OnArrivedAtMatingSpot; see
+    // the Breeding System plan's Phase 6 for the accompanying hearts VFX (lives on the Bedroom prefab
+    // itself, not here — see that phase's own reasoning).
+    [SerializeField] private string isMatingParam = "IsMating";
     // Same one-shot TRIGGER shape as isCheeringParam above (Any State -> Attacking, Has Exit Time off;
     // Attacking -> Idle, Has Exit Time on) — fired once per landed attack from HandleDefending, never tied
     // to CurrentState (which stays Defending throughout).
@@ -533,6 +708,13 @@ public class NPCBunny : MonoBehaviour, ICombatant
                 RegeneratePassiveHP();
 
             CheckLowNeedNotifications();
+
+            // Gestation ticks regardless of CurrentState — deliberately NOT gated on Working/Relaxing/
+            // Sleeping/Defending the way the needs above are, since a pregnant bunny keeps gestating
+            // whether she's working a job, relaxing, asleep, or fighting off an invasion (see decision #7
+            // in the plan — pregnancy doesn't block work or combat, only foraging/questing).
+            if (isPregnant)
+                pregnancyElapsed += Time.deltaTime;
         }
 
         switch (CurrentState)
@@ -581,6 +763,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
             case BunnyState.Eating:
             case BunnyState.Drinking:
                 // Eating/Drinking logic is driven by CafeteriaRoom's/WaterRoom's own coroutine/timer, not here
+                break;
+
+            case BunnyState.Mating:
+                // Driven externally by MatingSequenceCoroutine (see OnArrivedAtMatingSpot), same shape as
+                // Eating/Drinking above — nothing to tick here.
                 break;
 
             case BunnyState.WaitingForLift:
@@ -761,6 +948,15 @@ public class NPCBunny : MonoBehaviour, ICombatant
             return;
         }
 
+        // Kid bunnies can't work jobs yet (see the Breeding System plan's out-of-scope section — School/
+        // growth timer aren't built). Guarded here, not just in AssignmentUI, for the same "no caller can
+        // route around the UI" reasoning as the HasEnteredBase guard above.
+        if (isKidBunny)
+        {
+            Debug.LogWarning($"{name}: can't assign a kid bunny to a job.");
+            return;
+        }
+
         assignedJobRoom = jobRoom;
         RequestNewJobSpot();
     }
@@ -775,6 +971,14 @@ public class NPCBunny : MonoBehaviour, ICombatant
     public void UnassignFromJob()
     {
         if (assignedJobRoom == null) return;
+
+        // Blocks only the mid-animation/behind-the-wall window of a breeding pair's mating sequence — see
+        // isBreedingBlocked's own comment. Normal wander/Working unassign is unaffected (decision #2).
+        if (isBreedingBlocked)
+        {
+            Debug.LogWarning($"{name}: can't unassign mid-mating-sequence — try again once the animation finishes.");
+            return;
+        }
 
         // Release the reserved spot. In practice claimedWorkSpot is always set the moment a job is
         // actively pursued (RequestNewJobSpot claims it via assignedJobRoom.RequestSpot before any
@@ -1171,6 +1375,24 @@ public class NPCBunny : MonoBehaviour, ICombatant
         IVDefense = Random.Range(MinIV, MaxIV + 1);
         IVSpeed = Random.Range(MinIV, MaxIV + 1);
         IVLuck = Random.Range(MinIV, MaxIV + 1);
+    }
+
+    // Kid Bunny equivalent of RollIndividuality — used instead of it, never alongside it, so that
+    // method's "always fresh and random" contract stays intact for wild spawns (see the Breeding System
+    // plan). IVs come in already fully resolved from a LitterMemberData rolled at conception (some
+    // inherited from a parent, some independently randomized — HatcheryRoom.HatchEgg doesn't distinguish
+    // which is which, it just hands over the final values). Nature is NOT part of the inherited litter
+    // snapshot (it isn't inheritable, and isn't a "reroll for a better one" target the way IVs are), so
+    // it's rolled fresh here exactly like RollIndividuality's own Nature roll.
+    public void SetIndividualityFromInheritance(int ivHP, int ivAttack, int ivDefense, int ivSpeed, int ivLuck)
+    {
+        Nature = (BunnyNature)Random.Range(0, System.Enum.GetValues(typeof(BunnyNature)).Length);
+
+        IVHP = ivHP;
+        IVAttack = ivAttack;
+        IVDefense = ivDefense;
+        IVSpeed = ivSpeed;
+        IVLuck = ivLuck;
     }
 
     // Second pass after ApplyTraitEffects, per the design doc's Option B — Stats already holds the
@@ -1679,6 +1901,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
         }
     }
 
+
     // Set by ForagingManager the instant a trip's return countdown begins (any of the four return
     // triggers fired) and cleared once the bunny arrives home. While true, Energy stops decaying
     // entirely (see the needs-freeze block in Update()) — the countdown is purely a timer to the walk-in
@@ -2028,6 +2251,15 @@ public class NPCBunny : MonoBehaviour, ICombatant
         // gate/approval flow entirely.
         if (!HasEnteredBase) return;
 
+        // Egg-laying priority — see HandleNeedsCheckWhileWorking's identical comment. Checked ahead of
+        // the job-reclaim logic below too, so a ready-to-lay egg wins even over grabbing a freshly-opened
+        // job spot.
+        if (IsEggReadyToLay)
+        {
+            TryLayEgg();
+            return;
+        }
+
         if (assignedJobRoom != null && claimedWorkSpot == null)
         {
             RequestNewJobSpot();
@@ -2266,6 +2498,10 @@ public class NPCBunny : MonoBehaviour, ICombatant
                 OnArrivedAtDefendingSpot();
             else if (pendingStateOnArrival == BunnyState.Recovering)
                 OnArrivedAtRecoveringSpot();
+            else if (pendingStateOnArrival == BunnyState.Mating)
+                OnArrivedAtMatingSpot();
+            else if (pendingStateOnArrival == BunnyState.LayingEgg)
+                OnArrivedAtHatcherySpot();
 
             return;
         }
@@ -2537,6 +2773,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
     public bool CanDepartForForaging()
     {
         if (!HasEnteredBase || IsAwaitingApproval) return false;
+        // Pregnant bunnies can still work jobs and fight, but not forage or (once a quest system exists)
+        // quest — see decision list in the Breeding System plan. Kid bunnies can't do either yet either.
+        // TODO(breeding): gate quest dispatch on IsPregnant/IsKidBunny too once a quest system exists —
+        // none exists in the codebase today.
+        if (isPregnant || isKidBunny) return false;
 
         switch (CurrentState)
         {
@@ -2915,6 +3156,16 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // the highest-priority need in code order (hunger, then thirst, then tired) is the one acted on.
     private void HandleNeedsCheckWhileWorking()
     {
+        // Egg-laying priority (decision #7 in the plan) — checked ahead of every need below, so a
+        // pregnant bunny with a ready egg heads to the Hatchery before addressing hunger/thirst/tiredness.
+        // Combat needs no special-casing here: BeginDefending already preempts Working entirely at a layer
+        // above this method, so this priority chain is simply never reached while she's fighting.
+        if (IsEggReadyToLay)
+        {
+            StopWorkWander();
+            TryLayEgg();
+            return;
+        }
         if (IsHungry)
         {
             StopWorkWander();
@@ -2948,8 +3199,132 @@ public class NPCBunny : MonoBehaviour, ICombatant
         workWanderWaypointTarget = null;
     }
 
+    // ---------- BREEDING: mating sequence (see the Breeding System plan doc) ----------
+
+    // True for the entire mating sequence — from the moment a roll succeeds through both legs of the walk
+    // (visible happy beat at MatingSpot, then behind the wall, then back) — cleared only once the walk
+    // back to the work spot actually begins (ReturnToWorkFromMating). The pair is already committed (a
+    // Hatchery slot is already reserved) the instant this is set, so unassigning at any point during the
+    // sequence would strand that reservation. Normal wander/Working is NOT blocked — see decision #2
+    // (repeating cycle, unassign works any time outside this window).
+    private bool isBreedingBlocked;
+    public bool IsMidMatingSequence => isBreedingBlocked;
+
+    // Which leg of the mating sequence a Mating-state arrival represents — OnArrivedAtMatingSpot is the
+    // shared dispatch target for BOTH legs (she paths through BunnyState.Mating twice: once to the
+    // visible MatingSpot, once to the BehindWallSpot), so this disambiguates which one just happened.
+    // False = first arrival (at MatingSpot, about to play the happy beat); true = second arrival (behind
+    // the wall, about to wait out the rest of the sequence there).
+    private bool matingWalkedBehindWall;
+
+    // Called by Bedroom.TriggerMatingSequence on both occupants simultaneously once a mating roll
+    // succeeds. No cross-bunny synchronization beyond that shared starting moment — each bunny runs its
+    // own independent copy of this sequence from here on (see the plan's own reasoning for why that's
+    // sufficient). partner isn't used by anything in this method today; kept for parity with the plan's
+    // documented signature and as a hook for any future pair-coherence check.
+    public void BeginMatingSequence(RoomSpot matingSpot, NPCBunny partner)
+    {
+        // Same stale-workWanderPath bug class as every other Working-state interrupt in this class (see
+        // StopWorkWander's own comment) — must be called before CurrentState changes away from Working.
+        StopWorkWander();
+        isBreedingBlocked = true;
+        matingWalkedBehindWall = false; // defensive reset in case an earlier cycle was somehow interrupted mid-sequence
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, currentRoom, matingSpot, currentFloorIndex);
+        MoveAlongPath(path, matingSpot, BunnyState.Mating);
+    }
+
+    // Shared arrival callback for BunnyState.Mating (see HandleMovingToSpot's pendingStateOnArrival
+    // dispatch) — fires once per leg of the sequence, disambiguated by matingWalkedBehindWall. She never
+    // actually vanishes at any point (no SpriteRenderer toggle) — the "hidden" beat is a real walk to a
+    // spot physically positioned behind the Bedroom's wall art, occluded by ordinary sprite sorting order
+    // the same way any object would be walking behind scenery.
+    private void OnArrivedAtMatingSpot()
+    {
+        currentRoom = (RoomBase)assignedJobRoom;
+        // No dedicated claimedMatingSpot/claimedBehindWallSpot field (neither shared spot is ever
+        // TryClaim'd — both bunnies path to the same Transforms, see Bedroom.TriggerMatingSequence's own
+        // reasoning) — currentTargetSpot is already whatever the most recent MoveAlongPath call routed
+        // here, generically the same way every other arrival handler's currentSpot assignment reflects
+        // wherever it just arrived. Needed so each leg's GetRouteToSpot call below starts from the right
+        // physical spot instead of a stale degenerate lookup.
+        currentSpot = currentTargetSpot;
+        currentWanderPoint = null;
+
+        if (!matingWalkedBehindWall)
+        {
+            // Leg 1: just arrived at the visible MatingSpot. Both occupants route to the exact same
+            // shared Transform (see Bedroom's own comment) — nudge sideways here, once, so the two
+            // sprites don't render stacked directly on top of each other. Purely cosmetic; doesn't touch
+            // currentSpot/pathing at all, so it doesn't need a second authored spot or extra RoomPaths.
+            float offset = BreedingConfig.Instance.matingSpotOffsetX;
+            transform.position += new Vector3(Gender == BunnyGender.Male ? -offset : offset, 0f, 0f);
+
+            // Play the happy animation, hold position (fully visible) for the beat, then walk behind the wall.
+            if (animator != null) animator.SetTrigger(isMatingParam);
+            StartCoroutine(PlayHappyBeatThenWalkBehindWall());
+        }
+        else
+        {
+            // Leg 2: just arrived behind the wall (now out of line of sight via sprite sorting, not
+            // hidden by any code toggle). Wait out the rest of the sequence there, then walk back to work.
+            matingWalkedBehindWall = false; // reset for the next cycle
+            StartCoroutine(WaitBehindWallThenReturnToWork());
+        }
+    }
+
+    private IEnumerator PlayHappyBeatThenWalkBehindWall()
+    {
+        yield return new WaitForSeconds(BreedingConfig.Instance.happyAnimationSeconds);
+
+        RoomSpot behindWallSpot = assignedJobRoom is Bedroom bedroom ? bedroom.GetBehindWallSpot() : null;
+        if (behindWallSpot == null)
+        {
+            // No BehindWallSpot authored — degrade gracefully by skipping straight to the "hidden" wait
+            // in place, same "not yet authored isn't an error state" philosophy as every other optional
+            // spot in this project, rather than getting stuck.
+            Debug.LogWarning($"{(assignedJobRoom as RoomBase)?.name}: no BehindWallSpot authored — {BunnyName} will wait in place instead of walking behind the wall.");
+            yield return new WaitForSeconds(BreedingConfig.Instance.hiddenBehindWallSeconds);
+            ReturnToWorkFromMating();
+            yield break;
+        }
+
+        matingWalkedBehindWall = true;
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, currentRoom, behindWallSpot, currentFloorIndex);
+        MoveAlongPath(path, behindWallSpot, BunnyState.Mating);
+    }
+
+    private IEnumerator WaitBehindWallThenReturnToWork()
+    {
+        yield return new WaitForSeconds(BreedingConfig.Instance.hiddenBehindWallSeconds);
+        ReturnToWorkFromMating();
+    }
+
+    private void ReturnToWorkFromMating()
+    {
+        isBreedingBlocked = false;
+
+        // assignedJobRoom can legitimately have gone null here if the player force-unassigned via some
+        // other path, or the Bedroom was deleted mid-sequence — bail to Idle rather than NRE on a null
+        // cast, same defensive shape RequestNewJobSpot already uses.
+        if (assignedJobRoom == null || claimedWorkSpot == null)
+        {
+            CurrentState = BunnyState.Idle;
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, (RoomBase)assignedJobRoom, claimedWorkSpot, currentFloorIndex);
+        MoveAlongPath(path, claimedWorkSpot, BunnyState.Working);
+    }
+
     private void HandleNeedsCheckWhileRelaxing()
     {
+        // Egg-laying priority — see HandleNeedsCheckWhileWorking's identical comment.
+        if (IsEggReadyToLay)
+        {
+            TryLayEgg();
+            return;
+        }
         if (IsHungry)
             LeaveRelaxingForCafeteria();
         else if (IsThirsty)
@@ -2960,9 +3335,15 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
     // Sleeping is only ever interrupted by a CRITICAL hunger/thirst threshold (well below the normal
     // low threshold) — normal hunger/thirst are ignored while asleep, and a job assignment never
-    // interrupts it at all (see the Sleeping case in Update()).
+    // interrupts it at all (see the Sleeping case in Update()). Egg-laying priority is the one exception
+    // that jumps this queue entirely, same as it does for Working/Relaxing above — see decision #7.
     private void HandleCriticalNeedsCheckWhileSleeping()
     {
+        if (IsEggReadyToLay)
+        {
+            TryLayEgg();
+            return;
+        }
         if (IsCriticallyHungry)
             LeaveSleepingForCafeteria();
         else if (IsCriticallyThirsty)

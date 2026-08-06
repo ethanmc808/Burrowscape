@@ -14,6 +14,12 @@ public class BaseManager : MonoBehaviour
     // Room's roster when populating the one-at-a-time deploy list (see Combat_DesignDoc.md).
     private List<GuardRoom> guardRooms = new List<GuardRoom>();
     public IReadOnlyList<GuardRoom> GuardRooms => guardRooms;
+    // See the Breeding System plan — Bedroom.BreedingRoutine's mating-roll gate looks up the nearest
+    // Hatchery with reservable capacity here, same pattern as every other FindNearestXWithSpot below.
+    private List<HatcheryRoom> hatcheries = new List<HatcheryRoom>();
+    // Read by SaveManager.SaveEggs to enumerate every registered Hatchery's ActiveEggs, same "expose the
+    // full roster" shape as GuardRooms above.
+    public IReadOnlyList<HatcheryRoom> Hatcheries => hatcheries;
 
     private void Awake()
     {
@@ -169,6 +175,40 @@ public class BaseManager : MonoBehaviour
         {
             if (room == null) continue; // safety check for destroyed rooms
             if (!room.HasAvailableSleepSpot()) continue;
+
+            float dist = Vector3.Distance(fromPosition, room.transform.position);
+            if (dist < nearestDist)
+            {
+                nearestDist = dist;
+                nearest = room;
+            }
+        }
+
+        return nearest;
+    }
+
+    public void RegisterHatchery(HatcheryRoom room)
+    {
+        if (!hatcheries.Contains(room))
+            hatcheries.Add(room);
+    }
+
+    public void UnregisterHatchery(HatcheryRoom room)
+    {
+        hatcheries.Remove(room);
+    }
+
+    // Nearest Hatchery with reservable capacity (HasFreeSlot accounts for both pending pregnancies and
+    // already-laid eggs, see HatcheryRoom's own comment) — same shape as FindNearestBedroomWithSpot.
+    public HatcheryRoom FindNearestHatcheryWithSpot(Vector3 fromPosition)
+    {
+        HatcheryRoom nearest = null;
+        float nearestDist = float.MaxValue;
+
+        foreach (HatcheryRoom room in hatcheries)
+        {
+            if (room == null) continue; // safety check for destroyed rooms
+            if (!room.HasFreeSlot()) continue;
 
             float dist = Vector3.Distance(fromPosition, room.transform.position);
             if (dist < nearestDist)
