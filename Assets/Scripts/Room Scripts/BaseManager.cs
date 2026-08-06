@@ -168,7 +168,7 @@ public class BaseManager : MonoBehaviour
         foreach (Bedroom room in bedrooms)
         {
             if (room == null) continue; // safety check for destroyed rooms
-            if (!room.HasAvailableSpot()) continue;
+            if (!room.HasAvailableSleepSpot()) continue;
 
             float dist = Vector3.Distance(fromPosition, room.transform.position);
             if (dist < nearestDist)

@@ -41,7 +41,7 @@ public class Bedroom : RoomBase
             PopulationManager.Instance.UnregisterBedroomCapacity(this);
     }
 
-    public RoomSpot RequestSpot(NPCBunny bunny)
+    public RoomSpot RequestSleepSpot(NPCBunny bunny)
     {
         foreach (RoomSpot spot in sleepingSpots)
         {
@@ -51,12 +51,12 @@ public class Bedroom : RoomBase
         return null;
     }
 
-    public void ReleaseSpot(RoomSpot spot, NPCBunny bunny)
+    public void ReleaseSleepSpot(RoomSpot spot, NPCBunny bunny)
     {
         spot.Release(bunny);
     }
 
-    public bool HasAvailableSpot()
+    public bool HasAvailableSleepSpot()
     {
         foreach (RoomSpot spot in sleepingSpots)
         {

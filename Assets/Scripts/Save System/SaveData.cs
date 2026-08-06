@@ -126,8 +126,12 @@ public class BunnySaveData
     public float mood;
     public int currentHP;
 
-    // Position — floorIndex/facing aren't saved separately: RestoreRoomAssignment derives floor from the
-    // resolved room, and facing is purely cosmetic sprite-flip state that self-corrects on the next move.
+    // Position — floorIndex isn't saved separately: RestoreRoomAssignment derives it from the resolved
+    // room. Facing WAS assumed cosmetic/self-correcting and left unsaved — true for Working/Relaxing
+    // (the next work-wander/movement tick recomputes it almost immediately) but false for Sleeping, where
+    // a reloaded bunny doesn't move again until she wakes, so the wrong facing stayed visibly wrong for
+    // her whole remaining nap. Fixed not by saving facing but by having RestoreRoomAssignment explicitly
+    // call SetFacing(spot.FacesRight) on every reclaim branch, same as a live arrival already does.
     public float posX, posY, posZ;
 
     // Room/job assignment — see SavedBunnyRole. roomInstanceId is empty when savedState == Idle
@@ -135,6 +139,14 @@ public class BunnySaveData
     // value during the room-reconstruction pass, which always runs before bunnies on load.
     public SavedBunnyRole savedState;
     public string roomInstanceId;
+
+    // Separate from roomInstanceId/savedState above — a job-assigned bunny who happens to be
+    // Sleeping/Eating/Drinking/etc. at save time keeps her AssignedJobRoom live the whole time (see
+    // NPCBunny.RestoreUnderlyingJobAssignment's own comment for why), but savedState/roomInstanceId can
+    // only capture ONE role+room pair, whichever CurrentState currently is. This second field independently
+    // records the job so it survives a reload that happens to land mid-interruption. Empty when the bunny
+    // has no job assigned, or (harmlessly) duplicates roomInstanceId when savedState is already Working.
+    public string underlyingJobRoomInstanceId;
 }
 
 // ---------- Unlocks ----------

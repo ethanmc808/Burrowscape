@@ -993,7 +993,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
             if (!away)
             {
-                claimedSleepRoom.ReleaseSpot(claimedSleepSpot, this);
+                claimedSleepRoom.ReleaseSleepSpot(claimedSleepSpot, this);
                 claimedSleepSpot = null;
                 claimedSleepRoom = null;
                 if (CurrentState == BunnyState.Sleeping)
@@ -1001,7 +1001,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
                 return RoomTransitionRole.Sleeping;
             }
 
-            claimedSleepRoom.ReleaseSpot(claimedSleepSpot, this);
+            claimedSleepRoom.ReleaseSleepSpot(claimedSleepSpot, this);
             claimedSleepSpot = null;
             claimedSleepRoom = null;
             return RoomTransitionRole.SleepingAway;
@@ -1102,7 +1102,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // (which self-resolves to the nearest bed with a spot once tiredness routes them there).
     public bool TryHoldSleepSpotOnNewRoom(Bedroom newBedroom)
     {
-        RoomSpot spot = newBedroom.RequestSpot(this);
+        RoomSpot spot = newBedroom.RequestSleepSpot(this);
         if (spot == null) return false;
 
         claimedSleepRoom = newBedroom;
@@ -1792,6 +1792,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
                 currentSpot = spot; // read by GetRouteToSpot the next time this bunny needs to path anywhere — see OnArrivedAtWorkSpot's identical assignment
                 CurrentState = BunnyState.Working;
                 transform.position = spot.transform.position;
+                SetFacing(spot.FacesRight); // see the facing-restoration note below — same fix, same reason, applied uniformly across all three reclaim branches
                 jobRoom.NotifyBunnyReadyToWork(this);
                 BeginWorkWander();
                 return;
@@ -1799,7 +1800,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
         }
         else if (role == SavedBunnyRole.Sleeping && room is Bedroom bedroom)
         {
-            RoomSpot spot = bedroom.RequestSpot(this);
+            RoomSpot spot = bedroom.RequestSleepSpot(this);
             if (spot != null)
             {
                 claimedSleepSpot = spot;
@@ -1807,6 +1808,16 @@ public class NPCBunny : MonoBehaviour, ICombatant
                 currentSpot = spot;
                 CurrentState = BunnyState.Sleeping;
                 transform.position = spot.transform.position;
+                // Facing restoration — this branch is the one where it actually matters visibly. The old
+                // assumption (see SaveData.BunnySaveData's now-corrected comment) was "facing is cosmetic,
+                // it self-corrects on the next move" — true for Working/Relaxing, where work-wander/normal
+                // movement recomputes facing within moments, but false for Sleeping: a reloaded sleeping
+                // bunny doesn't move again until she wakes, so a wrong facing here was visible for the
+                // bunny's entire remaining nap (this is the mirrored-sprite bug a mid-sleep save/load
+                // reload actually exposed). Fixed uniformly across all three branches anyway, not just
+                // this one, since the same gap silently existed for Working/Relaxing too — SetFacing here
+                // exactly mirrors HandleMovingToSpot's own live-arrival SetFacing(currentTargetSpot.FacesRight).
+                SetFacing(spot.FacesRight);
                 return;
             }
         }
@@ -1820,6 +1831,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
                 currentSpot = spot;
                 CurrentState = BunnyState.Relaxing;
                 transform.position = spot.transform.position;
+                SetFacing(spot.FacesRight);
                 return;
             }
         }
@@ -1837,6 +1849,34 @@ public class NPCBunny : MonoBehaviour, ICombatant
         // landing spot, so snapping to it here would visibly nudge the bunny away from where it actually
         // was for no reason.
         if (room != null && !(room is LiftRoom)) transform.position = room.transform.position;
+    }
+
+    // Fixes a real pre-existing gap: SaveManager.SaveBunnies only ever captures ONE role+room pair per
+    // bunny (whatever CurrentState currently is), but a job-assigned bunny pulled away to sleep (or
+    // eat/drink) keeps her AssignedJobRoom/claimedWorkSpot the whole time — LeaveWorkForBedroom only
+    // pauses the job via NotifyBunnyLeavingToEat, it never clears either field (see its own body). Saving
+    // only "Sleeping in Bedroom X" with no separate record of the underlying job silently dropped that
+    // job on every reload that happened to land mid-sleep. Called from SaveManager.LoadBunnies right after
+    // RestoreRoomAssignment, only when the primary role wasn't already Working (that branch already
+    // reclaims the job the normal way) and a saved underlying job room resolved successfully.
+    //
+    // Deliberately does NOT call NotifyBunnyReadyToWork — she isn't physically back at work yet (she's
+    // still asleep/wherever RestoreRoomAssignment just placed her), exactly mirroring live behavior where
+    // the job stays paused (NotifyBunnyLeavingToEat already fired) until she naturally wakes and returns.
+    public void RestoreUnderlyingJobAssignment(IJobRoom jobRoom)
+    {
+        if (jobRoom == null || assignedJobRoom != null) return; // already handled by the Working branch above, or nothing to restore
+
+        RoomSpot spot = jobRoom.RequestSpot(this);
+        if (spot != null)
+        {
+            assignedJobRoom = jobRoom;
+            claimedWorkSpot = spot;
+        }
+        else
+        {
+            Debug.LogWarning($"{BunnyName}: had an underlying job assignment in {((RoomBase)jobRoom).name} but couldn't reclaim a spot there on load — job lost.");
+        }
     }
 
     private void RequestNewJobSpot()
@@ -2527,7 +2567,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
         if (claimedSleepSpot != null)
         {
-            claimedSleepRoom.ReleaseSpot(claimedSleepSpot, this);
+            claimedSleepRoom.ReleaseSleepSpot(claimedSleepSpot, this);
             claimedSleepSpot = null;
             claimedSleepRoom = null;
         }
@@ -3146,7 +3186,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
             return;
         }
 
-        RoomSpot sleepSpot = bedroom.RequestSpot(this);
+        RoomSpot sleepSpot = bedroom.RequestSleepSpot(this);
         if (sleepSpot == null)
         {
             WarnNoSleepSpot();
@@ -3162,7 +3202,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
         {
             if (!TryBeginCrossFloorTripToSpot(bedroom, sleepSpot, BunnyState.Sleeping))
             {
-                bedroom.ReleaseSpot(sleepSpot, this);
+                bedroom.ReleaseSleepSpot(sleepSpot, this);
                 claimedSleepSpot = null;
                 claimedSleepRoom = null;
             }
@@ -3185,7 +3225,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
             return;
         }
 
-        RoomSpot sleepSpot = bedroom.RequestSpot(this);
+        RoomSpot sleepSpot = bedroom.RequestSleepSpot(this);
         if (sleepSpot == null)
         {
             WarnNoSleepSpot();
@@ -3199,7 +3239,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
         {
             if (!TryBeginCrossFloorTripToSpot(bedroom, sleepSpot, BunnyState.Sleeping))
             {
-                bedroom.ReleaseSpot(sleepSpot, this);
+                bedroom.ReleaseSleepSpot(sleepSpot, this);
                 claimedSleepSpot = null;
                 claimedSleepRoom = null;
             }
@@ -3473,7 +3513,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
             return;
         }
 
-        RoomSpot sleepSpot = bedroom.RequestSpot(this);
+        RoomSpot sleepSpot = bedroom.RequestSleepSpot(this);
         if (sleepSpot == null)
         {
             WarnNoSleepSpot();
@@ -3489,7 +3529,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
         {
             if (!TryBeginCrossFloorTripToSpot(bedroom, sleepSpot, BunnyState.Sleeping))
             {
-                bedroom.ReleaseSpot(sleepSpot, this);
+                bedroom.ReleaseSleepSpot(sleepSpot, this);
                 claimedSleepSpot = null;
                 claimedSleepRoom = null;
                 ReturnToPreviousActivity();
@@ -3510,7 +3550,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
     private void FinishSleepingAndReturnToPrevious()
     {
         if (claimedSleepRoom != null)
-            claimedSleepRoom.ReleaseSpot(claimedSleepSpot, this);
+            claimedSleepRoom.ReleaseSleepSpot(claimedSleepSpot, this);
 
         claimedSleepSpot = null;
         claimedSleepRoom = null;
@@ -3825,7 +3865,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
                 if (!TryBeginCrossFloorTripToSpot(sleepRoomBase, claimedSleepSpot, BunnyState.Sleeping))
                 {
                     // No lift back to the sleep floor — release the spot and let a later needs-check retry.
-                    claimedSleepRoom.ReleaseSpot(claimedSleepSpot, this);
+                    claimedSleepRoom.ReleaseSleepSpot(claimedSleepSpot, this);
                     claimedSleepSpot = null;
                     claimedSleepRoom = null;
                     CurrentState = BunnyState.Idle;

@@ -209,6 +209,9 @@ public class SaveManager : MonoBehaviour
 
                 savedState = role,
                 roomInstanceId = room != null ? room.InstanceId : "",
+                // Independent of role/room above — see BunnySaveData's own comment. Populated whenever a
+                // job is currently held, regardless of what the bunny's CurrentState happens to be right now.
+                underlyingJobRoomInstanceId = bunny.AssignedJobRoom != null ? ((RoomBase)bunny.AssignedJobRoom).InstanceId : "",
             };
 
             data.bunnies.Add(saved);
@@ -465,6 +468,18 @@ public class SaveManager : MonoBehaviour
             RoomBase room = !string.IsNullOrEmpty(bunnyData.roomInstanceId) && roomsByInstanceId.TryGetValue(bunnyData.roomInstanceId, out RoomBase r)
                 ? r : null;
             bunny.RestoreRoomAssignment(bunnyData.savedState, room);
+
+            // Fixes a real bug: a job-assigned bunny saved mid-Sleep (or Eating/Drinking) previously lost
+            // her job entirely on reload, since RestoreRoomAssignment's non-Working branches never touch
+            // AssignedJobRoom — see RestoreUnderlyingJobAssignment's own comment. No-ops if the primary
+            // role above was already Working (that branch already reclaimed the job the normal way) or if
+            // no underlying job was saved.
+            if (!string.IsNullOrEmpty(bunnyData.underlyingJobRoomInstanceId)
+                && roomsByInstanceId.TryGetValue(bunnyData.underlyingJobRoomInstanceId, out RoomBase jobRoomBase)
+                && jobRoomBase is IJobRoom underlyingJobRoom)
+            {
+                bunny.RestoreUnderlyingJobAssignment(underlyingJobRoom);
+            }
 
             loaded.Add(bunny);
         }
