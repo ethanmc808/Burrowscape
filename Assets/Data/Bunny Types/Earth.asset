@@ -15,6 +15,7 @@ MonoBehaviour:
   type: 13
   displayName: Earth
   icon: {fileID: 21300000, guid: 6c26d679602385741b36d7d330bc830b, type: 3}
+  eggSprite: {fileID: 0}
   prefab: {fileID: 0}
   baseHP: 110
   baseAttack: 90
@@ -25,6 +26,7 @@ MonoBehaviour:
   isMelee: 0
   attackVFXPrefab: {fileID: 0}
   attackIntervalSeconds: 2
-  group: 5
-  populationThreshold: 100
+  attackBasePower: 20
+  group: 4
+  populationThreshold: 75
   passives: []

@@ -219,7 +219,16 @@ public class NPCBunny : MonoBehaviour, ICombatant
             return;
         }
 
-        if (currentFloorIndex != claimedHatcheryRoom.FloorIndex)
+        // Checked against currentRoom.FloorIndex, NOT the currentFloorIndex field directly — during the
+        // brief window right after DisembarkFromLift, currentFloorIndex is updated to the destination
+        // floor immediately while currentRoom still references the origin floor's lift segment until
+        // ResumeTripAfterLift reconciles it a moment later. HandleIdle can call TryLayEgg during exactly
+        // that window; trusting the possibly-stale currentFloorIndex there would take the same-floor
+        // direct-path branch below with a currentRoom that isn't actually registered on that floor,
+        // spamming "Room not registered in BaseLayoutManager." every frame until the fields catch up.
+        // currentRoom (when non-null) is always accurate to what she's actually holding a reference to.
+        int actualFloorIndex = currentRoom != null ? currentRoom.FloorIndex : currentFloorIndex;
+        if (actualFloorIndex != claimedHatcheryRoom.FloorIndex)
         {
             // TryBeginCrossFloorTripToSpot itself retries via the same lift-trip machinery every other
             // cross-floor trip in this class uses — if it fails (no lift connects these floors right
@@ -229,7 +238,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
             return;
         }
 
-        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, claimedHatcheryRoom, walkTarget, currentFloorIndex);
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, claimedHatcheryRoom, walkTarget, actualFloorIndex);
         MoveAlongPath(path, walkTarget, BunnyState.LayingEgg);
     }
 
@@ -301,16 +310,16 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // scope for this pass (see the plan's "Explicitly out of scope" section). Gates job assignment and
     // foraging/questing below; falls back to ordinary idle/relax routing otherwise (no School/Play Room
     // yet, so a kid bunny behaves like any other unassigned adult except for those two gates).
-    private const float KidBunnyScale = 0.5f;
     private bool isKidBunny;
     public bool IsKidBunny => isKidBunny;
     // Also scales the sprite/rig down to read as visibly smaller than an adult — same prefab, no separate
     // kid art. Centralized here (rather than at the HatchEgg call site) so a future growth-to-adult system
-    // can just call SetIsKidBunny(false) and get the adult scale back for free, symmetrically.
+    // can just call SetIsKidBunny(false) and get the adult scale back for free, symmetrically. Scale factor
+    // itself lives on BreedingConfig.kidBunnyScale (tunable), not a local const, so it's Inspector-editable.
     public void SetIsKidBunny(bool value)
     {
         isKidBunny = value;
-        transform.localScale = value ? Vector3.one * KidBunnyScale : Vector3.one;
+        transform.localScale = value ? Vector3.one * BreedingConfig.Instance.kidBunnyScale : Vector3.one;
     }
 
     [Header("Mood")]

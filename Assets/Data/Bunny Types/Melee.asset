@@ -15,14 +15,18 @@ MonoBehaviour:
   type: 6
   displayName: Melee
   icon: {fileID: 21300000, guid: 861e77384a6dcef45a6775a3d2a1c6a5, type: 3}
+  eggSprite: {fileID: 0}
   prefab: {fileID: 0}
   baseHP: 80
   baseAttack: 150
   baseDefense: 70
   baseSpeed: 70
   baseLuck: 40
-  group: 2
-  populationThreshold: 25
-  passives: []
+  attackName: 
   isMelee: 1
   attackVFXPrefab: {fileID: 0}
+  attackIntervalSeconds: 2
+  attackBasePower: 20
+  group: 3
+  populationThreshold: 50
+  passives: []

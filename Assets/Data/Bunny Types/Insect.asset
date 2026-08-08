@@ -15,12 +15,18 @@ MonoBehaviour:
   type: 5
   displayName: Insect
   icon: {fileID: 21300000, guid: 9e4b741a98aa55c43a5c726d8159d675, type: 3}
+  eggSprite: {fileID: 0}
   prefab: {fileID: 0}
   baseHP: 50
   baseAttack: 70
   baseDefense: 90
   baseSpeed: 100
   baseLuck: 70
-  group: 3
-  populationThreshold: 50
+  attackName: 
+  isMelee: 0
+  attackVFXPrefab: {fileID: 0}
+  attackIntervalSeconds: 2
+  attackBasePower: 20
+  group: 2
+  populationThreshold: 25
   passives: []

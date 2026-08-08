@@ -67,6 +67,10 @@ public class BreedingConfig : ScriptableObject
     public float eggIncubationMinSeconds = 300f;
     public float eggIncubationMaxSeconds = 600f;
 
+    [Header("Kid Bunny")]
+    [Tooltip("Uniform scale applied to a kid bunny's transform at hatch (NPCBunny.SetIsKidBunny) so it reads as visibly smaller than an adult — same prefab/rig, no separate kid art. 1 = adult size.")]
+    [Range(0.1f, 1f)] public float kidBunnyScale = 0.7f;
+
     [Header("Egg Prefab")]
     [Tooltip("The single shared Egg prefab (Egg.cs) instantiated by NPCBunny.OnArrivedAtHatcherySpot on lay. One universal prefab, not per-type — the type-specific look comes from Egg applying BunnyTypeDefinition.eggSprite dynamically, not from separate prefabs.")]
     public GameObject eggPrefab;

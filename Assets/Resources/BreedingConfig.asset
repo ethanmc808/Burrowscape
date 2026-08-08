@@ -16,13 +16,16 @@ MonoBehaviour:
   matingIntervalMaxSeconds: 60
   sameTypeMatingChance: 0.5
   differentTypeMatingChance: 0.25
-  matingAnimationSeconds: 2.5
+  happyAnimationSeconds: 2
+  hiddenBehindWallSeconds: 2.5
+  matingSpotOffsetX: 0.15
   tripletChance: 0.05
   twinChance: 0.1
   pregnancyDurationMinSeconds: 300
   pregnancyDurationMaxSeconds: 600
   eggIncubationMinSeconds: 300
   eggIncubationMaxSeconds: 600
-  eggPrefab: {fileID: 0}
+  kidBunnyScale: 0.6
+  eggPrefab: {fileID: 2697210185167629396, guid: 290f1a5246e6a114f920df282ea65b4a, type: 3}
   fireOrLightTenderHatchSpeedBonus: 0.15
   otherTypeTenderHatchSpeedBonus: 0.05
