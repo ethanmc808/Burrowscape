@@ -22,7 +22,12 @@ public static class ForagingDataGenerator
 {
     private const string LocationsFolder = "Assets/Data/Foraging Locations";
     private const string AccessoriesFolder = "Assets/Data/Foraging Accessories";
-    private const string TierConfigPath = "Assets/Data/Foraging Difficulty Tiers.asset";
+    // Lives in the Locations subfolder (not the Data root) because that's the copy actually wired
+    // into ForagingManager.tierConfig in the Home_Base scene — a duplicate used to also exist at
+    // "Assets/Data/Foraging Difficulty Tiers.asset" (this constant's old value) with identical data
+    // but zero live references; deleted 2026-08-08 to remove the split-brain risk of editing the
+    // wrong copy. Keep this pointed at the scene-referenced one if it ever moves again.
+    private const string TierConfigPath = "Assets/Data/Foraging Locations/Foraging Difficulty Tiers.asset";
     private const string KindRarityConfigPath = "Assets/Data/Foraging Kind Rarities.asset";
     private const string FruitsFolder = "Assets/Data/Foraging Fruits";
     private const string TrinketsFolder = "Assets/Data/Foraging Trinkets";

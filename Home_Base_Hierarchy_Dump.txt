@@ -1,0 +1,963 @@
+Scene: Home_Base (Assets/Scenes/Home_Base.unity)
+Root object count: 43
+============================================================
+Audio Manager  <AudioManager>
+BaseLayoutManager  <BaseLayoutManager>
+BaseManager  <BaseManager>
+Bedroom_4x2x6_Grade1 (1)  [PREFAB: Bedroom_4x2x6_Grade1]  <Bedroom, BoxCollider, RoomUpgradeClickHandler, RoomLightFlicker, RoomClickHandler>
+  Lighting
+    Point Light  <Light, UniversalAdditionalLightData>
+    Point Light (2)  <Light, UniversalAdditionalLightData>
+    Point Light (1)  <Light, UniversalAdditionalLightData>
+  LeftDoorFrame  [INACTIVE]
+    LeftFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  RightDoorFrame  [INACTIVE]
+    RightFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  SleepingSpot_01  <RoomSpot>
+  SleepingSpot_02  <RoomSpot>
+  SleepingSpot_03  <RoomSpot>
+  SleepingSpot_04  <RoomSpot>
+  CombatSpot_01  <RoomSpot>
+  CombatSpot_02  <RoomSpot>
+  CombatSpot_03  <RoomSpot>
+  CombatSpot_04  <RoomSpot>
+  EnemySpot_01  <RoomSpot>
+  EnemySpot_02  <RoomSpot>
+  EnemySpot_03  <RoomSpot>
+  BreedingSpotMale  <RoomSpot>
+  BreedingSpotFemale  <RoomSpot>
+  MatingSpot  <RoomSpot>
+  HeartsAnimation
+    Effect_Hearts_VFX  <ParticleSystem, ParticleSystemRenderer>
+  BehindWallSpot  <RoomSpot>
+  Waypoint_01
+  Waypoint_02
+  Waypoint_03
+  Waypoint_04
+  Waypoint_05
+  Waypoint_06
+  PowerWarning  [INACTIVE]  <SpriteRenderer>
+  DefaultRoom_3x4x6  <RoomBase, BoxCollider, RoomUpgradeClickHandler, RoomClickHandler>
+    LeftWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    BackWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    BackWall_Lower  <MeshFilter, MeshRenderer, BoxCollider>
+    BackWall_Upper (1)  <MeshFilter, MeshRenderer, BoxCollider>
+    BackWall_Lower (2)  <MeshFilter, MeshRenderer, BoxCollider>
+    BackWall_Lower (1)  <MeshFilter, MeshRenderer, BoxCollider>
+    Ceiling  <MeshFilter, MeshRenderer, BoxCollider>
+    Floor  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    LeftEntrance
+    MIddleLeft
+    RightEntrance
+    MiddleRight
+  Furniture
+    Picture_21  <MeshFilter, MeshRenderer>
+    Bed_07 (3)  <MeshFilter, MeshRenderer>
+    Closet_01  <MeshFilter, MeshRenderer>
+      Closet_01_Door  <MeshFilter, MeshRenderer>
+    bed_010  <MeshFilter, MeshRenderer>
+    bed_012  <MeshFilter, MeshRenderer>
+    bed_017  <MeshFilter, MeshRenderer>
+    carpet_020  <MeshFilter, MeshRenderer>
+    Plants_05  <MeshFilter, MeshRenderer>
+    office_table_010  <MeshFilter, MeshRenderer>
+    lamp_005  <MeshFilter, MeshRenderer>
+    lamp_004  <MeshFilter, MeshRenderer>
+  closet_034  <MeshFilter, MeshRenderer>
+  armchair_004  <MeshFilter, MeshRenderer>
+  office_table_023  <MeshFilter, MeshRenderer>
+  office_table_023 (1)  <MeshFilter, MeshRenderer>
+  Kitchen_stool_003  <MeshFilter, MeshRenderer>
+Build Mode Controller  <BuildModeController>
+Bunny Trait Catalog  <BunnyTraitCatalog>
+Bunny Type Unlock Tracker  <BunnyTypeUnlockTracker>
+Cafeteria_4x2x6_Grade1  [PREFAB: Cafeteria_4x2x6_Grade1]  <CafeteriaRoom, BoxCollider, RoomUpgradeClickHandler, RoomLightFlicker, RoomClickHandler>
+  Lighting
+    Spot Light (1)  <Light, UniversalAdditionalLightData>
+    Spot Light (3)  <Light, UniversalAdditionalLightData>
+  PowerWarning  [INACTIVE]  <SpriteRenderer>
+  LeftDoorFrame  [INACTIVE]
+    LeftFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  RightDoorFrame  [INACTIVE]
+    RightFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  EatingSpot_01  <RoomSpot>
+  EatingSpot_02  <RoomSpot>
+  EatingSpot_03  <RoomSpot>
+  EatingSpot_04  <RoomSpot>
+  CombatSpot_01  <RoomSpot>
+  CombatSpot_02  <RoomSpot>
+  CombatSpot_03  <RoomSpot>
+  CombatSpot_04  <RoomSpot>
+  EnemySpot_01  <RoomSpot>
+  EnemySpot_02  <RoomSpot>
+  EnemySpot_03  <RoomSpot>
+  Waypoint_01  <RoomSpot>
+  Waypoint_02  <RoomSpot>
+  Waypoint_03  <RoomSpot>
+  Waypoint_04  <RoomSpot>
+  DefaultRoom_3x4x6  <RoomBase, BoxCollider, RoomUpgradeClickHandler, RoomClickHandler>
+    LeftWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    BackWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    BackWall_Lower  <MeshFilter, MeshRenderer, BoxCollider>
+    Ceiling  <MeshFilter, MeshRenderer, BoxCollider>
+    Floor  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    LeftEntrance
+    MIddleLeft
+    RightEntrance
+    MiddleRight
+  Furniture
+    kitchen_chair_006  <MeshFilter, MeshRenderer>
+    Plants_15  <MeshFilter, MeshRenderer>
+    barrel_001  <MeshFilter, MeshRenderer>
+    Trash_001  <MeshFilter, MeshRenderer>
+    Trash_003  <MeshFilter, MeshRenderer>
+    Trash_004  <MeshFilter, MeshRenderer>
+    Trash_005  <MeshFilter, MeshRenderer>
+    Trash_006  <MeshFilter, MeshRenderer>
+    Trash_bag_002  <MeshFilter, MeshRenderer>
+    kitchen_table_001  <MeshFilter, MeshRenderer>
+    Cube  <MeshFilter, MeshRenderer, BoxCollider>
+    Cube (3)  <MeshFilter, MeshRenderer, BoxCollider>
+    Cube (4)  <MeshFilter, MeshRenderer, BoxCollider>
+    Cube (1)  <MeshFilter, MeshRenderer, BoxCollider>
+    Cube (2)  <MeshFilter, MeshRenderer, BoxCollider>
+    lamp_002 (1)  <MeshFilter, MeshRenderer>
+    kitchen_table_001  <MeshFilter, MeshRenderer>
+    kitchen_chair_007  <MeshFilter, MeshRenderer>
+    kitchen_chair_015  <MeshFilter, MeshRenderer>
+    kitchen_chair_021  <MeshFilter, MeshRenderer>
+    Trash_012  <MeshFilter, MeshRenderer>
+    lpbns_br_plants_01  <MeshFilter, MeshRenderer, BoxCollider>
+CoalRoom_4x2x6_Grade1  [PREFAB: CoalRoom_4x2x6_Grade1]  <BoxCollider, CoalRoom, RoomClickHandler, RoomUpgradeClickHandler, RoomLightFlicker>
+  Lighting
+    Point Light  <Light, UniversalAdditionalLightData>
+    Point Light (3)  <Light, UniversalAdditionalLightData>
+    Point Light (1)  <Light, UniversalAdditionalLightData>
+    Point Light (2)  <Light, UniversalAdditionalLightData>
+  WaterWarning  [INACTIVE]  <SpriteRenderer>
+  LeftDoorFrame  [INACTIVE]
+    LeftFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  RightDoorFrame  [INACTIVE]
+    RightFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  ShovelingSpot_01  <RoomSpot>
+  ShovelingSpot_02  <RoomSpot>
+  CombatSpot_01  <RoomSpot>
+  CombatSpot_02  <RoomSpot>
+  EnemySpot_01  <RoomSpot>
+  EnemySpot_02  <RoomSpot>
+  EnemySpot_03  <RoomSpot>
+  ShovelingSpot_01_WanderLocation_01
+  ShovelingSpot_01_WanderLocation_02
+  ShovelingSpot_02_WanderLocation_01
+  ShovelingSpot_02_WanderLocation_02
+  DefaultRoom_3x4x6  <RoomBase, BoxCollider, RoomUpgradeClickHandler, RoomClickHandler>
+    LeftWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    BackWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    BackWall_Lower  <MeshFilter, MeshRenderer, BoxCollider>
+    Ceiling  <MeshFilter, MeshRenderer, BoxCollider>
+    Floor  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    LeftEntrance
+    MIddleLeft
+    RightEntrance
+    MiddleRight
+  Furniture
+    Generator_014  <MeshFilter, MeshRenderer>
+    Box_015  <MeshFilter, MeshRenderer>
+    Barrel_005  <MeshFilter, MeshRenderer>
+    Platform_004  <MeshFilter, MeshRenderer>
+    Container_type_A_door_002  <MeshFilter, MeshRenderer>
+    Container_type_A_door_003  <MeshFilter, MeshRenderer>
+    Cable_type_B_012  <MeshFilter, MeshRenderer>
+    Cable_type_B_011  <MeshFilter, MeshRenderer>
+    Cable_type_B_011 (1)  <MeshFilter, MeshRenderer>
+    Vent_tube_005  <MeshFilter, MeshRenderer>
+    Vent_tube_001  <MeshFilter, MeshRenderer>
+    Vent_tube_001 (1)  <MeshFilter, MeshRenderer>
+    Pallete_02  <MeshFilter, MeshRenderer>
+    Trash_009  <MeshFilter, MeshRenderer>
+    Ventilation_006  <MeshFilter, MeshRenderer>
+    Ventilation_006 (1)  <MeshFilter, MeshRenderer>
+    Ventilation_006 (2)  <MeshFilter, MeshRenderer>
+  Cube  <MeshFilter, MeshRenderer, BoxCollider>
+  Cube (1)  <MeshFilter, MeshRenderer, BoxCollider>
+  Box_016  <MeshFilter, MeshRenderer>
+  Gas_can_011  <MeshFilter, MeshRenderer>
+Combat Indicator Canvas  <Canvas, CanvasScaler, GraphicRaycaster, CombatIndicatorCanvas>
+Delete Mode Controller  <DeleteModeController>
+Directional Light  <Light, UniversalAdditionalLightData>
+Dirt Container
+  Dirt Fill Manager  <DirtFillManager>
+EnemyTypeUnlockTracker  <EnemyTypeUnlockTracker>
+Entrance Gate Manager  <EntranceGate>
+  EntranceGateModel  [PREFAB: WoodSharpFence]  <MeshFilter, MeshRenderer, BoxCollider, FlankSlots>
+EventSystem  <EventSystem, InputSystemUIInputModule>
+FadeInFromBlack  <Canvas, CanvasScaler, GraphicRaycaster>
+  BlackRectangle  <CanvasRenderer, Image, CanvasGroup, ScreenFader>
+Game Speed Manager  <GameSpeedManager>
+Garden_4x2x6_Grade1  [PREFAB: Garden_4x2x6_Grade1]  <GardenRoom, BoxCollider, RoomClickHandler, RoomUpgradeClickHandler, RoomLightFlicker>
+  Lighting
+    Spot Light  <Light, UniversalAdditionalLightData>
+    Point Light  <Light, UniversalAdditionalLightData>
+    Spot Light (1)  <Light, UniversalAdditionalLightData>
+  PowerWarning  [INACTIVE]  <SpriteRenderer>
+  WaterWarning  [INACTIVE]  <SpriteRenderer>
+  LeftDoorFrame  [INACTIVE]
+    LeftFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  RightDoorFrame  [INACTIVE]
+    RightFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  FarmingSpot_01  <RoomSpot>
+  FarmingSpot_02  <RoomSpot>
+  FarmingSpot_03  <RoomSpot>
+  FarmingSpot_04  <RoomSpot>
+  CombatSpot_01  <RoomSpot>
+  CombatSpot_03  <RoomSpot>
+  CombatSpot_04  <RoomSpot>
+  CombatSpot_02  <RoomSpot>
+  EnemySpot_01  <RoomSpot>
+  EnemySpot_02  <RoomSpot>
+  EnemySpot_03  <RoomSpot>
+  Waypoint_01
+  Waypoint_02
+  DefaultRoom_3x4x6  <RoomBase, BoxCollider, RoomUpgradeClickHandler, RoomClickHandler>
+    LeftWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    BackWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    BackWall_Lower  <MeshFilter, MeshRenderer, BoxCollider>
+    Ceiling  <MeshFilter, MeshRenderer, BoxCollider>
+    Floor  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    LeftEntrance
+    MIddleLeft
+    RightEntrance
+    MiddleRight
+  Furniture
+    flower_003  <MeshFilter, MeshRenderer>
+    flower_001  <MeshFilter, MeshRenderer>
+    flower_004  <MeshFilter, MeshRenderer>
+    flower_010  <MeshFilter, MeshRenderer>
+    flower_037  <MeshFilter, MeshRenderer>
+    flower_031  <MeshFilter, MeshRenderer>
+    bag_002  <MeshFilter, MeshRenderer>
+    box_002  <MeshFilter, MeshRenderer>
+    box_003  <MeshFilter, MeshRenderer>
+    Cube  <MeshFilter, MeshRenderer, BoxCollider>
+    Cube (1)  <MeshFilter, MeshRenderer, BoxCollider>
+    Cube (2)  <MeshFilter, MeshRenderer, BoxCollider>
+    bucket_001  <MeshFilter, MeshRenderer>
+    box_001.001 (1)  <MeshFilter, MeshRenderer>
+      Cube  <MeshFilter, MeshRenderer, BoxCollider>
+      carrot (12)  <MeshFilter, MeshRenderer>
+      carrot (18)  <MeshFilter, MeshRenderer>
+      carrot (24)  <MeshFilter, MeshRenderer>
+      carrot (25)  <MeshFilter, MeshRenderer>
+      carrot (19)  <MeshFilter, MeshRenderer>
+      carrot (20)  <MeshFilter, MeshRenderer>
+      carrot (21)  <MeshFilter, MeshRenderer>
+      carrot (22)  <MeshFilter, MeshRenderer>
+      carrot (23)  <MeshFilter, MeshRenderer>
+      carrot (13)  <MeshFilter, MeshRenderer>
+      carrot (14)  <MeshFilter, MeshRenderer>
+      carrot (15)  <MeshFilter, MeshRenderer>
+      carrot (26)  <MeshFilter, MeshRenderer>
+      carrot (28)  <MeshFilter, MeshRenderer>
+      carrot (29)  <MeshFilter, MeshRenderer>
+      carrot (27)  <MeshFilter, MeshRenderer>
+      carrot (16)  <MeshFilter, MeshRenderer>
+      carrot (17)  <MeshFilter, MeshRenderer>
+      carrot (6)  <MeshFilter, MeshRenderer>
+      carrot (7)  <MeshFilter, MeshRenderer>
+      carrot (8)  <MeshFilter, MeshRenderer>
+      carrot (9)  <MeshFilter, MeshRenderer>
+      carrot (10)  <MeshFilter, MeshRenderer>
+      carrot (11)  <MeshFilter, MeshRenderer>
+    box_001.001  <MeshFilter, MeshRenderer>
+      Cube  <MeshFilter, MeshRenderer, BoxCollider>
+      Plant_003  <MeshFilter, MeshRenderer>
+      Plant_003 (1)  <MeshFilter, MeshRenderer>
+      Plant_003 (11)  <MeshFilter, MeshRenderer>
+      Plant_003 (2)  <MeshFilter, MeshRenderer>
+      Plant_003 (3)  <MeshFilter, MeshRenderer>
+      Plant_003 (4)  <MeshFilter, MeshRenderer>
+      Plant_003 (5)  <MeshFilter, MeshRenderer>
+      Plant_003 (9)  <MeshFilter, MeshRenderer>
+      Plant_003 (6)  <MeshFilter, MeshRenderer>
+      Plant_003 (8)  <MeshFilter, MeshRenderer>
+      Plant_003 (7)  <MeshFilter, MeshRenderer>
+      Plant_003 (10)  <MeshFilter, MeshRenderer>
+  lamp_008  <MeshFilter, MeshRenderer>
+  lamp_008 (1)  <MeshFilter, MeshRenderer>
+Gate Queue Manager  <GateQueueManager>
+  QueueSpot_01
+  QueueSpot_02
+  QueueSpot_03
+  QueueSpot_04
+  QueueSpot_05
+  QueueSpot_06
+  QueueSpot_07
+  QueueSpot_08
+  QueueSpot_09
+  QueueSpot_10
+  Reject Exit Point
+  EnemySpawnPoint_01
+  EnemySpawnPoint_02
+  EnemySpawnPoint_03
+  MeleeSiegeSpot_01  <RoomSpot>
+  MeleeSiegeSpot_02  <RoomSpot>
+  MeleeSiegeSpot_03  <RoomSpot>
+  RangedSiegeSpot_01  <RoomSpot>
+  RangedSiegeSpot_02  <RoomSpot>
+  RangedSiegeSpot_03  <RoomSpot>
+Global Volume  <Volume>
+HomeBase_Root
+  Outside Floor  <MeshFilter, MeshRenderer, BoxCollider>
+  EntranceRoom_4x2x6_Grade1  [PREFAB: EntranceRoom_4x2x6_Grade1]  <EntranceRoom, BoxCollider, RoomClickHandler, RoomUpgradeClickHandler, RoomLightFlicker>
+    Lighting
+      Spot Light  <Light, UniversalAdditionalLightData>
+      Spot Light (1)  <Light, UniversalAdditionalLightData>
+    PowerWarning  [INACTIVE]  <SpriteRenderer>
+    LeftDoorFrame  [INACTIVE]
+      LeftFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+      LeftFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+      LeftFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+    RightDoorFrame  [INACTIVE]
+      RightFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+      RightFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+      RightFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+    BaseEntrance
+    GateExitPoint
+    GuardSpot_01  <RoomSpot>
+    GuardSpot_02  <RoomSpot>
+    GuardSpot_02_WanderLocation_01
+    GuardSpot_02_WanderLocation_02
+    GuardSpot_02_WanderLocation_03
+    CombatSpot_01  <RoomSpot>
+    CombatSpot_02  <RoomSpot>
+    EnemySpot_01  <RoomSpot>
+    EnemySpot_02  <RoomSpot>
+    EnemySpot_03  <RoomSpot>
+    Waypoint_01  <RoomSpot>
+    Waypoint_02  <RoomSpot>
+    Waypoint_03  <RoomSpot>
+    DefaultRoom_3x4x6  <RoomBase, BoxCollider, RoomUpgradeClickHandler, RoomClickHandler>
+      LeftWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+      LeftWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+      LeftWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+      LeftWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+      BackWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+      BackWall_Lower  <MeshFilter, MeshRenderer, BoxCollider>
+      Ceiling  <MeshFilter, MeshRenderer, BoxCollider>
+      Floor  <MeshFilter, MeshRenderer, BoxCollider>
+      RightWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+      RightWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+      RightWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+      RightWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+      LeftEntrance
+      MIddleLeft
+      RightEntrance
+      MiddleRight
+    Furniture
+      Barrel_005  <MeshFilter, MeshRenderer>
+      Box_003  <MeshFilter, MeshRenderer>
+      Box_022  <MeshFilter, MeshRenderer>
+      Hedgehog_001  <MeshFilter, MeshRenderer>
+      Tire_001  <MeshFilter, MeshRenderer>
+      Tires_001  <MeshFilter, MeshRenderer>
+    lamp_015 (1)  <MeshFilter, MeshRenderer>
+Hospital_4x2x6_Grade1  [PREFAB: Hospital_4x2x6_Grade1]  <BoxCollider, RoomUpgradeClickHandler, RoomLightFlicker, HospitalRoom, RoomClickHandler>
+  EnemySpot_01  <RoomSpot>
+  EnemySpot_02  <RoomSpot>
+  EnemySpot_03  <RoomSpot>
+  BedSpot_01  <RoomSpot>
+  BedSpot_02  <RoomSpot>
+  NursingSpot_01  <RoomSpot>
+  NursingSpot_01_WanderLocation_01
+  NursingSpot_01_WanderLocation_02
+  NursingSpot_01_WanderLocation_03
+  CombatSpot_01  <RoomSpot>
+  Waypoint_01
+  Waypoint_02
+  Waypoint_03
+  Lighting
+    Point Light  <Light, UniversalAdditionalLightData>
+  PowerWarning  [INACTIVE]  <SpriteRenderer>
+  WaterWarning  [INACTIVE]  <SpriteRenderer>
+  LeftDoorFrame  [INACTIVE]
+    LeftFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  RightDoorFrame  [INACTIVE]
+    RightFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  DefaultRoom_3x4x6  <RoomBase, BoxCollider, RoomUpgradeClickHandler, RoomClickHandler>
+    LeftWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    BackWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    BackWall_Lower  <MeshFilter, MeshRenderer, BoxCollider>
+    Ceiling  <MeshFilter, MeshRenderer, BoxCollider>
+    Floor  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    LeftEntrance
+    MIddleLeft
+    RightEntrance
+    MiddleRight
+  Furniture
+    hospital_bed_011  <MeshFilter, MeshRenderer>
+    hospital_bed_010  <MeshFilter, MeshRenderer>
+    hospital_info_board_009  <MeshFilter, MeshRenderer>
+    Curtains_024  <MeshFilter, MeshRenderer>
+    Curtains_024 (1)  <MeshFilter, MeshRenderer>
+    Curtains_024 (2)  <MeshFilter, MeshRenderer>
+    Pipe_002  <MeshFilter, MeshRenderer>
+    reception_desk_001  <MeshFilter, MeshRenderer>
+    shelf_043  <MeshFilter, MeshRenderer>
+    lamp_026  <MeshFilter, MeshRenderer>
+Invasion Manager  <InvasionManager>
+LiftRoom_1x2x6_Grade1  [PREFAB: LiftRoom_1x2x6_Grade1]  <BoxCollider, LiftRoom, RoomLightFlicker, RoomClickHandler>
+  LiftDoor_Left
+    LeftDoor  <MeshFilter, MeshRenderer, BoxCollider>
+  LiftDoor_Right
+    RightDoor  <MeshFilter, MeshRenderer, BoxCollider>
+  BackWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+  BackWall_Lower  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftDoorFrame  [INACTIVE]
+    LeftFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  RightDoorFrame  [INACTIVE]
+    RightFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftWall_Filler  <MeshFilter, MeshRenderer, BoxCollider>
+  RightWall_Filler  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+  Directional Light Left  <Light, UniversalAdditionalLightData>
+  BackWall  <MeshFilter, MeshRenderer, BoxCollider>
+  Ceiling  <MeshFilter, MeshRenderer, BoxCollider>
+  Floor_Front  <MeshFilter, MeshRenderer, BoxCollider>
+  Foor_Middle  <MeshFilter, MeshRenderer, BoxCollider>
+  Floor _Back  <MeshFilter, MeshRenderer, BoxCollider>
+  RightWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+  RightWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+  RightWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftEntrance
+  MIddleLeft
+  RightEntrance
+  MiddleRight
+  LandingSpot
+  BoardingSpot
+LiftRoom_1x2x6_Grade1 (1)  [PREFAB: LiftRoom_1x2x6_Grade1]  <BoxCollider, LiftRoom, RoomLightFlicker, RoomClickHandler>
+  LiftDoor_Left
+    LeftDoor  <MeshFilter, MeshRenderer, BoxCollider>
+  LiftDoor_Right
+    RightDoor  <MeshFilter, MeshRenderer, BoxCollider>
+  BackWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+  BackWall_Lower  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftDoorFrame  [INACTIVE]
+    LeftFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  RightDoorFrame  [INACTIVE]
+    RightFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftWall_Filler  <MeshFilter, MeshRenderer, BoxCollider>
+  RightWall_Filler  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+  Directional Light Left  <Light, UniversalAdditionalLightData>
+  BackWall  <MeshFilter, MeshRenderer, BoxCollider>
+  Ceiling  <MeshFilter, MeshRenderer, BoxCollider>
+  Floor_Front  <MeshFilter, MeshRenderer, BoxCollider>
+  Foor_Middle  <MeshFilter, MeshRenderer, BoxCollider>
+  Floor _Back  <MeshFilter, MeshRenderer, BoxCollider>
+  RightWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+  RightWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+  RightWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+  LeftEntrance
+  MIddleLeft
+  RightEntrance
+  MiddleRight
+  LandingSpot
+  BoardingSpot
+LivingRoom_4x2x6_Grade1  [PREFAB: LivingRoom_4x2x6_Grade1]  <LivingRoom, BoxCollider, RoomUpgradeClickHandler, RoomLightFlicker, RoomClickHandler>
+  Lighting
+    Spot Light  <Light, UniversalAdditionalLightData>
+    point light  <Light, UniversalAdditionalLightData>
+    Point Light  <Light, UniversalAdditionalLightData>
+    Point Light (1)  <Light, UniversalAdditionalLightData>
+  PowerWarning  [INACTIVE]  <SpriteRenderer>
+  LeftDoorFrame  [INACTIVE]
+    LeftFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  RightDoorFrame  [INACTIVE]
+    RightFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  RelaxingSpot_01  <RoomSpot>
+  CombatSpot_01  <RoomSpot>
+  RelaxingSpot_02  <RoomSpot>
+  CombatSpot_02  <RoomSpot>
+  RelaxingSpot_03  <RoomSpot>
+  CombatSpot_03  <RoomSpot>
+  RelaxingSpot_04  <RoomSpot>
+  CombatSpot_04  <RoomSpot>
+  RelaxingSpot_05  <RoomSpot>
+  CombatSpot_05  <RoomSpot>
+  RelaxingSpot_06  <RoomSpot>
+  CombatSpot_06  <RoomSpot>
+  EnemySpot_01  <RoomSpot>
+  EnemySpot_02  <RoomSpot>
+  EnemySpot_03  <RoomSpot>
+  DefaultRoom_3x4x6  <RoomBase, BoxCollider, RoomUpgradeClickHandler, RoomClickHandler>
+    LeftWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    BackWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    BackWall_Lower  <MeshFilter, MeshRenderer, BoxCollider>
+    Ceiling  <MeshFilter, MeshRenderer, BoxCollider>
+    Floor  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    LeftEntrance
+    MIddleLeft
+    RightEntrance
+    MiddleRight
+  Furniture
+    Couch_08  <MeshFilter, MeshRenderer>
+    Coffee_Table_03  <MeshFilter, MeshRenderer>
+    Light_05  <MeshFilter, MeshRenderer>
+    Plants_19  <MeshFilter, MeshRenderer>
+    lounge_chair_015  <MeshFilter, MeshRenderer>
+    carpet_003  <MeshFilter, MeshRenderer>
+    door_007  <MeshFilter, MeshRenderer>
+    tv_wall_020  <MeshFilter, MeshRenderer>
+    picture_029  <MeshFilter, MeshRenderer>
+    office_table_019  <MeshFilter, MeshRenderer>
+  lamp_006  <MeshFilter, MeshRenderer>
+Main Camera  <Camera, AudioListener, UniversalAdditionalCameraData, TestCamera>
+NotificationManager  <NotificationManager>
+Placement Mode Manager  <PlacementModeManager>
+Population Manager  <PopulationManager>
+  Dweller Roster  <DwellerRoster>
+Rabbit_Neutral_Default_3D  [PREFAB: Rabbit_Neutral_Default_3D]  <Animator, ForceSpriteSkinAlwaysUpdate, BunnyMovement, Rigidbody, BoxCollider, SortingGroup, BunnyDepthSorter>
+  GroundCheck
+  CeilingCheck
+  BunnyFacingRoot
+    BunnyScaleRoot
+      Rabbit_Neutral_Idle  <Animator, BunnyAnimationEvents, BunnyAnimationEvents>
+        bone_root
+          Bone_Torso
+            Bone_Front_Arm_Base
+              Bone_Front_Arm_Paw
+            Bone_Back_Arm_Base
+              Bone_Back_Arm_Paw
+            Bone_Tail
+            Bone_Head
+              Bone_Front_Ear_Base
+                Bone_Front_Ear_Mid
+                  Bone_Front_Ear_Top
+              Bone_Back_Ear_Base
+                Bone_Back_Ear_Mid
+                  Bone_Back_Ear_Top
+              Eyes
+                Eyes_Open  <SpriteRenderer, SpriteSkin>
+                Eyes_Angry  <SpriteRenderer>
+                Eyes_Closed  <SpriteRenderer>
+                Eyes_Fainting  <SpriteRenderer>
+              Mouths
+                Mouth  <SpriteRenderer>
+                Mouth_Eating  <SpriteRenderer>
+            Front Ear
+              Front Ear_1  <SpriteRenderer, SpriteSkin>
+            Front Arm
+              Front Arm_1  <SpriteRenderer, SpriteSkin>
+            Back Arm
+              Back Arm_1  <SpriteRenderer, SpriteSkin>
+            Front Thigh
+              Front Thigh_1  <SpriteRenderer, SpriteSkin>
+            Front Foot
+              Front Foot_1  <SpriteRenderer, SpriteSkin>
+            Torso
+              Torso_1  <SpriteRenderer, SpriteSkin>
+            Tail
+              Tail_1  <SpriteRenderer, SpriteSkin>
+            Back Ear
+              Back Ear_1  <SpriteRenderer, SpriteSkin>
+            Back Thigh
+              Back Thigh_1  <SpriteRenderer, SpriteSkin>
+            Back Foot
+              Back Foot_1  <SpriteRenderer, SpriteSkin>
+            Head
+              Head_1  <SpriteRenderer, SpriteSkin>
+          Bone_Front_Thigh
+          Bone_Front_Foot
+          Bone_Back_Thigh
+          Bone_Back_Foot
+          Items
+            Carrot  <SpriteRenderer>
+            Carrot_One_Bite  <SpriteRenderer>
+            Carrot_Two_Bites  <SpriteRenderer>
+          Effects
+            Z_Sleep  <SpriteRenderer>
+            Effect_Trigger_LevelUp  <SpriteRenderer, CounterFlipX>
+Resource Managers
+  Carrot Manager  <CarrotManager>
+  Water Manager  <WaterManager>
+  Water Rationing Manager  <WaterRationingManager>
+  Gold Manager  <GoldManager>
+  Power Manager  <PowerManager>
+Room Catalog Registry  <RoomCatalogRegistry>
+Room Transition Service  <RoomTransitionService>
+Room Unlock Tracker  <RoomUnlockTracker>
+RoomTypeUnlockAnnouncer  <RoomTypeUnlockAnnouncer>
+SaveManager  <SaveManager>
+Testers
+  Garden Test Manager  <GardenTestAssigner>
+  Entrance Test Manager  <EntranceTestAssigner>
+  Wander Test Trigger  <WanderTestTrigger>
+  Room Deletion Tester  <RoomDeletionTester>
+User Interface  <Canvas, CanvasScaler, GraphicRaycaster>
+  SaveButton  <CanvasRenderer, Image, Button, SaveButtonUI>
+    Save  <CanvasRenderer, TextMeshProUGUI>
+  Resource Panel  <CanvasRenderer, Image>
+    Icons
+      Carrot  <CanvasRenderer, Image>
+      Water Drop  <CanvasRenderer, Image>
+      Gold  <CanvasRenderer, Image>
+      Power  <CanvasRenderer, Image>
+  Power Count  <CanvasRenderer, TextMeshProUGUI, CarrotCountDisplay>
+  Water Count  <CanvasRenderer, TextMeshProUGUI, WaterCountDisplay>
+  Gold Count  <CanvasRenderer, TextMeshProUGUI, GoldCountDisplay>
+  Power Count  <CanvasRenderer, TextMeshProUGUI, PowerCountDisplay>
+  New Bunny Type Notification
+    Visuals
+      Side Container  <CanvasRenderer, Image>
+      Type Symbol  [PREFAB: Type Symbol]  <CanvasRenderer, Image>
+      Notification  <CanvasRenderer, TextMeshProUGUI>
+  Bunny Info UI  <CanvasRenderer, Image, BunnyInfoUI>
+    BunnyStatsPanel  <CanvasRenderer, Image>
+      UsePotionButton  <CanvasRenderer, Image, Button>
+        UsePotion  <CanvasRenderer, TextMeshProUGUI>
+      Stats Container  <CanvasRenderer, Image>
+      Stats Container (1)  <CanvasRenderer, Image>
+      Stats Container_2  <CanvasRenderer, Image>
+      Stats Container_2 (1)  <CanvasRenderer, Image>
+      Stats Container_2 (2)  <CanvasRenderer, Image>
+      Side Container  <CanvasRenderer, Image>
+      Side Container (1)  <CanvasRenderer, Image>
+      BunnyNameLabel  <CanvasRenderer, TextMeshProUGUI>
+      Nature Label  <CanvasRenderer, TextMeshProUGUI>
+      Type Label  <CanvasRenderer, TextMeshProUGUI>
+        Type Symbol  [PREFAB: Type Symbol]  <CanvasRenderer, Image>
+      Stats Label  <CanvasRenderer, TextMeshProUGUI>
+      HP Label  <CanvasRenderer, TextMeshProUGUI>
+      Current HP Label  <CanvasRenderer, TextMeshProUGUI>
+      HP Stat  <CanvasRenderer, TextMeshProUGUI>
+      HP Bar  <CanvasRenderer, Image>
+      Attack Label  <CanvasRenderer, TextMeshProUGUI>
+      Attack Stat  <CanvasRenderer, TextMeshProUGUI>
+      Defense Label  <CanvasRenderer, TextMeshProUGUI>
+      Defense Stat  <CanvasRenderer, TextMeshProUGUI>
+      Speed Label  <CanvasRenderer, TextMeshProUGUI>
+      Speed Stat  <CanvasRenderer, TextMeshProUGUI>
+      Luck Label  <CanvasRenderer, TextMeshProUGUI>
+      Luck Stat  <CanvasRenderer, TextMeshProUGUI>
+      Level Label  <CanvasRenderer, TextMeshProUGUI>
+      Level Stat  <CanvasRenderer, TextMeshProUGUI>
+      Needs  <CanvasRenderer, TextMeshProUGUI>
+        Hunger Label  <CanvasRenderer, TextMeshProUGUI>
+        Hunger  <CanvasRenderer, Image>
+        Thirst Label  <CanvasRenderer, TextMeshProUGUI>
+        Thirst  <CanvasRenderer, Image>
+        Energy Label  <CanvasRenderer, TextMeshProUGUI>
+        Energy  <CanvasRenderer, Image>
+        Mood Label  <CanvasRenderer, TextMeshProUGUI>
+        Mood  <CanvasRenderer, Image>
+      Traits Label  <CanvasRenderer, TextMeshProUGUI>
+        Traits List Container  <CanvasRenderer, Image, HorizontalLayoutGroup>
+      Passives Label  <CanvasRenderer, TextMeshProUGUI>
+        Passives List Container  <CanvasRenderer, Image, HorizontalLayoutGroup>
+      CloseButton  <CanvasRenderer, Image, Button>
+        Close  <CanvasRenderer, TextMeshProUGUI>
+      Send Foraging Button  <CanvasRenderer, Image, Button>
+        Send Foraging  <CanvasRenderer, TextMeshProUGUI>
+      Approval Controls
+        ApproveButton  <CanvasRenderer, Image, Button>
+          Approve  <CanvasRenderer, TextMeshProUGUI>
+        RejectButton  <CanvasRenderer, Image, Button>
+          Reject  <CanvasRenderer, TextMeshProUGUI>
+      GenderLabel  [PREFAB: GenderLabel]  <CanvasRenderer, Image>
+      AccessoryPIcker
+        AcccessoryContainer  <VerticalLayoutGroup>
+      AccessorySlotButton  <CanvasRenderer, Image, Button>
+        AccessoryName  <CanvasRenderer, TextMeshProUGUI>
+      FeedFruitButton  <CanvasRenderer, Image, Button>
+        Feed Fruit  <CanvasRenderer, TextMeshProUGUI>
+      FruitPicker
+        FruitContainer  <VerticalLayoutGroup>
+        FruitDetail
+          EatFruitButton  <CanvasRenderer, Image, Button>
+            Eat Fruit  <CanvasRenderer, TextMeshProUGUI>
+          BackButton  <CanvasRenderer, Image, Button>
+            Back  <CanvasRenderer, TextMeshProUGUI>
+  Error Messages
+    Room Full Notification  <CanvasRenderer, TextMeshProUGUI>
+      Toast Panel  <CanvasRenderer, Image>
+        Room Full Text  <CanvasRenderer, TextMeshProUGUI>
+    Can't Delete Room Notification  <CanvasRenderer, TextMeshProUGUI>
+      Toast Panel  <CanvasRenderer, Image>
+        Can't Delete Room Text  <CanvasRenderer, TextMeshProUGUI>
+    Upgrade/Merge In Progress  <CanvasRenderer, TextMeshProUGUI, RoomTransitionNotice>
+      Merge Panel  <CanvasRenderer, Image>
+        Merge In Progress  <CanvasRenderer, TextMeshProUGUI>
+      Upgrade Panel  <CanvasRenderer, Image>
+        Upgrade In Progress  <CanvasRenderer, TextMeshProUGUI>
+  Assignment UI  <CanvasRenderer, Image, AssignmentUI>
+    Panel  <CanvasRenderer, Image>
+    RoomNameLabel  <CanvasRenderer, TextMeshProUGUI>
+    UnemployedBunnies  <CanvasRenderer, TextMeshProUGUI>
+      AssignButtonContainer  <VerticalLayoutGroup>
+    AssignedBunnies  <CanvasRenderer, TextMeshProUGUI>
+      AssignedButtonContainer  <VerticalLayoutGroup>
+    UnassignButton  <CanvasRenderer, Image, Button>
+      UnassignText  <CanvasRenderer, TextMeshProUGUI>
+    CloseButton  <CanvasRenderer, Image, Button>
+      CloseText  <CanvasRenderer, TextMeshProUGUI>
+  Guard Deploy UI  <CanvasRenderer, Image, GuardDeployUI>
+    Panel  <CanvasRenderer, Image>
+    RoomNameLabel  <CanvasRenderer, TextMeshProUGUI>
+    StatusLabel  <CanvasRenderer, TextMeshProUGUI>
+    DeployableBunnies  <CanvasRenderer, TextMeshProUGUI>
+      ButtonContainer  <VerticalLayoutGroup>
+    CloseButtonX  <CanvasRenderer, Image, Button>
+      CloseText  <CanvasRenderer, TextMeshProUGUI>
+  Patient UI  <CanvasRenderer, Image, PatientUI>
+    Panel  <CanvasRenderer, Image>
+    RoomNameLabel  <CanvasRenderer, TextMeshProUGUI>
+    StatusLabel  <CanvasRenderer, TextMeshProUGUI>
+    InjuredBunnies  <CanvasRenderer, TextMeshProUGUI>
+      ButtonContainer  <VerticalLayoutGroup>
+  Room Upgrade UI  <CanvasRenderer, Image, RoomUpgradeUI>
+    Panel (1)  <CanvasRenderer, Image>
+    Panel  <CanvasRenderer, Image>
+    GoldCostLabel  <CanvasRenderer, TextMeshProUGUI>
+    GradeLabel  <CanvasRenderer, TextMeshProUGUI>
+    UpgradeButton  <CanvasRenderer, Image, Button>
+      Upgrade  <CanvasRenderer, TextMeshProUGUI>
+    NoUpgradeAvailable  <CanvasRenderer, TextMeshProUGUI>
+    CloseButton  <CanvasRenderer, Image, Button>
+      X  <CanvasRenderer, TextMeshProUGUI>
+  Population Display  <PopulationCountDisplay>
+    Total Text  <CanvasRenderer, TextMeshProUGUI>
+      Water Drop  <CanvasRenderer, Image>
+    In Base Text  <CanvasRenderer, TextMeshProUGUI>
+    Questing Text  <CanvasRenderer, TextMeshProUGUI>
+    Foraging Text  <CanvasRenderer, TextMeshProUGUI>
+    Egg Text  <CanvasRenderer, TextMeshProUGUI>
+  Build Menu Button  <CanvasRenderer, Image, Button>
+    Build  <CanvasRenderer, TextMeshProUGUI>
+    Build Menu Panel  <CanvasRenderer, Image, BuildMenuUI>
+      List Container  <CanvasRenderer, Image, VerticalLayoutGroup>
+      Close Button  <CanvasRenderer, Image, Button>
+        Close  <CanvasRenderer, TextMeshProUGUI>
+    Delete Button  <CanvasRenderer, Image, Button>
+      Delete  <CanvasRenderer, TextMeshProUGUI>
+      Cancel Button  <CanvasRenderer, Image, Button>
+        Cancel  <CanvasRenderer, TextMeshProUGUI>
+  Foraging Dispatch Button  <CanvasRenderer, Image, Button>
+    Foraging  <CanvasRenderer, TextMeshProUGUI>
+  HammerCursor  <CanvasRenderer, Image, DeleteModeCursor>
+  Foraging Manager  <ForagingManager>
+    Foraging Stating Point
+    Foraging Inventory Manager  <ForagingInventoryManager>
+    Foraging Location Unlock Tracker  <ForagingLocationUnlockTracker>
+  Send Foraging Dispatch Panel  <CanvasRenderer, Image, ForagingDispatchUI>
+    SelectedLocationLabel  <CanvasRenderer, TextMeshProUGUI>
+      LocationImage  <CanvasRenderer, Image>
+    NextLocationButton  <CanvasRenderer, Image, Button>
+      Next  <CanvasRenderer, TextMeshProUGUI>
+    PreviousLocationButton  <CanvasRenderer, Image, Button>
+      Previous  <CanvasRenderer, TextMeshProUGUI>
+    EquipStep  <CanvasRenderer, Image>
+      PotionCountLabel  <CanvasRenderer, TextMeshProUGUI>
+      PotionIncrementButton  <CanvasRenderer, Image, Button>
+        Increase  <CanvasRenderer, TextMeshProUGUI>
+      PotionDecrementButton  <CanvasRenderer, Image, Button>
+        Decrease  <CanvasRenderer, TextMeshProUGUI>
+      AccessoryListContainer  <VerticalLayoutGroup>
+      ConfirmButton  <CanvasRenderer, Image, Button>
+        Confirm  <CanvasRenderer, TextMeshProUGUI>
+      AccessoryName  <CanvasRenderer, TextMeshProUGUI>
+    RecommendedTypesIconContainer  <CanvasRenderer, Image>
+      TypesListContainer  <VerticalLayoutGroup>
+      RecommendedTypes Text  <CanvasRenderer, TextMeshProUGUI>
+    Close Button  <CanvasRenderer, Image, Button>
+      Close  <CanvasRenderer, TextMeshProUGUI>
+  OpenInventoryButton  <CanvasRenderer, Image, Button>
+    Open  <CanvasRenderer, TextMeshProUGUI>
+  BaseInventoryScreenUI  <BaseInventoryScreenUI>
+    CloseButton  <CanvasRenderer, Image, Button>
+      Close  <CanvasRenderer, TextMeshProUGUI>
+    ListContainer  <GridLayoutGroup>
+  Main Foraging Screen Panel  <CanvasRenderer, Image, ForagingScreenUI>
+    PickerListPanel  <CanvasRenderer, Image>
+      PickerListContainer  <VerticalLayoutGroup>
+    ActiveTripListContainer  <VerticalLayoutGroup>
+    CloseButton  <CanvasRenderer, Image, Button>
+      Close  <CanvasRenderer, TextMeshProUGUI>
+    ReturnButton  <CanvasRenderer, Image, Button>
+      Return  <CanvasRenderer, TextMeshProUGUI>
+    ForagingTripDetailPanel  <CanvasRenderer, Image, ForagingTripDetailUI>
+      BunnyName  <CanvasRenderer, TextMeshProUGUI>
+      LocationName  <CanvasRenderer, TextMeshProUGUI>
+      RawImage  <CanvasRenderer, RawImage>
+      HP Value  <CanvasRenderer, TextMeshProUGUI>
+      Energy Value  <CanvasRenderer, TextMeshProUGUI>
+      Time Value  <CanvasRenderer, TextMeshProUGUI>
+      Gold Value  <CanvasRenderer, TextMeshProUGUI>
+      Enemies Slain Value  <CanvasRenderer, TextMeshProUGUI>
+      AccessoryImage  <CanvasRenderer, Image>
+      AccessoryName  <CanvasRenderer, TextMeshProUGUI>
+      ItemsFoundContainer  <HorizontalLayoutGroup>
+      TripLogDetails  <CanvasRenderer, Image, ScrollRect>
+        Viewport  <CanvasRenderer, Image, Mask>
+          Content
+            LogEntry  <CanvasRenderer, TextMeshProUGUI, ContentSizeFitter>
+        Scrollbar Vertical  <CanvasRenderer, Image, Scrollbar>
+          Sliding Area
+            Handle  <CanvasRenderer, Image>
+  Speed Control Button  <CanvasRenderer, Image, Button, GameSpeedButton>
+    Speed Up  <CanvasRenderer, TextMeshProUGUI>
+WaterRoom_4x2x6_Grade1  [PREFAB: WaterRoom_4x2x6_Grade1]  <WaterRoom, BoxCollider, RoomUpgradeClickHandler, RoomClickHandler, RoomLightFlicker>
+  Point Light (1)  <Light, UniversalAdditionalLightData>
+  Point Light (2)  <Light, UniversalAdditionalLightData>
+  Box_016 (1)  <MeshFilter, MeshRenderer>
+  Box_016  <MeshFilter, MeshRenderer>
+  PowerWarning  [INACTIVE]  <SpriteRenderer>
+  LeftDoorFrame  [INACTIVE]
+    LeftFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  RightDoorFrame  [INACTIVE]
+    RightFramePart1  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart2  <MeshFilter, MeshRenderer, BoxCollider>
+    RightFramePart3  <MeshFilter, MeshRenderer, BoxCollider>
+  PottingSpot_01  <RoomSpot>
+  PottingSpot_02  <RoomSpot>
+  PottingSpot_03  <RoomSpot>
+    PottingSpot_03_WanderLocation_01
+    PottingSpot_03_WanderLocation_02
+    PottingSpot_03_WanderLocation_03
+  StairsPath_01  <RoomSpot>
+  StairsPath_02  <RoomSpot>
+  StairsPath_03  <RoomSpot>
+  CombatSpot_01  <RoomSpot>
+  CombatSpot_02  <RoomSpot>
+  CombatSpot_03  <RoomSpot>
+  DrinkingSpot_01  <RoomSpot>
+  DrinkingSpot_02  <RoomSpot>
+  EnemySpot_01  <RoomSpot>
+  EnemySpot_02  <RoomSpot>
+  EnemySpot_03  <RoomSpot>
+  DefaultRoom_3x4x6  <RoomBase, BoxCollider, RoomUpgradeClickHandler, RoomClickHandler>
+    LeftWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    LeftWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    BackWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    BackWall_Lower  <MeshFilter, MeshRenderer, BoxCollider>
+    Ceiling  <MeshFilter, MeshRenderer, BoxCollider>
+    Floor  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Upper  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Big  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Lower_Small  <MeshFilter, MeshRenderer, BoxCollider>
+    RightWall_Filler  <MeshFilter, BoxCollider, MeshRenderer>
+    LeftEntrance
+    MIddleLeft
+    RightEntrance
+    MiddleRight
+  Furniture
+    Cube  <MeshFilter, MeshRenderer, BoxCollider>
+    Cube (1)  <MeshFilter, MeshRenderer, BoxCollider>
+    Fence_type_A_003  <MeshFilter, MeshRenderer>
+    Fence_type_A_003 (1)  <MeshFilter, MeshRenderer>
+    Fence_type_A_003 (2)  <MeshFilter, MeshRenderer>
+    Stairs_011  <MeshFilter, MeshRenderer>
+    Gas_cistern_type_A_001  <MeshFilter, MeshRenderer>
+    Gas_cistern_type_B_001  <MeshFilter, MeshRenderer>
+  New Mesh  <MeshFilter, MeshRenderer>
+  New Mesh (1)  <MeshFilter, MeshRenderer>
+  New Mesh (2)  <MeshFilter, MeshRenderer>
+  Pipe_005  <MeshFilter, MeshRenderer>
+  Pipe_002  <MeshFilter, MeshRenderer>
+  Pipe_002 (1)  <MeshFilter, MeshRenderer>
+  Pipe_002 (2)  <MeshFilter, MeshRenderer>
+  Pipe_008  <MeshFilter, MeshRenderer>
+  Pipe_007  <MeshFilter, MeshRenderer>
+  Ventilation_002  <MeshFilter, MeshRenderer>
+  Ventilation_002 (2)  <MeshFilter, MeshRenderer>
+  Ventilation_002 (3)  <MeshFilter, MeshRenderer>
+  Ventilation_002 (1)  <MeshFilter, MeshRenderer>
+  Pipe_002 (3)  <MeshFilter, MeshRenderer>
+  Pipe_002 (4)  <MeshFilter, MeshRenderer>
+  Pipe_007 (2)  <MeshFilter, MeshRenderer>
+  Pipe_007 (1)  <MeshFilter, MeshRenderer>
+Wild Bunny Names  <WildBunnyNames>
+Wild Bunny Spawner  <WildBunnySpawner>
+============================================================
+Total GameObjects: 958
