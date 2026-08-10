@@ -43,6 +43,32 @@ public class BunnyTraitCatalog : MonoBehaviour
         return chosen;
     }
 
+    // Used by Neutral's "Adaptable" passive (NPCBunny.TryRerollTrait, see BunnyTypeSystem_DesignDoc.md) —
+    // rolls exactly ONE replacement trait for a bunny discarding `discarded` while keeping `keptTraits`,
+    // enforcing the same incompatibility rule RollTraits already does. Excludes `discarded` itself from the
+    // candidate pool so a spent cooldown can never roll back into the same trait it just gave up. Returns
+    // null only if no valid replacement exists (empty catalog, or every remaining candidate conflicts with
+    // something kept) — same graceful-degradation contract as RollTraits/RollInheritedTrait; the caller
+    // treats null as "nothing happened," not an error.
+    public BunnyTraitDefinition RollReplacementTrait(BunnyTraitDefinition discarded, List<BunnyTraitDefinition> keptTraits)
+    {
+        List<BunnyTraitDefinition> pool = new List<BunnyTraitDefinition>(traits);
+        if (discarded != null) pool.RemoveAll(t => t.id == discarded.id);
+
+        while (pool.Count > 0)
+        {
+            int i = Random.Range(0, pool.Count);
+            BunnyTraitDefinition candidate = pool[i];
+            pool.RemoveAt(i);
+
+            bool conflicts = keptTraits != null && keptTraits.Exists(k =>
+                k.incompatibleTraitIds.Contains(candidate.id) || candidate.incompatibleTraitIds.Contains(k.id));
+
+            if (!conflicts) return candidate;
+        }
+        return null;
+    }
+
     // A kid bunny's single trait: 20% chance drawn uniformly from mom's own traits, 20% from dad's, 60%
     // (or whenever the rolled-favorite parent has no traits of their own to draw from) fully random from
     // the whole catalog via RollTraits(1) — see decision #4 in the Breeding System plan. Called once per

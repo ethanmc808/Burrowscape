@@ -70,12 +70,14 @@ public static class BunnyStatCalculator
     }
 }
 
-// Pure function of (type, level) — every passive on the type definition whose unlockLevel <= level.
-// Passives are data tags only right now (no effect/behavior hook exists yet — see the design doc).
+// Pure function of (type, level) — every passive on the type definition whose unlockLevel <= level AND
+// whose discovered flag is true (see BunnyPassiveDefinition.discovered) — an undiscovered passive (e.g.
+// Neutral's Adaptable before Ghost unlocks it) never shows up in ActivePassives regardless of level, so
+// it can't appear in BunnyInfoUI's passive list or be treated as active by anything reading this result.
 public static class BunnyPassiveResolver
 {
     public static List<BunnyPassiveDefinition> ResolvePassives(BunnyTypeDefinition def, int level)
     {
-        return def.passives.Where(p => p.unlockLevel <= level).ToList();
+        return def.passives.Where(p => p.discovered && p.unlockLevel <= level).ToList();
     }
 }

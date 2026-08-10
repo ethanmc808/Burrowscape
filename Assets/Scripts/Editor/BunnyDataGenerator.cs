@@ -42,7 +42,12 @@ public static class BunnyDataGenerator
     // number here is a placeholder per the user — expect retuning once Group 1 is playtested.
     private static readonly SeedData[] Seeds =
     {
-        new SeedData(BunnyType.Neutral, 1, 0,   70, 70, 70, 70, 20),
+        // 80/80/80/80/80 (400 total) — buffed from the original 70/70/70/70/20 (300, lowest in the
+        // roster) per BunnyTypeSystem_DesignDoc.md's 2026-08-10 update, so Neutral.asset is worth
+        // optimizing via its "Adaptable" trait-reroll passive. This generator never overwrites an
+        // already-tuned asset (Neutral.asset already reflects this), so the value here only matters if
+        // Neutral.asset is ever deleted and regenerated from scratch.
+        new SeedData(BunnyType.Neutral, 1, 0,   80, 80, 80, 80, 80),
         new SeedData(BunnyType.Fire,    1, 0,   70, 130, 70, 100, 70),
         new SeedData(BunnyType.Water,   1, 0,   100, 80, 80, 60, 30),
         new SeedData(BunnyType.Plant,   1, 0,   130, 70, 80, 50, 20),

@@ -56,10 +56,16 @@ public class BunnyTypeDefinition : ScriptableObject
 // NPCBunny.GetPassiveHPRegenMultiplier. Deliberately separate from TraitEffectType/BunnyTraitDefinition:
 // a Passive is universal to every bunny of a given TYPE (authored here, on BunnyTypeDefinition), whereas
 // a Trait is a per-individual roll. Add new cases here as more passives get built.
+//
+// TraitReroll (Neutral's "Adaptable", see NPCBunny.TryRerollTrait/CanRerollTrait) is the second entry and
+// doesn't fit the "read effectMultiplier as a stat multiplier" shape HPRegenMultiplier uses — it grants an
+// activatable ability with a cooldown instead of a passive stat effect, hence BunnyPassiveDefinition's
+// separate abilityCooldownSeconds field below rather than overloading effectMultiplier's meaning.
 public enum PassiveEffectType
 {
     None,
     HPRegenMultiplier,
+    TraitReroll,
 }
 
 [System.Serializable]
@@ -71,4 +77,8 @@ public class BunnyPassiveDefinition
     public int unlockLevel = 1;
     public PassiveEffectType effectType;
     public float effectMultiplier = 1f;
+    [Tooltip("Only used when effectType == TraitReroll — how long after use before the ability is available again. Placeholder value, needs playtesting.")]
+    public float abilityCooldownSeconds = 1f;
+    [Tooltip("Whether this passive has actually been unlocked yet. Defaults to true so every passive authored before this field existed (e.g. Plant's Regrowth) keeps working unchanged — set explicitly to false for passives that are meant to be dormant until some other system unlocks them (e.g. Neutral's Adaptable, gated behind Ghost's Ancient Knowledge / Shrine Room — see BunnyTypeNiches_DesignDoc.md — which doesn't exist in code yet, so this has no unlock path today beyond hand-flipping it in the Inspector). Checked by both BunnyPassiveResolver.ResolvePassives and any live read like GetPassiveHPRegenMultiplier/GetAdaptablePassive, so an undiscovered passive never shows up as active anywhere.")]
+    public bool discovered = true;
 }

@@ -153,6 +153,11 @@ public class NPCBunny : MonoBehaviour, ICombatant
     [SerializeField] private float hpPassiveRegenPercentPerSecond = 0.005f;
     private float hpRegenRemainder; // fractional carry-over so a slow regen rate isn't rounded away to 0 every frame
 
+    // Neutral-only "Adaptable" passive cooldown (see TryRerollTrait/CanRerollTrait below) — plain runtime
+    // state, not save-persisted, same as attackCooldownRemaining elsewhere in this class; resets to 0 on
+    // load rather than carrying across a save, which is an accepted simplification here too.
+    private float traitRerollCooldownRemaining;
+
     // ---------- Breeding (see the Breeding System plan doc) ----------
     // Plain fields directly on NPCBunny, not a StatusEffectController-style add-on component — pregnancy
     // is bunny-specific and isn't a combat stat modifier "consulted at point of use," it's a boolean
@@ -679,6 +684,9 @@ public class NPCBunny : MonoBehaviour, ICombatant
         // approved.
         if (HasEnteredBase)
         {
+            if (traitRerollCooldownRemaining > 0f)
+                traitRerollCooldownRemaining = Mathf.Max(0f, traitRerollCooldownRemaining - Time.deltaTime);
+
             // Hunger/Thirst/Mood are entirely frozen for the whole length of a Foraging trip (both the
             // active phase and the return countdown) — see Foraging_DesignDoc.md's "Other needs while
             // foraging" section. Only Energy is affected by Foraging, and even that stops decaying
@@ -1687,10 +1695,75 @@ public class NPCBunny : MonoBehaviour, ICombatant
         foreach (BunnyPassiveDefinition passive in typeDefinition.passives)
         {
             if (passive == null || passive.effectType != PassiveEffectType.HPRegenMultiplier) continue;
+            if (!passive.discovered) continue;
             if (Level < passive.unlockLevel) continue;
             multiplier *= passive.effectMultiplier;
         }
         return multiplier;
+    }
+
+    // Neutral-only "Adaptable" passive (BunnyTypeSystem_DesignDoc.md / BunnyTypeNiches_DesignDoc.md) — the
+    // player picks which of this bunny's current traits to discard; the replacement rolls randomly via
+    // BunnyTraitCatalog.RollReplacementTrait. Live-checked against typeDefinition.passives on every call,
+    // same idiom as GetPassiveHPRegenMultiplier above, rather than baked into ActivePassives at spawn — so
+    // a bunny that already exists when Ghost later discovers this passive gains access immediately, with
+    // no re-resolve needed.
+    //
+    // discovered defaults to false in the Neutral.asset entry today — this ability is authored and fully
+    // functional in code, but stays dormant in actual play until something flips that flag to true.
+    // Nothing does that yet: Ghost's Shrine Room / Ancient Knowledge system (see BunnyTypeNiches_DesignDoc.md)
+    // is still design-only, so for now the only way to turn it on is hand-editing the Inspector value.
+    private BunnyPassiveDefinition GetAdaptablePassive()
+    {
+        if (typeDefinition == null || typeDefinition.passives == null) return null;
+
+        foreach (BunnyPassiveDefinition passive in typeDefinition.passives)
+        {
+            if (passive == null || passive.effectType != PassiveEffectType.TraitReroll) continue;
+            if (!passive.discovered) continue;
+            if (Level < passive.unlockLevel) continue;
+            return passive;
+        }
+        return null;
+    }
+
+    // Whether this bunny has Adaptable at all (Neutral type AND the passive discovered), independent of
+    // cooldown — BunnyInfoUI reads this to decide whether to show the Adaptable block in the first place;
+    // the block stays visible on cooldown (showing a countdown), it just disables the button itself. See
+    // CanRerollTrait below for the cooldown-inclusive check used to actually gate the ability.
+    public bool HasAdaptablePassive => GetAdaptablePassive() != null;
+
+    // Whether this bunny could use Adaptable right now — Neutral only, not on cooldown, and the passive
+    // actually discovered (see GetAdaptablePassive). BunnyInfoUI reads this to decide whether the Reroll
+    // Trait button itself is interactable (see BunnyTypeNiches_DesignDoc.md's UI section).
+    public bool CanRerollTrait()
+    {
+        if (Type != BunnyType.Neutral) return false;
+        if (traitRerollCooldownRemaining > 0f) return false;
+        return GetAdaptablePassive() != null;
+    }
+
+    public float TraitRerollCooldownRemaining => traitRerollCooldownRemaining;
+
+    // The player chooses traitToDiscard (not random) — the replacement rolls randomly, excluding the
+    // discarded trait itself and anything incompatible with what's kept, same rules RollTraits already
+    // enforces (see BunnyTraitCatalog.RollReplacementTrait). Returns false (a complete no-op — no cooldown
+    // spent, no trait touched) if any precondition fails, so a failed attempt never costs the player
+    // anything, including the rare case where the catalog has no valid replacement left to offer.
+    public bool TryRerollTrait(BunnyTraitDefinition traitToDiscard)
+    {
+        if (!CanRerollTrait()) return false;
+        if (traitToDiscard == null || !Traits.Contains(traitToDiscard)) return false;
+        if (BunnyTraitCatalog.Instance == null) return false;
+
+        List<BunnyTraitDefinition> keptTraits = Traits.Where(t => t != traitToDiscard).ToList();
+        BunnyTraitDefinition replacement = BunnyTraitCatalog.Instance.RollReplacementTrait(traitToDiscard, keptTraits);
+        if (replacement == null) return false;
+
+        List<BunnyTraitDefinition> newTraits = new List<BunnyTraitDefinition>(keptTraits) { replacement };
+        Traits = newTraits;
+        traitRerollCooldownRemaining = GetAdaptablePassive().abilityCooldownSeconds;
+        return true;
     }
 
     // Called by ForagingManager's placeholder encounter resolver on a loss. Floored at 1, never 0 — see

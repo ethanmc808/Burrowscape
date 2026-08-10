@@ -11,8 +11,9 @@ or an entirely new system. The throughline across this pass: prefer active, enga
 passive bonuses where possible, and reuse existing systems/patterns wherever a niche can be built cheaply
 on top of something that already exists.
 
-This doc is the master record of that design pass. **Nothing described below has been implemented yet**
-— every row is a design decision or open question, not a shipped feature. Follow-up docs will flesh out
+This doc is the master record of that design pass. **Update (2026-08-10): Neutral's "Adaptable" is the
+first entry actually implemented** (see its section below for the file list) — everything else described
+below is still design-only, not a shipped feature. Follow-up docs will flesh out
 each system one at a time, implementation-ready, before it's actually built (see "Next steps" at the
 bottom).
 
@@ -30,7 +31,7 @@ bottom).
 
 | Group (unlock pop.) | Type | Niche | Status |
 |---|---|---|---|
-| 1 (0) | Neutral | "Adaptable" — only Neutral bunnies can re-roll one of their own traits (long per-bunny cooldown); a Passive, dormant until unlocked via Ghost's Ancient Knowledge; needs its own dedicated `BunnyInfoUI` element | **Locked** |
+| 1 (0) | Neutral | "Adaptable" — only Neutral bunnies can re-roll one of their own traits (long per-bunny cooldown); a Passive, dormant until unlocked via Ghost's Ancient Knowledge; has its own dedicated `BunnyInfoUI` element | **Implemented** (dormant — see below) |
 | 1 (0) | Water | Water Room — production bonus (`recommendedTypes`) | **Live in code** |
 | 1 (0) | Fire | Kitchen — bonus TBD | Decided, needs a mechanic |
 | 1 (0) | Plant | Garden Room — production bonus (`recommendedTypes`); also the only type with a real Passive today (Regrowth) | **Live in code** |
@@ -114,8 +115,39 @@ Proposed shape for the new block, modeled on those two: visible only when the in
 **and** has Adaptable in `ActivePassives` (i.e., Ghost has already unlocked it); contents are a cooldown
 readout (ready vs. time remaining), a "Reroll Trait" button (disabled while on cooldown), and a trait-picker
 step that reuses the bunny's current trait data (the same data `traitListContainer` already displays) but
-made selectable, since the player chooses which current trait goes. Exact layout/prefab wiring is left for
-the future implementation-ready doc, consistent with how the rest of this doc treats undesigned mechanics.
+made selectable, since the player chooses which current trait goes.
+
+**Update (2026-08-10): implemented.** All of the above is now real code:
+- `BunnyTypeDefinition.cs` — new `PassiveEffectType.TraitReroll` case, and two new `BunnyPassiveDefinition`
+  fields: `abilityCooldownSeconds` (cooldown length) and `discovered` (the Ghost-unlock gate, defaults
+  `true` so every passive authored before this field existed, i.e. Plant's Regrowth, keeps working
+  unchanged with no edit needed — only Adaptable's own entry explicitly sets it `false`).
+- `BunnyStats.cs` (`BunnyPassiveResolver.ResolvePassives`) and `NPCBunny.GetPassiveHPRegenMultiplier` both
+  now also check `discovered`, so an undiscovered passive can never appear as active anywhere, including
+  the plain-text Passives list.
+- `Neutral.asset` — the actual "Adaptable" entry, `discovered: false`. **Dormant in-game today**: nothing
+  exists yet to flip that flag (Ghost's Shrine Room/Ancient Knowledge is still design-only), so the only
+  way to turn it on right now is hand-editing the Inspector checkbox. That's expected, not a bug — same
+  "ahead of its dependency" scaffolding this codebase already does elsewhere (e.g. `AddExperience`/
+  `LevelUp` before an XP curve existed).
+- `BunnyTraitCatalog.cs` — new `RollReplacementTrait(discarded, keptTraits)`, mirroring `RollTraits`'
+  incompatibility-check loop exactly, scoped to "replace one entry" instead of "roll a fresh set."
+- `NPCBunny.cs` — `CanRerollTrait()`/`HasAdaptablePassive` (live-read against `typeDefinition.passives`,
+  same idiom as `GetPassiveHPRegenMultiplier`, not baked into `ActivePassives` at spawn) and
+  `TryRerollTrait(traitToDiscard)`, which validates, rolls the replacement, and starts the cooldown. A
+  failed attempt (bad precondition, or no valid replacement left in the pool) is a complete no-op — no
+  cooldown spent, no trait touched.
+- `BunnyInfoUI.cs` + new `TraitRerollRowUI.cs` — the dedicated block: an `adaptableRoot` shown whenever
+  `HasAdaptablePassive` is true (visible even on cooldown, showing a countdown; only the button itself
+  disables), a "Reroll Trait" button opening a `traitPickerRoot` list (one row per current trait, click to
+  discard-and-reroll that one, no separate confirm step — simpler than Fruit Feeding's list→detail flow
+  since there's no extra per-row info worth a detail panel here).
+- **Not done, and can't be from code**: the actual Unity-side wiring — creating the button/text/row-prefab
+  UI elements in the `BunnyInfoUI` prefab and dragging them into the new Inspector fields
+  (`adaptableRoot`/`rerollTraitButton`/`adaptableCooldownText`/`traitPickerRoot`/`traitPickerListContainer`/
+  `traitPickerRowPrefab`), and the `Neutral.asset` seed row in `Editor/BunnyDataGenerator.cs` was also
+  updated to 80/80/80/80/80 for consistency (harmless — the generator never overwrites an already-tuned
+  asset, so this only matters if `Neutral.asset` is ever deleted and regenerated).
 
 ### Fire — Kitchen (Decided, needs a mechanic)
 

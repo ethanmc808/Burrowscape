@@ -103,6 +103,19 @@ public class BunnyInfoUI : MonoBehaviour
     [Tooltip("Horizontal gap (pixels) between the clicked fruit row's right edge and FruitDetail's own anchor point (its left-middle). NOT the same as the visible gap to the Eat Fruit/Back buttons — those sit at their own local offset INSIDE FruitDetail (whatever you positioned them at in the Editor), so this value also has to cancel that out. If you ever move the buttons within FruitDetail, retune this to match.")]
     [SerializeField] private float fruitDetailHorizontalOffset = -150f;
 
+    [Header("Adaptable — Neutral-only trait re-roll (see BunnyTypeNiches_DesignDoc.md)")]
+    [Tooltip("The whole block, including the button below — shown only while currentBunny.HasAdaptablePassive is true (Neutral type AND Ghost has discovered this passive). Stays visible while on cooldown; only the button itself becomes non-interactable then.")]
+    [SerializeField] private GameObject adaptableRoot;
+    [Tooltip("Opens traitPickerRoot. Non-interactable while currentBunny.CanRerollTrait() is false (on cooldown).")]
+    [SerializeField] private Button rerollTraitButton;
+    [Tooltip("Ready when not on cooldown; a countdown otherwise. Optional — skipped if not wired.")]
+    [SerializeField] private TextMeshProUGUI adaptableCooldownText;
+    [Tooltip("List step — one row per entry in currentBunny.Traits, rebuilt every time it opens. Clicking a row immediately calls TryRerollTrait for that trait (no separate confirm step, unlike Fruit Feeding's list->detail flow — trait re-roll has no extra info to show per row worth a detail panel).")]
+    [SerializeField] private GameObject traitPickerRoot;
+    [SerializeField] private Transform traitPickerListContainer;
+    [Tooltip("Row prefab needs a TraitRerollRowUI component (nameText + button) — see that file.")]
+    [SerializeField] private GameObject traitPickerRowPrefab;
+
     private ForagingFruitDefinition selectedFruit;
     private RectTransform fruitDetailRect;
 
@@ -153,6 +166,11 @@ public class BunnyInfoUI : MonoBehaviour
             fruitDetailRoot.SetActive(false);
             fruitDetailRect = fruitDetailRoot.GetComponent<RectTransform>();
         }
+
+        if (rerollTraitButton != null)
+            rerollTraitButton.onClick.AddListener(ToggleTraitPicker);
+        if (traitPickerRoot != null)
+            traitPickerRoot.SetActive(false);
     }
 
     private void Update()
@@ -178,6 +196,7 @@ public class BunnyInfoUI : MonoBehaviour
         RefreshPotionButton();
         RefreshAccessorySlot();
         RefreshFeedFruitButton();
+        RefreshAdaptableBlock();
     }
 
     public void OpenForBunny(NPCBunny bunny)
@@ -220,6 +239,8 @@ public class BunnyInfoUI : MonoBehaviour
         if (fruitDetailRoot != null) fruitDetailRoot.SetActive(false);
         selectedFruit = null;
         RefreshFeedFruitButton();
+        if (traitPickerRoot != null) traitPickerRoot.SetActive(false);
+        RefreshAdaptableBlock();
     }
 
     public void Close() => Close(true);
@@ -236,6 +257,7 @@ public class BunnyInfoUI : MonoBehaviour
         if (fruitPickerRoot != null) fruitPickerRoot.SetActive(false);
         if (fruitDetailRoot != null) fruitDetailRoot.SetActive(false);
         selectedFruit = null;
+        if (traitPickerRoot != null) traitPickerRoot.SetActive(false);
     }
 
     private void RefreshBars()
@@ -485,6 +507,92 @@ public class BunnyInfoUI : MonoBehaviour
         // Back to the list (refreshed — stock/greying may have changed), not closing the whole picker,
         // so the player can immediately feed another fruit.
         ShowFruitList();
+    }
+
+    // Re-checked every frame (like everything else in Update()) rather than only on Open, so the block
+    // appears immediately if Ghost discovers Adaptable while this panel happens to be open on a Neutral
+    // bunny, and so the cooldown countdown/button interactability stay live without needing their own timer.
+    private void RefreshAdaptableBlock()
+    {
+        if (adaptableRoot == null || currentBunny == null) return;
+
+        bool hasPassive = currentBunny.HasAdaptablePassive;
+        adaptableRoot.SetActive(hasPassive);
+        if (!hasPassive)
+        {
+            if (traitPickerRoot != null) traitPickerRoot.SetActive(false);
+            return;
+        }
+
+        bool canUse = currentBunny.CanRerollTrait();
+        if (rerollTraitButton != null) rerollTraitButton.interactable = canUse;
+        if (adaptableCooldownText != null)
+            adaptableCooldownText.text = canUse ? "Ready" : FormatCooldown(currentBunny.TraitRerollCooldownRemaining);
+    }
+
+    private static string FormatCooldown(float seconds)
+    {
+        System.TimeSpan span = System.TimeSpan.FromSeconds(Mathf.Max(0f, seconds));
+        return span.TotalHours >= 1
+            ? $"{(int)span.TotalHours}h {span.Minutes}m"
+            : $"{span.Minutes}m {span.Seconds}s";
+    }
+
+    private void ToggleTraitPicker()
+    {
+        if (traitPickerRoot == null || currentBunny == null || !currentBunny.CanRerollTrait()) return;
+
+        bool opening = !traitPickerRoot.activeSelf;
+        // Only one picker open at a time — same rule ToggleFruitPicker/ToggleAccessoryPicker follow.
+        if (opening)
+        {
+            if (accessoryPickerRoot != null) accessoryPickerRoot.SetActive(false);
+            if (fruitPickerRoot != null) fruitPickerRoot.SetActive(false);
+        }
+        traitPickerRoot.SetActive(opening);
+        if (opening) RefreshTraitPickerList();
+    }
+
+    private void RefreshTraitPickerList()
+    {
+        if (traitPickerListContainer == null || traitPickerRowPrefab == null || currentBunny == null) return;
+
+        foreach (Transform child in traitPickerListContainer)
+            Destroy(child.gameObject);
+
+        // One row per CURRENT trait — clicking a row discards that specific trait and rolls a random
+        // replacement (see NPCBunny.TryRerollTrait). No greying-out logic needed here (unlike
+        // RefreshFruitPickerList's EV check) — every current trait is always a valid thing to discard.
+        foreach (BunnyTraitDefinition trait in currentBunny.Traits)
+        {
+            GameObject rowObj = Instantiate(traitPickerRowPrefab, traitPickerListContainer);
+
+            TraitRerollRowUI row = rowObj.GetComponent<TraitRerollRowUI>();
+            if (row == null)
+            {
+                Debug.LogWarning("BunnyInfoUI: traitPickerRowPrefab needs a TraitRerollRowUI component with nameText/button wired in the Inspector.");
+                continue;
+            }
+
+            if (row.nameText != null) row.nameText.text = trait.displayName;
+            if (row.button != null)
+                row.button.onClick.AddListener(() => OnTraitSelectedForReroll(trait));
+        }
+    }
+
+    private void OnTraitSelectedForReroll(BunnyTraitDefinition traitToDiscard)
+    {
+        if (currentBunny == null) return;
+
+        bool succeeded = currentBunny.TryRerollTrait(traitToDiscard);
+        if (!succeeded) return; // no-op — precondition failed or no valid replacement was available
+
+        // Refresh the read-only Traits list at the top of the panel too, not just this picker — the
+        // bunny's actual trait set just changed.
+        PopulateList(traitListContainer, currentBunny.Traits, t => t.displayName);
+
+        if (traitPickerRoot != null) traitPickerRoot.SetActive(false);
+        RefreshAdaptableBlock();
     }
 
     // Green "+" for the stat Nature boosts, red "-" for the one it lowers, plain number otherwise --
