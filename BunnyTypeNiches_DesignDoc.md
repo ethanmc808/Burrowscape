@@ -30,7 +30,7 @@ bottom).
 
 | Group (unlock pop.) | Type | Niche | Status |
 |---|---|---|---|
-| 1 (0) | Neutral | Only Neutral bunnies can re-roll one of their own traits (long per-bunny cooldown) — a Passive, so dormant until unlocked via Ghost's Ancient Knowledge | **Locked** |
+| 1 (0) | Neutral | "Adaptable" — only Neutral bunnies can re-roll one of their own traits (long per-bunny cooldown); a Passive, dormant until unlocked via Ghost's Ancient Knowledge; needs its own dedicated `BunnyInfoUI` element | **Locked** |
 | 1 (0) | Water | Water Room — production bonus (`recommendedTypes`) | **Live in code** |
 | 1 (0) | Fire | Kitchen — bonus TBD | Decided, needs a mechanic |
 | 1 (0) | Plant | Garden Room — production bonus (`recommendedTypes`); also the only type with a real Passive today (Regrowth) | **Live in code** |
@@ -53,7 +53,7 @@ bottom).
 
 ## Per-type detail
 
-### Neutral — self-only trait re-roll (Locked)
+### Neutral — "Adaptable" self-only trait re-roll (Locked)
 
 No room tie-in at all, deliberately — Neutral having no elemental identity is *why* it's the one type
 that can reshape identity. Only a Neutral bunny can re-roll one of its own current traits, on a long
@@ -89,6 +89,33 @@ Once discovered, the ability itself still works as designed:
 - Bonus payoff, not designed together but composes for free: once Ghost's Ancient Knowledge starts
   unlocking the 16 currently-dormant trait names into the shared pool over time, Neutral's re-roll gets
   more interesting for free (bigger pool, better odds of landing something worth having).
+
+**Update (2026-08-10): named "Adaptable," and it needs its own `BunnyInfoUI` element.** Naming it makes
+this the passive's actual identifier everywhere it's referenced (this section, the master table, and the
+Ghost section's cross-reference to it as the first named example of a Ghost-unlocked Passive).
+
+It also can't just ride the existing generic Passives display. `BunnyInfoUI.cs` currently shows every
+Passive as a flat name only — `PopulateList(passiveListContainer, bunny.ActivePassives, p =>
+p.displayName)`, the same mechanism Traits use. That's fine for a background stat multiplier like Plant's
+Regrowth (nothing to click), but Adaptable is a player-triggered ability with a cooldown and a "pick which
+current trait to discard" step, so it needs real interactive UI — Adaptable would still also appear as a
+plain name in the shared list like any other passive, but that's not where the player actually *uses* it.
+
+`BunnyInfoUI.cs` already has two precedents for exactly this shape of addition — a self-contained,
+conditionally-visible control block inside the same panel, rather than a new separate panel:
+- **Approval Controls** (`approveButton`/`rejectButton`, shown only while `bunny.IsAwaitingApproval`) — the
+  precedent for "a block that only appears under a specific bunny condition."
+- **Foraging Fruit Feeding** (`feedFruitButton` → a detail panel with `fruitDetailIcon`/
+  `fruitDetailNameText`/`fruitDetailStatText` → `eatFruitButton`/`fruitDetailBackButton`) — the precedent
+  for "a multi-step trigger → select → confirm flow" inside the panel, which Adaptable also needs (trigger
+  → pick a trait to discard → confirm).
+
+Proposed shape for the new block, modeled on those two: visible only when the inspected bunny is Neutral
+**and** has Adaptable in `ActivePassives` (i.e., Ghost has already unlocked it); contents are a cooldown
+readout (ready vs. time remaining), a "Reroll Trait" button (disabled while on cooldown), and a trait-picker
+step that reuses the bunny's current trait data (the same data `traitListContainer` already displays) but
+made selectable, since the player chooses which current trait goes. Exact layout/prefab wiring is left for
+the future implementation-ready doc, consistent with how the rest of this doc treats undesigned mechanics.
 
 ### Fire — Kitchen (Decided, needs a mechanic)
 
@@ -233,9 +260,9 @@ only matters in hard mode:
   becomes the mechanism that fleshes out every other type's Passives over time, one entry at a time, at
   **escalating cost per unlock** — cheap and impactful early, tapering off, so it can't compound into
   infinite value from stacking Ghosts forever. Optional secondary brake: diminishing returns on multiple
-  Ghosts communing simultaneously, same curve family as Work Rooms. Neutral's trait re-roll (see above) is
-  the first concrete, named example of a Passive this system unlocks — every other type's eventual Passive
-  works the same way, just with effects still to be designed.
+  Ghosts communing simultaneously, same curve family as Work Rooms. Neutral's "Adaptable" trait re-roll
+  (see above) is the first concrete, named example of a Passive this system unlocks — every other type's
+  eventual Passive works the same way, just with effects still to be designed.
 - Optional flavor, not load-bearing: Commune could occasionally surface a lore fragment (backstory on the
   world/Fox King) as a bonus roll.
 - **Open**: trickle production (steady per-second while staffed, simplest, matches every other Work Room)
