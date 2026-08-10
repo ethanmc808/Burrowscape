@@ -15,6 +15,7 @@ MonoBehaviour:
   type: 0
   displayName: Neutral
   icon: {fileID: 21300000, guid: 480d3c6ec893626429821f75d806cc1a, type: 3}
+  eggSprite: {fileID: 0}
   prefab: {fileID: 5601990158651218953, guid: 4d1f8847fcaad46499f85679d17231d3, type: 3}
   baseHP: 80
   baseAttack: 80
@@ -25,16 +26,17 @@ MonoBehaviour:
   isMelee: 1
   attackVFXPrefab: {fileID: 7391025816263471001, guid: b5f43d98e236df24184eb89b0c21239c, type: 3}
   attackIntervalSeconds: 1
+  attackBasePower: 20
   group: 1
   populationThreshold: 0
   passives:
   - id: adaptable
     displayName: Adaptable
-    description: 'Pick one of this bunny''s current traits to discard; a new one rolls in its place. Long
-      cooldown. Only Neutral bunnies have this, and only once a Ghost bunny has spent Ancient Knowledge to
-      unlock it.'
+    description: Pick one of this bunny's current traits to discard; a new one rolls
+      in its place. Long cooldown. Only Neutral bunnies have this, and only once
+      a Ghost bunny has spent Ancient Knowledge to unlock it.
     unlockLevel: 1
     effectType: 2
     effectMultiplier: 1
-    abilityCooldownSeconds: 86400
-    discovered: 0
+    abilityCooldownSeconds: 5
+    discovered: 1

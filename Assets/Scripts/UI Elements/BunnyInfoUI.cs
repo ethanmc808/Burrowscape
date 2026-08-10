@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 
 // Replaces BunnyApprovalUI (Gate & Queue Scripts) + BunnyStatsUI (UI Elements) with one shared panel —
@@ -197,6 +198,37 @@ public class BunnyInfoUI : MonoBehaviour
         RefreshAccessorySlot();
         RefreshFeedFruitButton();
         RefreshAdaptableBlock();
+
+        // TEMP debug logging — remove once the "click does nothing" bug is confirmed fixed. Logs every UI
+        // element under the cursor, front-to-back, on any left click while this panel is open — to catch
+        // an invisible raycast-blocking element sitting on top of the Reroll Trait button.
+        if (Input.GetMouseButtonDown(0) && EventSystem.current != null)
+        {
+            PointerEventData ped = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
+            List<RaycastResult> hits = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(ped, hits);
+            if (hits.Count == 0)
+            {
+                Debug.Log("[TraitReroll] Click raycast: NOTHING hit (no UI element under cursor).");
+            }
+            else
+            {
+                string report = string.Join(" | ", hits.Select(h => GetHierarchyPath(h.gameObject.transform)));
+                Debug.Log($"[TraitReroll] Click raycast hits (front-to-back): {report}");
+            }
+        }
+    }
+
+    // TEMP debug helper — remove alongside the raycast logging above.
+    private static string GetHierarchyPath(Transform t)
+    {
+        string path = t.name;
+        while (t.parent != null)
+        {
+            t = t.parent;
+            path = t.name + "/" + path;
+        }
+        return path;
     }
 
     public void OpenForBunny(NPCBunny bunny)
@@ -528,6 +560,11 @@ public class BunnyInfoUI : MonoBehaviour
         if (rerollTraitButton != null) rerollTraitButton.interactable = canUse;
         if (adaptableCooldownText != null)
             adaptableCooldownText.text = canUse ? "Ready" : FormatCooldown(currentBunny.TraitRerollCooldownRemaining);
+
+        // TEMP debug logging — remove once the "click does nothing" bug is confirmed fixed. Throttled to
+        // once/sec since this runs every Update() frame while the panel is open.
+        if (Time.frameCount % 60 == 0)
+            Debug.Log($"[TraitReroll] RefreshAdaptableBlock: Type={currentBunny.Type}, canUse={canUse}, cooldownRemaining={currentBunny.TraitRerollCooldownRemaining}, button.interactable={(rerollTraitButton != null ? rerollTraitButton.interactable : (bool?)null)}, button.raycastTarget-ish enabled={(rerollTraitButton != null ? rerollTraitButton.enabled : (bool?)null)}, buttonGO.activeInHierarchy={(rerollTraitButton != null ? rerollTraitButton.gameObject.activeInHierarchy : (bool?)null)}");
     }
 
     private static string FormatCooldown(float seconds)
@@ -540,6 +577,8 @@ public class BunnyInfoUI : MonoBehaviour
 
     private void ToggleTraitPicker()
     {
+        // TEMP debug logging — remove once the "click does nothing" bug is confirmed fixed.
+        Debug.Log($"[TraitReroll] ToggleTraitPicker called. traitPickerRoot={(traitPickerRoot != null)}, currentBunny={(currentBunny != null)}, CanRerollTrait={(currentBunny != null && currentBunny.CanRerollTrait())}");
         if (traitPickerRoot == null || currentBunny == null || !currentBunny.CanRerollTrait()) return;
 
         bool opening = !traitPickerRoot.activeSelf;
@@ -550,12 +589,16 @@ public class BunnyInfoUI : MonoBehaviour
             if (fruitPickerRoot != null) fruitPickerRoot.SetActive(false);
         }
         traitPickerRoot.SetActive(opening);
+        Debug.Log($"[TraitReroll] traitPickerRoot set active={opening}, actual activeSelf={traitPickerRoot.activeSelf}, activeInHierarchy={traitPickerRoot.activeInHierarchy}");
         if (opening) RefreshTraitPickerList();
     }
 
     private void RefreshTraitPickerList()
     {
         if (traitPickerListContainer == null || traitPickerRowPrefab == null || currentBunny == null) return;
+
+        // TEMP debug logging — remove once the "click does nothing" bug is confirmed fixed.
+        Debug.Log($"[TraitReroll] RefreshTraitPickerList: currentBunny.Traits.Count={currentBunny.Traits.Count}");
 
         foreach (Transform child in traitPickerListContainer)
             Destroy(child.gameObject);
