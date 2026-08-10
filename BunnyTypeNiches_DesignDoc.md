@@ -30,7 +30,7 @@ bottom).
 
 | Group (unlock pop.) | Type | Niche | Status |
 |---|---|---|---|
-| 1 (0) | Neutral | Only Neutral bunnies can re-roll one of their own traits (long per-bunny cooldown) | **Locked** |
+| 1 (0) | Neutral | Only Neutral bunnies can re-roll one of their own traits (long per-bunny cooldown) — a Passive, so dormant until unlocked via Ghost's Ancient Knowledge | **Locked** |
 | 1 (0) | Water | Water Room — production bonus (`recommendedTypes`) | **Live in code** |
 | 1 (0) | Fire | Kitchen — bonus TBD | Decided, needs a mechanic |
 | 1 (0) | Plant | Garden Room — production bonus (`recommendedTypes`); also the only type with a real Passive today (Regrowth) | **Live in code** |
@@ -57,7 +57,25 @@ bottom).
 
 No room tie-in at all, deliberately — Neutral having no elemental identity is *why* it's the one type
 that can reshape identity. Only a Neutral bunny can re-roll one of its own current traits, on a long
-per-bunny cooldown:
+per-bunny cooldown.
+
+**Update (2026-08-10): this is a Passive, gated behind Ghost.** Rather than an innate ability every
+Neutral bunny has from the moment it spawns, trait re-roll is implemented as an entry in Neutral's
+`BunnyTypeDefinition.passives` list — meaning it doesn't exist in the game at all until a Ghost bunny
+spends Ancient Knowledge to discover it (see the Ghost section below). Mechanically this needed no new
+design of its own: it's simply one concrete, named example of the "Ghost unlocks Passives for every type"
+system already planned, rather than a special case. Practical effect: **Neutral bunnies are just a solid,
+mid-stat generic bunny (400 total, see the stat buff below) with no special trick at all until the player
+has reached Group 6 (population 150) and specifically chosen to spend Knowledge unlocking Neutral's
+passive** rather than one of the other 19 types'. Worth being deliberate about that pacing — every other
+type's Passive is a bonus layered on top of a niche they already have from the moment they're unlocked
+(Plant has Garden Room *and*, once discovered, Regrowth); Neutral has no other niche at all, so this is its
+*only* reason to be wanted, and it's dormant for a potentially very long stretch of early/mid-game. The
+stat buff means it's never dead weight in the meantime, just unremarkable. Flagging in case you'd rather
+guarantee Neutral's passive is cheap/early in Ghost's unlock order rather than leaving it fully player-
+prioritized alongside the other 19.
+
+Once discovered, the ability itself still works as designed:
 - The player picks **which** of the bunny's current traits to discard (not random) — this is what makes
   it feel like "getting rid of a bad trait" rather than a coin-flip that might strip a good one instead.
 - The replacement trait rolls **randomly** from `BunnyTraitCatalog`'s shared pool, reusing the exact
@@ -215,7 +233,9 @@ only matters in hard mode:
   becomes the mechanism that fleshes out every other type's Passives over time, one entry at a time, at
   **escalating cost per unlock** — cheap and impactful early, tapering off, so it can't compound into
   infinite value from stacking Ghosts forever. Optional secondary brake: diminishing returns on multiple
-  Ghosts communing simultaneously, same curve family as Work Rooms.
+  Ghosts communing simultaneously, same curve family as Work Rooms. Neutral's trait re-roll (see above) is
+  the first concrete, named example of a Passive this system unlocks — every other type's eventual Passive
+  works the same way, just with effects still to be designed.
 - Optional flavor, not load-bearing: Commune could occasionally surface a lore fragment (backstory on the
   world/Fox King) as a bonus roll.
 - **Open**: trickle production (steady per-second while staffed, simplest, matches every other Work Room)
