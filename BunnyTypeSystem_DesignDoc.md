@@ -26,6 +26,8 @@ case, not the data row; same manual step as any other trait content).
 
 **Gotcha hit and fixed (2026-07-23):** `BunnyTraitCatalog` was originally implemented in the same file as `BunnyTraitDefinition` (`BunnyTraitDefinition.cs`). It compiled fine (confirmed by grepping the compiled `Assembly-CSharp.dll` for the class name) but never showed up in Add Component — Unity's Add Component search/browse resolves entries through a `.cs` file's `MonoScript` asset, and a file only gets ONE `MonoScript`, assigned to whichever class matches the filename. `BunnyTraitCatalog` didn't, so it had no `MonoScript` for the Editor UI to find even though the type itself was real and usable from code. Fixed by moving it to its own `BunnyTraitCatalog.cs`. Lesson for any future MonoBehaviour added to this system: one file, one class, filename matching the class name — exactly what every other singleton here (`RoomUnlockTracker`, `WildBunnyNames`, `BunnyTypeUnlockTracker`) already does.
 
+**Update (2026-08-10): Neutral base stats buffed, and full type base-utility niche pass complete.** Neutral's base stats are raised from 70/70/70/70/20 (300 total, lowest in the roster) to a flat 80/80/80/80/80 (400 total) — see the table below. This was decided alongside giving every type a real reason to be wanted in the base beyond raw combat stats (Sound gates the Radio Station, Toxic/Laboratory, Mind/Library, Earth digs deeper, etc.) — the full 20-type map, including Neutral's new self-only trait-reroll niche, is tracked separately in `BunnyTypeNiches_DesignDoc.md` rather than duplicated here, since it's a different concern (room/economy design) from this doc's scope (spawn/stat/level/trait/passive resolution). The stat table below is updated to match; nothing else in this doc changes as a result.
+
 This doc defines the system that gives every spawned bunny a real `BunnyType`, plus the Level/Stats/Passives/Traits that come with it. Full target roster is 20 types, gated into 7 population-based unlock groups; only Group 1 (Neutral, Fire, Water, Plant, Shock) has art today, but the data model covers all 20 from the start so adding a type later is "author one asset," not "touch code."
 
 **Full type list:** Neutral, Fire, Water, Plant, Shock, Insect, Melee, Stone, Mind, Toxic, Ice, Sound, Air, Earth, Pixie, Light, Metal, Ghost, Dark, Draco.
@@ -34,7 +36,7 @@ This doc defines the system that gives every spawned bunny a real `BunnyType`, p
 
 | Type | HP | Attack | Defense | Speed | Luck | Total |
 |---|---|---|---|---|---|---|
-| Neutral | 70 | 70 | 70 | 70 | 20 | 300 |
+| Neutral | 80 | 80 | 80 | 80 | 80 | 400 |
 | Fire | 70 | 130 | 70 | 100 | 70 | 440 |
 | Water | 100 | 80 | 80 | 60 | 30 | 350 |
 | Plant | 130 | 70 | 80 | 50 | 20 | 350 |
