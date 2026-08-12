@@ -1314,6 +1314,7 @@ MonoBehaviour:
   xpGradeMultiplier: 1
   xpRecommendedTypes: 03000000
   roomTypeId: Garden
+  instanceId: 
   farmingSpots:
   - {fileID: 87078019840192008}
   - {fileID: 4191936910316496395}

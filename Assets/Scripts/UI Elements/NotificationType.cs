@@ -11,6 +11,12 @@
 // land, but nothing currently fires them. HatcheryFull/PopulationCapFull are new (Phase 1/2 of the same
 // plan) — like every value here, each needs its own Inspector-authored NotificationDefinition on
 // NotificationManager before it actually shows anything; the enum value alone is just the tag.
+//
+// RecipeDiscovered/BrewComplete/NotEnoughHerbs are new for the Laboratory room (see LaboratoryRoom,
+// LaboratoryRecipeUnlockTracker). RecipeDiscovered currently only ever fires from
+// LaboratoryRecipeUnlockTracker.DiscoverRecipe, which nothing calls yet (scaffolding for future foraging/
+// quest/special-visitor recipe rewards) — like the others above, wiring an Inspector NotificationDefinition
+// for it is a required manual step before it will show anything.
 public enum NotificationType
 {
     // Special/Reveal
@@ -19,6 +25,7 @@ public enum NotificationType
     RoomTypeUnlocked,
     NewBunnyType,
     SpecialVisitor,
+    RecipeDiscovered,
 
     // Standard
     LevelUp,
@@ -30,6 +37,7 @@ public enum NotificationType
     BunnyFainted,
     BunnyDeath,
     BunnyBanished,
+    BrewComplete,
 
     // Alert/Warning
     InvasionSiege,
@@ -44,6 +52,7 @@ public enum NotificationType
     PopulationCapFull,
     NotEnoughGold,
     NotEnoughPotions,
+    NotEnoughHerbs,
     NoRouteToGate,
     CantDeleteRoom,
     CantDepartForaging,

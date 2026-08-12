@@ -195,8 +195,27 @@ public class UnlockSaveData
     // direct asset references, which can't round-trip through JSON), re-resolved against
     // ForagingManager.Instance.Locations on load.
     public List<string> unlockedForagingLocationNames = new List<string>();
+    // LaboratoryRecipeUnlockTracker — same by-displayName pattern as unlockedForagingLocationNames above,
+    // re-resolved against LaboratoryRecipeCatalog.Instance.AllRecipes on load.
+    public List<string> discoveredRecipeNames = new List<string>();
     // RoomTypeUnlockAnnouncer's own dedupe set is deliberately NOT here — it's pure notification
     // bookkeeping and already correctly re-seeds itself from live unlock state in its own Start().
+}
+
+// ---------- Foraging base stockpile ----------
+
+// ForagingInventoryManager's base-wide stock — NOT previously saved at all (materials, trinkets, fruits,
+// consumables, crystal carrots all reset on reload until this was added). Each item-backed family is
+// flattened into a List<NamedCountEntry> (Dictionary replacements — see file header); crystalCarrotStock
+// is a bare int already, no entry type needed.
+[System.Serializable]
+public class ForagingInventorySaveData
+{
+    public int crystalCarrotStock;
+    public List<NamedCountEntry> fruitStock = new List<NamedCountEntry>();
+    public List<NamedCountEntry> trinketStock = new List<NamedCountEntry>();
+    public List<NamedCountEntry> materialStock = new List<NamedCountEntry>();
+    public List<NamedCountEntry> consumableStock = new List<NamedCountEntry>();
 }
 
 // ---------- Active foraging trips ----------
@@ -259,6 +278,7 @@ public class SaveData
     public List<RoomSaveData> rooms = new List<RoomSaveData>();
     public List<BunnySaveData> bunnies = new List<BunnySaveData>();
     public UnlockSaveData unlocks = new UnlockSaveData();
+    public ForagingInventorySaveData foragingInventory = new ForagingInventorySaveData();
     public List<ForagingTripSaveData> activeTrips = new List<ForagingTripSaveData>();
     public GameSpeedSaveData gameSpeed = new GameSpeedSaveData();
     public WildBunnyNamesSaveData bunnyNames = new WildBunnyNamesSaveData();

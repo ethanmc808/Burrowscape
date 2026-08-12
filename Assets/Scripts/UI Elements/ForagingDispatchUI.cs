@@ -33,6 +33,8 @@ public class ForagingDispatchUI : MonoBehaviour
     [SerializeField] private Button nextLocationButton;
 
     [Header("Equip Items")]
+    [Tooltip("The base 'Potion' tier ConsumableDefinition — the only tier trips can currently carry (Great/Super Potion have no in-trip consumer yet).")]
+    [SerializeField] private ConsumableDefinition basicHealthPotion;
     [SerializeField] private TextMeshProUGUI potionCountLabel;
     [SerializeField] private Button potionIncrementButton;
     [SerializeField] private Button potionDecrementButton;
@@ -165,7 +167,7 @@ public class ForagingDispatchUI : MonoBehaviour
 
     private void ChangePotionCount(int delta)
     {
-        int stock = ForagingInventoryManager.Instance != null ? ForagingInventoryManager.Instance.PotionStock : 0;
+        int stock = ForagingInventoryManager.Instance != null ? ForagingInventoryManager.Instance.GetConsumableCount(basicHealthPotion) : 0;
         selectedPotionCount = Mathf.Clamp(selectedPotionCount + delta, 0, Mathf.Min(stock, CarryCapacity));
         RefreshEquipStep();
     }

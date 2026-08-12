@@ -48,9 +48,11 @@ public class BunnyInfoUI : MonoBehaviour
 
     [Header("HP Bar + Potion (Image.Type = Filled) — ported from the retired BunnyStatsUI")]
     [SerializeField] private Image hpBar;
-    // Consumes 1 potion from ForagingInventoryManager's stock and heals ForagingManager.PotionHealAmount
-    // — same flat amount Foraging's own auto-use potion path applies, just player-triggered instead of
-    // an encounter-loss auto-use.
+    [Tooltip("The base 'Potion' tier ConsumableDefinition — this button only ever uses/shows this specific tier, not Great/Super Potion (no generic 'pick any consumable' UI exists yet).")]
+    [SerializeField] private ConsumableDefinition basicHealthPotion;
+    // Consumes 1 Potion from ForagingInventoryManager's stock and heals basicHealthPotion.effectAmount —
+    // same amount Foraging's own auto-use potion path applies (see ForagingManager), just
+    // player-triggered instead of an encounter-loss auto-use.
     [SerializeField] private Button usePotionButton;
     [SerializeField] private TextMeshProUGUI potionButtonLabel;
 
@@ -280,7 +282,7 @@ public class BunnyInfoUI : MonoBehaviour
     {
         if (usePotionButton == null || currentBunny == null) return;
 
-        int stock = ForagingInventoryManager.Instance != null ? ForagingInventoryManager.Instance.PotionStock : 0;
+        int stock = ForagingInventoryManager.Instance != null ? ForagingInventoryManager.Instance.GetConsumableCount(basicHealthPotion) : 0;
         bool atFullHP = currentBunny.HPValue >= currentBunny.Stats.HP;
         bool isFainted = currentBunny.CurrentState == BunnyState.Fainted;
         usePotionButton.interactable = stock > 0 && !atFullHP && !isFainted;
@@ -290,10 +292,10 @@ public class BunnyInfoUI : MonoBehaviour
 
     private void UsePotionOnCurrentBunny()
     {
-        if (currentBunny == null || ForagingInventoryManager.Instance == null || ForagingManager.Instance == null) return;
-        if (!ForagingInventoryManager.Instance.TryWithdrawPotions(1)) return;
+        if (currentBunny == null || ForagingInventoryManager.Instance == null || basicHealthPotion == null) return;
+        if (!ForagingInventoryManager.Instance.TryWithdrawConsumable(basicHealthPotion, 1)) return;
 
-        currentBunny.HealHP(ForagingManager.Instance.PotionHealAmount);
+        currentBunny.HealHP(Mathf.RoundToInt(basicHealthPotion.effectAmount));
         RefreshBars();
         RefreshPotionButton();
     }
@@ -530,7 +532,9 @@ public class BunnyInfoUI : MonoBehaviour
             adaptableCooldownText.text = canUse ? "Ready" : FormatCooldown(currentBunny.TraitRerollCooldownRemaining);
     }
 
-    private static string FormatCooldown(float seconds)
+    // Public — also reused by AssignmentUI's Laboratory brew-timer display (see BrewTimerUI) so the
+    // "Xh Ym"/"Xm Ys" countdown format only lives in one place.
+    public static string FormatCooldown(float seconds)
     {
         System.TimeSpan span = System.TimeSpan.FromSeconds(Mathf.Max(0f, seconds));
         return span.TotalHours >= 1

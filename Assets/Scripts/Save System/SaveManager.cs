@@ -80,6 +80,7 @@ public class SaveManager : MonoBehaviour
         SaveRooms(data);
         Dictionary<NPCBunny, int> bunnyIndices = SaveBunnies(data);
         SaveUnlocks(data);
+        SaveForagingInventory(data);
         SaveForagingTrips(data, bunnyIndices);
         SaveEggs(data);
         data.gameSpeed.speedIndex = GameSpeedManager.Instance != null ? GameSpeedManager.Instance.CurrentIndex : 0;
@@ -246,6 +247,21 @@ public class SaveManager : MonoBehaviour
             data.unlocks.unlockedBunnyTypes = BunnyTypeUnlockTracker.Instance.ExportUnlockedTypes().ToList();
         if (ForagingLocationUnlockTracker.Instance != null)
             data.unlocks.unlockedForagingLocationNames = ForagingLocationUnlockTracker.Instance.ExportUnlockedLocationNames().ToList();
+        if (LaboratoryRecipeUnlockTracker.Instance != null)
+            data.unlocks.discoveredRecipeNames = LaboratoryRecipeUnlockTracker.Instance.ExportDiscoveredRecipeNames().ToList();
+    }
+
+    // ForagingInventoryManager's base stockpile was never saved before this — see ForagingInventorySaveData's
+    // own comment. Doesn't depend on rooms/bunnies, so it has no ordering requirement relative to those.
+    private void SaveForagingInventory(SaveData data)
+    {
+        if (ForagingInventoryManager.Instance == null) return;
+
+        data.foragingInventory.crystalCarrotStock = ForagingInventoryManager.Instance.CrystalCarrotStock;
+        data.foragingInventory.fruitStock = ForagingInventoryManager.Instance.ExportFruitStock();
+        data.foragingInventory.trinketStock = ForagingInventoryManager.Instance.ExportTrinketStock();
+        data.foragingInventory.materialStock = ForagingInventoryManager.Instance.ExportMaterialStock();
+        data.foragingInventory.consumableStock = ForagingInventoryManager.Instance.ExportConsumableStock();
     }
 
     private void SaveForagingTrips(SaveData data, Dictionary<NPCBunny, int> bunnyIndices)
@@ -345,6 +361,7 @@ public class SaveManager : MonoBehaviour
             Dictionary<string, RoomBase> roomsByInstanceId = LoadRooms(data);
             LoadPopulation(data);
             LoadUnlocks(data);
+            LoadForagingInventory(data);
 
             // Must run AFTER LoadPopulation, and explicitly (not just left to RoomTypeUnlockAnnouncer's own
             // Start()) — Unity gives no ordering guarantee between two different components' Start() methods,
@@ -362,6 +379,10 @@ public class SaveManager : MonoBehaviour
             // Same reasoning again for foraging locations — see ForagingLocationUnlockTracker.SeedAlreadyUnlocked's
             // own comment. Must also run after LoadUnlocks, which restores its real unlockedLocations set.
             ForagingLocationUnlockTracker.Instance?.SeedAlreadyUnlocked();
+            // Same reasoning again for recipes — see LaboratoryRecipeUnlockTracker.SeedAlreadyUnlocked's own
+            // comment. Currently unreachable in practice (nothing calls DiscoverRecipe reactively yet), but
+            // correct the moment a future foraging/quest/visitor system does.
+            LaboratoryRecipeUnlockTracker.Instance?.SeedAlreadyUnlocked();
             if (GameSpeedManager.Instance != null)
                 GameSpeedManager.Instance.SetSpeedIndex(data.gameSpeed.speedIndex);
 
@@ -461,6 +482,18 @@ public class SaveManager : MonoBehaviour
         RoomUnlockTracker.Instance?.ImportUnlockedIds(data.unlocks.permanentlyUnlockedRoomIds);
         BunnyTypeUnlockTracker.Instance?.ImportUnlockedTypes(data.unlocks.unlockedBunnyTypes);
         ForagingLocationUnlockTracker.Instance?.ImportUnlockedLocationNames(data.unlocks.unlockedForagingLocationNames);
+        LaboratoryRecipeUnlockTracker.Instance?.ImportDiscoveredRecipeNames(data.unlocks.discoveredRecipeNames);
+    }
+
+    private void LoadForagingInventory(SaveData data)
+    {
+        if (ForagingInventoryManager.Instance == null) return;
+
+        ForagingInventoryManager.Instance.SetCrystalCarrotStockForLoad(data.foragingInventory.crystalCarrotStock);
+        ForagingInventoryManager.Instance.ImportFruitStock(data.foragingInventory.fruitStock);
+        ForagingInventoryManager.Instance.ImportTrinketStock(data.foragingInventory.trinketStock);
+        ForagingInventoryManager.Instance.ImportMaterialStock(data.foragingInventory.materialStock);
+        ForagingInventoryManager.Instance.ImportConsumableStock(data.foragingInventory.consumableStock);
     }
 
     private void LoadResources(SaveData data)

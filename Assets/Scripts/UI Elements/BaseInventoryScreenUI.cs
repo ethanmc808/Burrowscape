@@ -23,8 +23,7 @@ public class BaseInventoryScreenUI : MonoBehaviour
     [Tooltip("Simple prefab: an Image (icon) + a TextMeshProUGUI child (name + count).")]
     [SerializeField] private GameObject rowPrefab;
 
-    [Header("Fixed Icons (Potion/Crystal Carrot are plain int counters on ForagingInventoryManager, not ScriptableObject assets, so they have no icon field of their own — assign their art here instead)")]
-    [SerializeField] private Sprite potionIcon;
+    [Header("Fixed Icon (Crystal Carrot is a plain int counter on ForagingInventoryManager, not a ScriptableObject asset, so it has no icon field of its own — assign its art here instead. Potions/consumables now have their own icon via ConsumableDefinition, same as every other item family below.)")]
     [SerializeField] private Sprite crystalCarrotIcon;
 
     private void Awake()
@@ -77,8 +76,10 @@ public class BaseInventoryScreenUI : MonoBehaviour
 
         ForagingInventoryManager inv = ForagingInventoryManager.Instance;
 
-        if (inv.PotionStock > 0) AddRow(potionIcon, "Potion", inv.PotionStock);
         if (inv.CrystalCarrotStock > 0) AddRow(crystalCarrotIcon, "Crystal Carrot", inv.CrystalCarrotStock);
+
+        foreach (ConsumableDefinition consumable in inv.GetConsumablesInStock())
+            AddRow(consumable.icon, consumable.displayName, inv.GetConsumableCount(consumable));
 
         // Only unequipped copies show up here — an equipped accessory was withdrawn from stock at equip
         // time (see NPCBunny.EquippedAccessory / ForagingInventoryManager.TryEquipAccessory).
