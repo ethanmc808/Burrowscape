@@ -5,7 +5,8 @@
 // rather than sharing a generic "Error" bucket, precisely so each can have its own tier and wording
 // authored independently instead of fighting over one shared definition.
 //
-// EggHatched is now wired (see HatcheryRoom.HatchEgg — Breeding System plan, Phase 4); SpecialVisitor,
+// EggHatched is now wired (see HatcheryRoom.HatchEgg — Breeding System plan, Phase 4); KidBunnyGrewUp is
+// also now wired (see NPCBunny.GrowUp — Kid Bunny Growth follow-up to the same plan). SpecialVisitor,
 // BunnyDeath, and BunnyBanished still have no underlying game system yet (no merchant/visitor or
 // death/banish mechanic exists) — stubbed here so NotificationManager is ready the moment those features
 // land, but nothing currently fires them. HatcheryFull/PopulationCapFull are new (Phase 1/2 of the same
@@ -21,6 +22,7 @@ public enum NotificationType
 {
     // Special/Reveal
     EggHatched,
+    KidBunnyGrewUp,
     ForagingLocationUnlocked,
     RoomTypeUnlocked,
     NewBunnyType,

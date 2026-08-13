@@ -83,6 +83,7 @@ GameObject:
   - component: {fileID: 6017790442959256821}
   - component: {fileID: 48176784534322638}
   - component: {fileID: 5043168083735419102}
+  - component: {fileID: 7873330906310771801}
   m_Layer: 0
   m_Name: NPC_Bunny_Water_Default
   m_TagString: Untagged
@@ -239,6 +240,7 @@ MonoBehaviour:
   isDrinkingParam: IsDrinking
   isSleepingParam: IsSleeping
   isCheeringParam: IsCheering
+  isMatingParam: IsMating
   isAttackingParam: IsAttacking
   isFaintedParam: IsFainted
   faintFadeDelaySeconds: 0.6666667
@@ -306,6 +308,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41b2c9eb41007834e9f3dce17b262871, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GuardBuffController
+--- !u!114 &7873330906310771801
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601990158651218953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 409fa0963324c904dbdb16055347ddf8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PregnancyIndicator
+  bunny: {fileID: 0}
+  indicatorPrefab: {fileID: 2018665818644140885, guid: 639c547b7f135c447a575567299e0d8c, type: 3}
+  worldCamera: {fileID: 0}
+  worldOffset: {x: 0, y: 1, z: 0}
+  worldSize: 0.18
 --- !u!1001 &5346258186291160782
 PrefabInstance:
   m_ObjectHideFlags: 0

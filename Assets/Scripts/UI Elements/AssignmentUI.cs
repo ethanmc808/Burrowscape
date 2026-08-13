@@ -29,23 +29,38 @@ public class AssignmentUI : MonoBehaviour
     // ---------- Laboratory extras (see LaboratoryRoom design notes) — shown only while currentRoom is a
     // LaboratoryRoom, folded into this same panel rather than a separate one (same precedent BunnyInfoUI's
     // Adaptable block already set: one shared panel showing an extra block only when relevant). Additive
-    // to everything above — the normal assign/unassign flow is completely unmodified. ----------
+    // to everything above — the normal assign/unassign flow is completely unmodified.
+    //
+    // REDESIGNED from an earlier one-row-per-assigned-bunny layout — that didn't fit on screen once a
+    // Grade-3 (12x2x6) room could hold 6 bunnies at once. LaboratoryRoom is now a single ROOM-WIDE brew, so
+    // this only ever needs ONE status display regardless of room grade: either the idle "Select item to
+    // craft" button, or one BrewTimerUI showing whatever's currently brewing. ----------
     [Header("Laboratory Extras (shown only when currentRoom is LaboratoryRoom)")]
     [SerializeField] private GameObject laboratoryExtrasRoot;
-    [Tooltip("One LaboratoryBrewRowUI per bunny DwellerRoster.GetBunniesAssignedTo(currentRoom) returns — automatically the right length for the room's grade since capacity is just BrewSpot count.")]
-    [SerializeField] private Transform laboratoryBrewListContainer;
-    [Tooltip("Row prefab needs a LaboratoryBrewRowUI component — see that file.")]
-    [SerializeField] private GameObject laboratoryBrewRowPrefab;
+    [Tooltip("Shown when the room isn't brewing — contains the one 'Select item to craft' button below.")]
+    [SerializeField] private GameObject laboratoryIdleRoot;
+    [SerializeField] private Button laboratorySelectCraftButton;
+    [Tooltip("Shown while the room IS brewing — a single BrewTimerUI wired directly (not instantiated per row, there's only ever one active brew now).")]
+    [SerializeField] private GameObject laboratoryBrewTimerRoot;
+    [SerializeField] private BrewTimerUI laboratoryBrewTimer;
 
-    [Header("Laboratory — Recipe Picker (opened per-bunny from a LaboratoryBrewRowUI's selectCraftButton)")]
+    [Header("Laboratory — Recipe Picker, step 1 of 2 (opened from the room-level Select Craft button)")]
     [SerializeField] private GameObject recipePickerRoot;
-    [Tooltip("Optional — clicking a bunny's craft button again also closes it (same toggle idiom as BunnyInfoUI's pickers).")]
+    [Tooltip("Optional — clicking the craft button again also closes it (same toggle idiom as BunnyInfoUI's pickers).")]
     [SerializeField] private Button recipePickerCloseButton;
     [SerializeField] private Transform recipePickerListContainer;
     [Tooltip("Row prefab needs a RecipeRowUI component — see that file.")]
     [SerializeField] private GameObject recipeRowPrefab;
-    [Tooltip("Small prefab: an Image (herb icon) + a TextMeshProUGUI ('x3') — one instantiated per RecipeIngredientCost inside each RecipeRowUI's ingredientCostContainer. Needs an IngredientCostSlotUI component.")]
-    [SerializeField] private GameObject ingredientCostSlotPrefab;
+
+    [Tooltip("Just 3 plain buttons (1x/5x/10x) — the recipe row above already shows per-1x herb cost, so an unaffordable quantity just greys its button out (Button.interactable = false) rather than repeating cost text per option.")]
+    [Header("Laboratory — Quantity Picker, step 2 of 2 (1x/5x/10x, greyed out by affordability)")]
+    [SerializeField] private GameObject quantityPickerRoot;
+    [SerializeField] private TextMeshProUGUI quantityPickerRecipeNameText;
+    [Tooltip("Optional close/back button — returns to the recipe list without starting a brew.")]
+    [SerializeField] private Button quantityPickerCloseButton;
+    [SerializeField] private Button quantity1Button;
+    [SerializeField] private Button quantity5Button;
+    [SerializeField] private Button quantity10Button;
 
     [Header("Laboratory — Recently Crafted")]
     [SerializeField] private Transform recentlyCraftedListContainer;
@@ -53,7 +68,7 @@ public class AssignmentUI : MonoBehaviour
     [SerializeField] private GameObject recentlyCraftedRowPrefab;
 
     private LaboratoryRoom currentLabRoom;
-    private NPCBunny recipePickerTargetBunny;
+    private RecipeDefinition quantityPickerRecipe;
 
     // Throttled, not every Update() frame — matches ForagingTripDetailUI's convention for a live countdown
     // readout; 0.5s granularity is visually indistinguishable from per-frame for a brew timer.
@@ -77,9 +92,17 @@ public class AssignmentUI : MonoBehaviour
         unassignButton.onClick.AddListener(OnUnassignClicked);
         unassignButton.interactable = false;
 
+        if (laboratorySelectCraftButton != null)
+            laboratorySelectCraftButton.onClick.AddListener(ToggleRecipePicker);
         if (recipePickerCloseButton != null)
             recipePickerCloseButton.onClick.AddListener(CloseRecipePicker);
+        if (quantityPickerCloseButton != null)
+            quantityPickerCloseButton.onClick.AddListener(CloseQuantityPicker);
+        if (quantity1Button != null) quantity1Button.onClick.AddListener(() => OnQuantitySelected(1));
+        if (quantity5Button != null) quantity5Button.onClick.AddListener(() => OnQuantitySelected(5));
+        if (quantity10Button != null) quantity10Button.onClick.AddListener(() => OnQuantitySelected(10));
         CloseRecipePicker();
+        CloseQuantityPicker();
     }
 
     private void Update()
@@ -105,6 +128,7 @@ public class AssignmentUI : MonoBehaviour
 
         if (laboratoryExtrasRoot != null) laboratoryExtrasRoot.SetActive(currentLabRoom != null);
         CloseRecipePicker();
+        CloseQuantityPicker();
         if (currentLabRoom != null) RefreshLaboratoryExtras();
     }
 
@@ -125,10 +149,14 @@ public class AssignmentUI : MonoBehaviour
         if (!panelRoot.activeSelf) return;
 
         panelRoot.SetActive(false);
+        // LaboratoryExtrasRoot lives as its own top-level panel now (not nested under panelRoot — see its
+        // header comment), so hiding panelRoot alone no longer hides it for free; needs an explicit call.
+        if (laboratoryExtrasRoot != null) laboratoryExtrasRoot.SetActive(false);
         if (playSound) AudioManager.EnsureInstance().PlayUIClose();
         currentRoom = null;
         currentLabRoom = null;
         CloseRecipePicker();
+        CloseQuantityPicker();
         ClearSelection();
         RoomUpgradeUI.Instance?.Close(playSound);
         PatientUI.Instance?.Close(playSound);
@@ -246,8 +274,8 @@ public class AssignmentUI : MonoBehaviour
         ClearSelection();
         PopulateLists(); // bunny moves from the assigned list back into the unassigned list
 
-        // The unassigned bunny's LaboratoryRoom.ReleaseSpot (called inside UnassignFromJob) already
-        // cancelled any active brew on the room's side — this just syncs the visible row list to match.
+        // An active brew isn't tied to any one bunny anymore — it just keeps ticking (possibly at 0 speed,
+        // if that was the room's last present worker) — this just refreshes the displayed rate/remaining.
         if (currentLabRoom != null) RefreshLaboratoryExtras();
     }
 
@@ -273,58 +301,40 @@ public class AssignmentUI : MonoBehaviour
 
     // ---------- Laboratory extras ----------
 
-    // One row per bunny assigned to the room (whether physically arrived yet or not — StartBrew below
-    // no-ops cleanly if a bunny clicks "select item to craft" before it's actually present at its spot).
-    // Destroy-and-rebuild every refresh, same idiom every other picker/list in this codebase uses.
+    // Single room-wide status — either the idle "Select item to craft" button, or the one active brew's
+    // timer. No per-bunny list anymore (see the class-header comment for why).
     private void RefreshLaboratoryExtras()
     {
-        if (laboratoryExtrasRoot == null || laboratoryBrewListContainer == null || laboratoryBrewRowPrefab == null || currentLabRoom == null) return;
+        if (laboratoryExtrasRoot == null || currentLabRoom == null) return;
 
-        foreach (Transform child in laboratoryBrewListContainer)
-            Destroy(child.gameObject);
+        bool brewing = currentLabRoom.IsBrewing;
+        if (laboratoryIdleRoot != null) laboratoryIdleRoot.SetActive(!brewing);
+        if (laboratoryBrewTimerRoot != null) laboratoryBrewTimerRoot.SetActive(brewing);
 
-        foreach (NPCBunny bunny in DwellerRoster.Instance.GetBunniesAssignedTo(currentRoom))
-        {
-            GameObject rowObj = Instantiate(laboratoryBrewRowPrefab, laboratoryBrewListContainer);
-            LaboratoryBrewRowUI row = rowObj.GetComponent<LaboratoryBrewRowUI>();
-            if (row == null)
-            {
-                Debug.LogWarning("AssignmentUI: laboratoryBrewRowPrefab needs a LaboratoryBrewRowUI component with timer/idle sub-elements wired in the Inspector.");
-                continue;
-            }
-
-            if (row.bunnyNameText != null) row.bunnyNameText.text = bunny.name;
-
-            bool brewing = currentLabRoom.IsBrewing(bunny);
-            if (row.timerRoot != null) row.timerRoot.SetActive(brewing);
-            if (row.idleRoot != null) row.idleRoot.SetActive(!brewing);
-
-            if (brewing)
-            {
-                RefreshBrewTimer(row.timer, bunny);
-            }
-            else if (row.selectCraftButton != null)
-            {
-                row.selectCraftButton.onClick.RemoveAllListeners();
-                row.selectCraftButton.onClick.AddListener(() => ToggleRecipePicker(bunny));
-            }
-        }
+        if (brewing) RefreshBrewTimer();
 
         RefreshRecentlyCrafted();
     }
 
-    private void RefreshBrewTimer(BrewTimerUI timer, NPCBunny bunny)
+    private void RefreshBrewTimer()
     {
-        if (timer == null || currentLabRoom == null) return;
+        if (laboratoryBrewTimer == null || currentLabRoom == null) return;
 
-        RecipeDefinition recipe = currentLabRoom.GetActiveBrewRecipe(bunny);
+        RecipeDefinition recipe = currentLabRoom.GetActiveRecipe();
         if (recipe == null || recipe.output == null) return;
 
-        if (timer.itemIcon != null) timer.itemIcon.sprite = recipe.output.icon;
-        if (timer.recipeNameLabel != null) timer.recipeNameLabel.text = recipe.output.displayName;
-        if (timer.fillBar != null) timer.fillBar.fillAmount = currentLabRoom.GetBrewProgress01(bunny);
-        if (timer.timeRemainingLabel != null)
-            timer.timeRemainingLabel.text = BunnyInfoUI.FormatCooldown(currentLabRoom.GetBrewRemainingSeconds(bunny));
+        int quantity = currentLabRoom.GetActiveQuantity();
+        if (laboratoryBrewTimer.itemIcon != null) laboratoryBrewTimer.itemIcon.sprite = recipe.output.icon;
+        if (laboratoryBrewTimer.recipeNameLabel != null)
+            laboratoryBrewTimer.recipeNameLabel.text = quantity > 1 ? $"{recipe.displayName} x{quantity}" : recipe.displayName;
+        if (laboratoryBrewTimer.fillBar != null) laboratoryBrewTimer.fillBar.fillAmount = currentLabRoom.GetBrewProgress01();
+        if (laboratoryBrewTimer.timeRemainingLabel != null)
+        {
+            float remaining = currentLabRoom.GetBrewRemainingSeconds();
+            laboratoryBrewTimer.timeRemainingLabel.text = float.IsInfinity(remaining)
+                ? "No bunnies working" // rate is 0 — every present worker left, brewing is stalled, not broken
+                : BunnyInfoUI.FormatCooldown(remaining);
+        }
     }
 
     private void RefreshRecentlyCrafted()
@@ -346,15 +356,13 @@ public class AssignmentUI : MonoBehaviour
         }
     }
 
-    // Same toggle idiom as BunnyInfoUI's ToggleTraitPicker/ToggleFruitPicker — clicking the SAME bunny's
-    // craft button again closes it; clicking a DIFFERENT bunny's button while already open just retargets
-    // and refreshes rather than requiring a close-then-reopen.
-    private void ToggleRecipePicker(NPCBunny bunny)
+    // Same toggle idiom as BunnyInfoUI's ToggleTraitPicker/ToggleFruitPicker.
+    private void ToggleRecipePicker()
     {
         if (recipePickerRoot == null || currentLabRoom == null) return;
 
-        bool opening = !recipePickerRoot.activeSelf || recipePickerTargetBunny != bunny;
-        recipePickerTargetBunny = opening ? bunny : null;
+        bool opening = !recipePickerRoot.activeSelf;
+        CloseQuantityPicker();
         recipePickerRoot.SetActive(opening);
         if (opening) RefreshRecipePickerList();
     }
@@ -362,16 +370,13 @@ public class AssignmentUI : MonoBehaviour
     private void CloseRecipePicker()
     {
         if (recipePickerRoot != null) recipePickerRoot.SetActive(false);
-        recipePickerTargetBunny = null;
     }
 
-    // Two kinds of rows, in order: (1) "Join [Bunny]'s brew" for every batch currently short a second
-    // worker (no herb cost — the batch already paid at StartBrew time — and always affordable/interactable
-    // regardless of BatchCapacity, since joining doesn't start a new batch), then (2) the normal
-    // discovered-recipe list, gated by LaboratoryRecipeUnlockTracker.IsDiscovered (a recipe that's ever
-    // been discovered stays listed forever — sticky ledger, which alone satisfies "discovered or
-    // previously owned") and disabled once the room's already brewing BatchCapacity distinct recipes.
-    // Both kinds reuse RecipeRowUI — a join row just leaves ingredientCostContainer empty.
+    // Step 1: the discovered-recipe list, gated by LaboratoryRecipeUnlockTracker.IsDiscovered (a recipe
+    // that's ever been discovered stays listed forever — sticky ledger, which alone satisfies "discovered
+    // or previously owned") and disabled entirely while the room's already brewing something (no queueing —
+    // confirmed with Ethan). Selecting a row doesn't start the brew directly anymore — it opens the
+    // quantity picker (step 2) first.
     private void RefreshRecipePickerList()
     {
         if (recipePickerListContainer == null || recipeRowPrefab == null || currentLabRoom == null) return;
@@ -380,34 +385,7 @@ public class AssignmentUI : MonoBehaviour
         foreach (Transform child in recipePickerListContainer)
             Destroy(child.gameObject);
 
-        NPCBunny targetBunny = recipePickerTargetBunny;
-
-        foreach ((NPCBunny existingWorker, RecipeDefinition recipe) in currentLabRoom.GetJoinableBrews())
-        {
-            if (existingWorker == targetBunny || recipe == null) continue;
-
-            GameObject rowObj = Instantiate(recipeRowPrefab, recipePickerListContainer);
-            RecipeRowUI row = rowObj.GetComponent<RecipeRowUI>();
-            if (row == null)
-            {
-                Debug.LogWarning("AssignmentUI: recipeRowPrefab needs a RecipeRowUI component with icon/name/ingredientCostContainer/selectButton wired in the Inspector.");
-                continue;
-            }
-
-            if (row.recipeIcon != null) row.recipeIcon.sprite = recipe.icon;
-            if (row.recipeNameText != null) row.recipeNameText.text = $"Join {existingWorker.name}: {recipe.displayName}";
-            if (row.ingredientCostContainer != null)
-                foreach (Transform child in row.ingredientCostContainer) Destroy(child.gameObject);
-
-            if (row.selectButton != null)
-            {
-                row.selectButton.interactable = true;
-                row.selectButton.onClick.RemoveAllListeners();
-                row.selectButton.onClick.AddListener(() => OnJoinBrewSelected(targetBunny, existingWorker));
-            }
-        }
-
-        bool canStartNew = currentLabRoom.CanStartNewBatch;
+        bool canStartNew = currentLabRoom.CanStartNewBrew;
         foreach (RecipeDefinition recipe in LaboratoryRecipeCatalog.Instance.AllRecipes)
         {
             if (recipe == null || !LaboratoryRecipeUnlockTracker.Instance.IsDiscovered(recipe)) continue;
@@ -416,77 +394,100 @@ public class AssignmentUI : MonoBehaviour
             RecipeRowUI row = rowObj.GetComponent<RecipeRowUI>();
             if (row == null)
             {
-                Debug.LogWarning("AssignmentUI: recipeRowPrefab needs a RecipeRowUI component with icon/name/ingredientCostContainer/selectButton wired in the Inspector.");
+                Debug.LogWarning("AssignmentUI: recipeRowPrefab needs a RecipeRowUI component with icon/name/ingredientIcon/ingredientCountText/selectButton wired in the Inspector.");
                 continue;
             }
 
             if (row.recipeIcon != null) row.recipeIcon.sprite = recipe.icon;
             if (row.recipeNameText != null) row.recipeNameText.text = recipe.displayName;
 
-            bool affordable = BuildIngredientCostRows(row, recipe);
+            // Cost preview at 1x here — the real per-quantity affordability check happens in the quantity
+            // picker (step 2), this row only needs to convey "can I make this at all."
+            bool affordableAt1x = SetIngredientDisplay(row, recipe, 1);
 
             if (row.selectButton != null)
             {
-                row.selectButton.interactable = affordable && canStartNew;
+                row.selectButton.interactable = affordableAt1x && canStartNew;
                 row.selectButton.onClick.RemoveAllListeners();
-                row.selectButton.onClick.AddListener(() => OnRecipeSelected(targetBunny, recipe));
+                row.selectButton.onClick.AddListener(() => OpenQuantityPicker(recipe));
             }
         }
     }
 
-    // Returns true if every ingredient is currently affordable — drives whether the row's select button
-    // is interactable. Red-tints any short herb's count text rather than hiding the row outright, so the
-    // player can see what they're missing.
-    private bool BuildIngredientCostRows(RecipeRowUI row, RecipeDefinition recipe)
+    // Every recipe costs some quantity of exactly ONE herb tier (confirmed with Ethan as a permanent
+    // assumption, not just true of today's 3 starter recipes) — reads RecipeDefinition.ingredients[0]
+    // directly rather than instantiating a sub-list. Returns true if that single cost is currently
+    // affordable at the given quantity multiplier — drives whether the row/button is interactable.
+    // Red-tints the count text rather than hiding the row outright, so the player can see what's short.
+    private bool SetIngredientDisplay(RecipeRowUI row, RecipeDefinition recipe, int quantity)
     {
-        bool affordable = true;
-        if (row.ingredientCostContainer == null || ingredientCostSlotPrefab == null) return affordable;
+        if (recipe.ingredients == null || recipe.ingredients.Count == 0) return false;
 
-        foreach (Transform child in row.ingredientCostContainer)
-            Destroy(child.gameObject);
+        RecipeIngredientCost cost = recipe.ingredients[0];
+        int neededAmount = cost.amount * quantity;
+        bool affordable = cost.herb != null && ForagingInventoryManager.Instance != null
+            && ForagingInventoryManager.Instance.GetMaterialCount(cost.herb) >= neededAmount;
 
-        foreach (RecipeIngredientCost cost in recipe.ingredients)
+        if (row.ingredientIcon != null) row.ingredientIcon.sprite = cost.herb != null ? cost.herb.icon : null;
+        if (row.ingredientCountText != null)
         {
-            bool haveEnough = cost.herb != null && ForagingInventoryManager.Instance != null
-                && ForagingInventoryManager.Instance.GetMaterialCount(cost.herb) >= cost.amount;
-            if (!haveEnough) affordable = false;
-
-            GameObject slotObj = Instantiate(ingredientCostSlotPrefab, row.ingredientCostContainer);
-            IngredientCostSlotUI slot = slotObj.GetComponent<IngredientCostSlotUI>();
-            if (slot == null) continue;
-
-            if (slot.herbIcon != null) slot.herbIcon.sprite = cost.herb != null ? cost.herb.icon : null;
-            if (slot.countText != null)
-            {
-                slot.countText.text = $"x{cost.amount}";
-                slot.countText.color = haveEnough ? Color.white : Color.red;
-            }
+            row.ingredientCountText.text = $"x{neededAmount}";
+            // Only override to red when short — each row is a fresh Instantiate every refresh, so leaving
+            // the affordable case untouched preserves whatever color was authored on the prefab (black)
+            // instead of forcing it to white.
+            if (!affordable) row.ingredientCountText.color = Color.red;
         }
 
         return affordable;
     }
 
-    private void OnRecipeSelected(NPCBunny bunny, RecipeDefinition recipe)
+    // Step 2: 1x/5x/10x, each greyed out (not interactable) if the recipe's ingredient cost times that
+    // multiplier isn't currently affordable. Fixed 3-option set — no per-option prefab needed, just the 3
+    // hardcoded buttons wired in the Inspector.
+    private void OpenQuantityPicker(RecipeDefinition recipe)
     {
-        if (bunny == null || recipe == null || currentLabRoom == null) return;
+        if (quantityPickerRoot == null || recipe == null) return;
 
-        // Failure (unaffordable, bunny not actually present yet, room already at BatchCapacity, etc.)
-        // already surfaces its own notification from StartBrew/TryWithdrawIngredients — nothing else to
-        // do here on a false return.
-        if (!currentLabRoom.StartBrew(bunny, recipe)) return;
+        quantityPickerRecipe = recipe;
+        recipePickerRoot.SetActive(false);
+        quantityPickerRoot.SetActive(true);
 
-        AudioManager.EnsureInstance().PlayButtonClick();
-        CloseRecipePicker();
-        RefreshLaboratoryExtras();
+        if (quantityPickerRecipeNameText != null) quantityPickerRecipeNameText.text = recipe.displayName;
+
+        SetQuantityOptionAffordability(quantity1Button, recipe, 1);
+        SetQuantityOptionAffordability(quantity5Button, recipe, 5);
+        SetQuantityOptionAffordability(quantity10Button, recipe, 10);
     }
 
-    private void OnJoinBrewSelected(NPCBunny bunny, NPCBunny existingWorker)
+    // Greys the button itself out (Button.interactable = false) when unaffordable — no separate cost text
+    // per option, the recipe row one screen back already shows the per-1x herb cost.
+    private void SetQuantityOptionAffordability(Button button, RecipeDefinition recipe, int quantity)
     {
-        if (bunny == null || existingWorker == null || currentLabRoom == null) return;
-        if (!currentLabRoom.JoinBrew(bunny, existingWorker)) return;
+        if (button == null) return;
+
+        bool affordable = recipe.ingredients.All(cost =>
+            cost.herb != null && ForagingInventoryManager.Instance != null
+            && ForagingInventoryManager.Instance.GetMaterialCount(cost.herb) >= cost.amount * quantity);
+        button.interactable = affordable;
+    }
+
+    private void CloseQuantityPicker()
+    {
+        if (quantityPickerRoot != null) quantityPickerRoot.SetActive(false);
+        quantityPickerRecipe = null;
+    }
+
+    private void OnQuantitySelected(int quantity)
+    {
+        if (quantityPickerRecipe == null || currentLabRoom == null) return;
+
+        // Failure (unaffordable, room already brewing, etc.) already surfaces its own notification from
+        // StartBrew/TryWithdrawIngredients — nothing else to do here on a false return.
+        if (!currentLabRoom.StartBrew(quantityPickerRecipe, quantity)) return;
 
         AudioManager.EnsureInstance().PlayButtonClick();
         CloseRecipePicker();
+        CloseQuantityPicker();
         RefreshLaboratoryExtras();
     }
 }

@@ -255,6 +255,17 @@ public class ForagingInventoryManager : MonoBehaviour
         AddMaterial(GetHerbForRarity(rarity), amount);
     }
 
+    // Debug-only shortcut for testing the Laboratory without waiting on foraging RNG — right-click this
+    // component's header in the Inspector during Play mode and pick "Debug: Add 10 Of Each Herb Tier".
+    // Not wired to any UI, not called from anywhere at runtime.
+    [ContextMenu("Debug: Add 10 Of Each Herb Tier")]
+    private void DebugAddHerbs()
+    {
+        for (int i = 0; i < herbTiers.Length; i++)
+            AddMaterial(herbTiers[i], 10);
+        Debug.Log("[ForagingInventoryManager] Debug: added 10 of each herb tier.");
+    }
+
     // ---------- Consumables (potions and any future Laboratory output) ----------
 
     public int GetConsumableCount(ConsumableDefinition consumable)
@@ -301,15 +312,17 @@ public class ForagingInventoryManager : MonoBehaviour
     // completion — herbs are locked in for the brew's duration rather than risking being spent elsewhere
     // mid-brew. Ledger-level entry point only, same relationship TryCraftTrinketIntoMaterial has to the
     // Workshop room — not callable from general UI, meant to be invoked from LaboratoryRoom's job-flow.
-    public bool TryWithdrawIngredients(RecipeDefinition recipe)
+    // quantity multiplies every ingredient's cost — used by LaboratoryRoom.StartBrew's 1x/5x/10x batch
+    // picker. Defaults to 1 so any other future caller can ignore the parameter entirely.
+    public bool TryWithdrawIngredients(RecipeDefinition recipe, int quantity = 1)
     {
-        if (recipe == null) return false;
+        if (recipe == null || quantity <= 0) return false;
 
         foreach (RecipeIngredientCost cost in recipe.ingredients)
-            if (GetMaterialCount(cost.herb) < cost.amount) return false;
+            if (GetMaterialCount(cost.herb) < cost.amount * quantity) return false;
 
         foreach (RecipeIngredientCost cost in recipe.ingredients)
-            materialStock[cost.herb] = GetMaterialCount(cost.herb) - cost.amount;
+            materialStock[cost.herb] = GetMaterialCount(cost.herb) - cost.amount * quantity;
 
         OnInventoryChanged?.Invoke();
         return true;

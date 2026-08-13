@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54993e9d2b4727a4289e0760d08854a2, type: 3}
   m_Name: BreedingConfig
   m_EditorClassIdentifier: Assembly-CSharp::BreedingConfig
-  matingIntervalMinSeconds: 30
-  matingIntervalMaxSeconds: 60
+  matingIntervalMinSeconds: 5
+  matingIntervalMaxSeconds: 10
   sameTypeMatingChance: 0.5
   differentTypeMatingChance: 0.25
   happyAnimationSeconds: 2
@@ -21,11 +21,11 @@ MonoBehaviour:
   matingSpotOffsetX: 0.15
   tripletChance: 0.05
   twinChance: 0.1
-  pregnancyDurationMinSeconds: 300
-  pregnancyDurationMaxSeconds: 600
-  eggIncubationMinSeconds: 300
-  eggIncubationMaxSeconds: 600
-  kidBunnyScale: 0.6
+  pregnancyDurationMinSeconds: 30
+  pregnancyDurationMaxSeconds: 30
+  eggIncubationMinSeconds: 30
+  eggIncubationMaxSeconds: 30
+  kidBunnyScale: 0.7
   eggPrefab: {fileID: 2697210185167629396, guid: 290f1a5246e6a114f920df282ea65b4a, type: 3}
   fireOrLightTenderHatchSpeedBonus: 0.15
   otherTypeTenderHatchSpeedBonus: 0.05

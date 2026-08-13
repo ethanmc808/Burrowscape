@@ -20,5 +20,5 @@ MonoBehaviour:
   ingredients:
   - herb: {fileID: 11400000, guid: d69c42f8acccc614d901b7d814f4ecd7, type: 2}
     amount: 2
-  baseBrewTime: 2
+  baseBrewTime: 60
   discovered: 1

@@ -256,6 +256,14 @@ public class NPCBunny : MonoBehaviour, ICombatant
     {
         currentRoom = claimedHatcheryRoom;
         currentWanderPoint = null;
+        // Unlike every sibling OnArrivedAt* (OnArrivedAtWorkSpot/RelaxSpot/SleepingSpot etc.), this one
+        // used to leave currentSpot stale at whatever it was BEFORE this trip (e.g. the Bedroom's
+        // BreedingSpotFemale) — confirmed the hard way in testing (2026-08-11): ReturnToPreviousActivity's
+        // GetRouteToSpot call below then got currentRoom=Hatchery paired with currentSpot=a RoomSpot that
+        // physically lives inside the BEDROOM, an internally-contradictory pair that produced a route
+        // straight through walls back to the Bedroom. null here for now (no real spot claimed yet in the
+        // two early-failure branches below); overwritten with the real claimedSpot once one exists.
+        currentSpot = null;
 
         GameObject eggPrefab = BreedingConfig.Instance.eggPrefab;
         if (eggPrefab == null)
@@ -294,6 +302,10 @@ public class NPCBunny : MonoBehaviour, ICombatant
         BreedingConfig cfg = BreedingConfig.Instance;
         float incubationDuration = Random.Range(cfg.eggIncubationMinSeconds, cfg.eggIncubationMaxSeconds);
         egg.Initialize(litterType, litterMembers, claimedHatcheryRoom, claimedSpot, incubationDuration);
+
+        // Now that a real spot exists, record it as where she's actually standing — see the currentSpot
+        // = null comment above for why this can't just be set unconditionally at the top of the method.
+        currentSpot = claimedSpot;
 
         claimedHatcheryRoom.CancelReservation();
         ClearPregnancyState();
@@ -1041,8 +1053,10 @@ public class NPCBunny : MonoBehaviour, ICombatant
             pendingStateOnArrival = BunnyState.Idle;
         }
         // Eating, or mid-lift-trip toward the job: deliberately left alone. FinishEatingAndReturnToWork
-        // and ResumeTripAfterLift both already check assignedJobRoom == null and fall back to
-        // wandering/idle on their own once that leg finishes.
+        // routes back through ReturnToPreviousActivity, which already checks assignedJobRoom == null and
+        // falls back to wandering/idle on its own. The mid-lift-trip case resumes via ResumeTripAfterLift
+        // instead, which has no such check of its own (confirmed the hard way — see OnArrivedAtWorkSpot's
+        // assignedJobRoom == null guard, which is what actually catches this case).
     }
 
     // Called by a job room's OnRoomShutdown (IJobRoom) when it loses Power or Water while this bunny is
@@ -2062,6 +2076,22 @@ public class NPCBunny : MonoBehaviour, ICombatant
         transform.position = stagingPosition;
     }
 
+    // Save-load only — sibling of SetForagingStateDirect immediately above, same reasoning. RestoreFromSave
+    // (called just before this, earlier in the same load pass) unconditionally sets HasEnteredBase = true;
+    // this is the one place that puts a still-queued-at-the-gate bunny back into HasEnteredBase == false
+    // instead, matching what she actually was at save time (never admitted, still awaiting approval or
+    // still walking to her queue spot). transform.position is deliberately left untouched — Instantiate
+    // already placed her at her exact saved position (see SaveManager.LoadBunnies), which is correct even
+    // for a bunny that was still mid-walk toward her queue spot and never actually arrived, same
+    // "restore the snapshot, don't replay movement" convention every other mid-transit save case already
+    // uses. GateQueueManager.RestoreQueueState (called right after this, by SaveManager.LoadGateQueue) is
+    // what actually re-inserts her into the right queue list.
+    public void SetQueuedStateDirect()
+    {
+        CurrentState = BunnyState.Idle;
+        HasEnteredBase = false;
+    }
+
     // Restores this bunny's job/relax/sleep claim directly (no walking there — a loaded bunny is
     // resuming, not arriving) by claiming a real spot via the same RequestSpot every room type already
     // exposes. Falls back to Idle-with-no-claim if the room no longer has a free spot (e.g. the save is
@@ -2687,6 +2717,20 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
     private void OnArrivedAtWorkSpot()
     {
+        // Unassigned mid-lift-trip (see UnassignFromJob's "deliberately left alone" comment on the
+        // WaitingForLift/RidingLift/DisembarkingLift case) — the job claim was already released before
+        // this cross-floor leg resolved, but ResumeTripAfterLift resumes toward the stale pendingFinalSpot
+        // regardless (it has no assignedJobRoom check of its own, despite that comment's claim). Recover
+        // exactly like the same-floor cancellation case (OnArrivedIdleAfterCancelledTrip) instead of
+        // dereferencing the now-null assignedJobRoom below — confirmed NREing here in testing (2026-08-11),
+        // which left the bunny frozen in a broken Working state wherever this leg happened to end.
+        if (assignedJobRoom == null)
+        {
+            OnArrivedIdleAfterCancelledTrip();
+            CurrentState = BunnyState.Idle;
+            return;
+        }
+
         currentRoom = (RoomBase)assignedJobRoom;
         currentSpot = claimedWorkSpot;
         currentWanderPoint = null;

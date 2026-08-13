@@ -70,15 +70,13 @@ public class SaveManager : MonoBehaviour
             return false;
         }
 
-        // No bunny is left mid-queue at save time — see GateQueueManager.ResolveQueueForSave's own comment.
-        GateQueueManager.Instance?.ResolveQueueForSave();
-
         SaveData data = new SaveData();
 
         SaveResources(data);
         SavePopulation(data);
         SaveRooms(data);
         Dictionary<NPCBunny, int> bunnyIndices = SaveBunnies(data);
+        SaveGateQueue(data, bunnyIndices); // must run after SaveBunnies — needs bunnyIndices, and every queued bunny to already be in data.bunnies (see SaveBunnies' own isQueued check)
         SaveUnlocks(data);
         SaveForagingInventory(data);
         SaveForagingTrips(data, bunnyIndices);
@@ -151,7 +149,13 @@ public class SaveManager : MonoBehaviour
             // to find either, so its whole trip vanishes on load even though PopulationManager still
             // (correctly) reports one bunny out foraging.
             bool isForaging = ForagingManager.Instance != null && ForagingManager.Instance.IsCurrentlyForaging(bunny);
-            if (!bunny.HasEnteredBase && !isForaging) continue; // still queued/awaiting approval — not a real resident and not away on a trip either
+            // Still queued/awaiting approval at the gate — a real bunny worth persisting (see
+            // GateQueueSaveData's own comment for why this is no longer force-admitted instead), but with
+            // no room/job of her own yet. Falls through to the generic Idle/no-room branch below exactly
+            // like any other unassigned Idle bunny — SaveGateQueue (called right after this method
+            // returns) is what actually records her queue membership/position.
+            bool isQueued = GateQueueManager.Instance != null && GateQueueManager.Instance.IsInQueue(bunny);
+            if (!bunny.HasEnteredBase && !isForaging && !isQueued) continue; // truly nothing yet — not a resident, not away on a trip, not even queued
 
             SavedBunnyRole role;
             RoomBase room;
@@ -237,6 +241,21 @@ public class SaveManager : MonoBehaviour
         }
 
         return indices;
+    }
+
+    // See GateQueueSaveData's own comment. Must run after SaveBunnies — needs bunnyIndices, and every
+    // queued/backlogged bunny to already be written to data.bunnies (SaveBunnies' own isQueued check).
+    private void SaveGateQueue(SaveData data, Dictionary<NPCBunny, int> bunnyIndices)
+    {
+        if (GateQueueManager.Instance == null) return;
+
+        foreach (NPCBunny bunny in GateQueueManager.Instance.QueuedBunnies)
+            if (bunny != null && bunnyIndices.TryGetValue(bunny, out int index))
+                data.gateQueue.queuedBunnyIndices.Add(index);
+
+        foreach (NPCBunny bunny in GateQueueManager.Instance.WaitingBacklogBunnies)
+            if (bunny != null && bunnyIndices.TryGetValue(bunny, out int index))
+                data.gateQueue.waitingBunnyIndices.Add(index);
     }
 
     private void SaveUnlocks(SaveData data)
@@ -388,6 +407,7 @@ public class SaveManager : MonoBehaviour
 
             List<NPCBunny> loadedBunnies = LoadBunnies(data, roomsByInstanceId);
             LoadResources(data); // after rooms so every *Max is already correctly recomputed
+            LoadGateQueue(data, loadedBunnies);
             LoadForagingTrips(data, loadedBunnies);
             // Eggs don't reference live bunny objects, so order relative to LoadBunnies doesn't matter —
             // kept adjacent to LoadForagingTrips stylistically (both are "in-flight, non-bunny-keyed
@@ -601,6 +621,39 @@ public class SaveManager : MonoBehaviour
             int count = loadedBunnies.Count(b => b != null && b.IsPregnant && b.ClaimedHatcheryRoom == hatchery);
             hatchery.SetReservedCountForLoad(count);
         }
+    }
+
+    // See GateQueueSaveData's own comment. Runs right after LoadBunnies so bunnyIndex -> NPCBunny
+    // resolution is available, and before LoadForagingTrips (order between the two doesn't actually
+    // matter — a bunny can never be in both lists — kept here purely to mirror LoadBunnies' own call
+    // order in LoadGame). Each resolved bunny needs SetQueuedStateDirect to undo RestoreFromSave's
+    // unconditional HasEnteredBase = true before GateQueueManager.RestoreQueueState re-inserts her into
+    // the right queue list — same "generic restore, then a dedicated override pass" shape LoadForagingTrips/
+    // SetForagingStateDirect already use for an away-foraging bunny.
+    private void LoadGateQueue(SaveData data, List<NPCBunny> loadedBunnies)
+    {
+        if (GateQueueManager.Instance == null) return;
+
+        List<NPCBunny> queuedBunnies = ResolveGateQueueIndices(data.gateQueue.queuedBunnyIndices, loadedBunnies);
+        List<NPCBunny> waitingBunnies = ResolveGateQueueIndices(data.gateQueue.waitingBunnyIndices, loadedBunnies);
+
+        foreach (NPCBunny bunny in queuedBunnies)
+            bunny.SetQueuedStateDirect();
+        foreach (NPCBunny bunny in waitingBunnies)
+            bunny.SetQueuedStateDirect();
+
+        GateQueueManager.Instance.RestoreQueueState(queuedBunnies, waitingBunnies);
+    }
+
+    private static List<NPCBunny> ResolveGateQueueIndices(List<int> indices, List<NPCBunny> loadedBunnies)
+    {
+        List<NPCBunny> resolved = new List<NPCBunny>();
+        foreach (int index in indices)
+        {
+            if (index < 0 || index >= loadedBunnies.Count || loadedBunnies[index] == null) continue;
+            resolved.Add(loadedBunnies[index]);
+        }
+        return resolved;
     }
 
     private void LoadForagingTrips(SaveData data, List<NPCBunny> loadedBunnies)

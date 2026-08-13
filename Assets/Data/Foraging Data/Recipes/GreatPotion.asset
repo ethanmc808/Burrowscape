@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5df66b66906f333489dd34559203272a, type: 3}
   m_Name: GreatPotion
   m_EditorClassIdentifier: Assembly-CSharp::RecipeDefinition
-  displayName: Potion
+  displayName: Great Potion
   icon: {fileID: 21300000, guid: fc7c98ea529a6d24eb62f95baea9ad97, type: 3}
   description: Heals a decent amount of health.
   output: {fileID: 11400000, guid: ff8f65b9b4cadd548973bee6e2b82db0, type: 2}
@@ -20,5 +20,5 @@ MonoBehaviour:
   ingredients:
   - herb: {fileID: 11400000, guid: c1a014234b525c740815d1b60393465f, type: 2}
     amount: 2
-  baseBrewTime: 5
+  baseBrewTime: 120
   discovered: 1

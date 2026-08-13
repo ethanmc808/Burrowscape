@@ -91,6 +91,11 @@ public class GateQueueManager : MonoBehaviour
         return currentQueue.Contains(bunny) || waitingBunnies.Contains(bunny);
     }
 
+    // Read by SaveManager.SaveGateQueue to persist real queue order — see GateQueueSaveData's own
+    // comment for why (replaces the old force-admit-on-save behavior).
+    public IReadOnlyList<NPCBunny> QueuedBunnies => currentQueue;
+    public IReadOnlyList<NPCBunny> WaitingBacklogBunnies => waitingBunnies.ToArray();
+
     // The fixed scene Transform marking the front queue slot (never moves — occupancy is what changes,
     // via ShiftQueueForward). No longer consumed by any UI (BunnyInfoUI is fixed-position, unlike the
     // old BunnyApprovalUI it replaced, which world-anchored here) — kept in case something else needs
@@ -182,36 +187,29 @@ public class GateQueueManager : MonoBehaviour
         EntranceGate.Instance.RequestPassage();
     }
 
-    // Save-load only — called right before writing a save so no bunny is ever mid-queue at save time
-    // (queue position, front-bunny clearance, and backlog ordering are all transient bookkeeping this
-    // project deliberately doesn't try to serialize). Walks every queued/waiting bunny straight through
-    // instantly (EnterBaseAndWander — the same non-walking arrival path a room-transition resettle
-    // already uses) and applies whatever population-bucket transition its ArrivalType implies, exactly
-    // as Update() above would have done once each bunny actually reached the front.
-    public void ResolveQueueForSave()
+    // Save-load only — counterpart to SaveManager.SaveGateQueue's export. Called once by
+    // SaveManager.LoadGateQueue, after every bunny has already been reconstructed (LoadBunnies), so the
+    // NPCBunny references below are already resolved from the saved bunnyIndex list. Puts each restored
+    // bunny back into EXACTLY the queue list/position it held at save time — currentQueue order matters
+    // (index 0 is front) — rather than admitting them, unlike the old ResolveQueueForSave this replaces
+    // (see git history / GateQueueSaveData's own comment for why that force-admit was a real bug: it
+    // silently bypassed the player's Approve/Reject decision on every single save). Doesn't call
+    // MoveToQueueSpot for anyone — each bunny's exact saved transform.position was already restored by
+    // SaveManager.LoadBunnies (including a bunny that was still mid-walk toward her queue spot and never
+    // actually arrived), so re-issuing a fresh walk here would just snap her onto the queue-spot marker
+    // instead of leaving her where she actually was.
+    public void RestoreQueueState(List<NPCBunny> queuedBunnies, List<NPCBunny> waitingBacklogBunnies)
     {
-        List<NPCBunny> allQueued = new List<NPCBunny>(currentQueue);
-        allQueued.AddRange(waitingBunnies);
-
-        foreach (NPCBunny bunny in allQueued)
-        {
-            if (bunny == null) continue;
-
-            if (bunny.ArrivalType == BunnyArrivalType.Wild)
-                PopulationManager.Instance?.AddNewResident(ResidentCategory.InBase);
-            else if (bunny.ArrivalType == BunnyArrivalType.ReturningFromQuest)
-                PopulationManager.Instance?.MoveResident(ResidentCategory.Questing, ResidentCategory.InBase);
-            else if (bunny.ArrivalType == BunnyArrivalType.ReturningFromForaging)
-                PopulationManager.Instance?.MoveResident(ResidentCategory.Foraging, ResidentCategory.InBase);
-
-            bunny.SetAwaitingApproval(false);
-            bunny.EnterBaseAndWander(entranceRoom, gateExitPoint);
-        }
-
         currentQueue.Clear();
         waitingBunnies.Clear();
         pendingRequestBunny = null;
         frontBunnyCleared = false;
+
+        foreach (NPCBunny bunny in queuedBunnies)
+            if (bunny != null) currentQueue.Add(bunny);
+
+        foreach (NPCBunny bunny in waitingBacklogBunnies)
+            if (bunny != null) waitingBunnies.Enqueue(bunny);
     }
 
     public void RejectFrontBunny(NPCBunny bunny)

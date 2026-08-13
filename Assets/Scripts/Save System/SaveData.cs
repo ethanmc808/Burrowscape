@@ -268,6 +268,23 @@ public class WildBunnyNamesSaveData
     public List<WildBunnyNames.UsedNameEntry> usedNames = new List<WildBunnyNames.UsedNameEntry>();
 }
 
+// ---------- Gate queue ----------
+
+// A bunny still waiting at the gate at save time — either physically queued (a real QueueSpot claimed)
+// or overflow-backlogged beyond queueSpots.Count — used to be silently force-admitted into the base on
+// every save (the old GateQueueManager.ResolveQueueForSave), bypassing the player's Approve/Reject
+// decision entirely since this state wasn't part of the save schema at all. Persisted for real now so a
+// reload puts everyone back exactly where they were, still waiting. Order matters in both lists: index 0
+// of queuedBunnyIndices is the front of the physical queue (closest to the gate); waitingBunnyIndices is
+// FIFO. Each entry is an index into SaveData.bunnies, same bunnyIndex cross-reference pattern
+// ForagingTripSaveData already uses — see GateQueueManager.RestoreQueueState/SaveManager.SaveGateQueue.
+[System.Serializable]
+public class GateQueueSaveData
+{
+    public List<int> queuedBunnyIndices = new List<int>();
+    public List<int> waitingBunnyIndices = new List<int>();
+}
+
 // ---------- Top level ----------
 
 [System.Serializable]
@@ -283,4 +300,5 @@ public class SaveData
     public GameSpeedSaveData gameSpeed = new GameSpeedSaveData();
     public WildBunnyNamesSaveData bunnyNames = new WildBunnyNamesSaveData();
     public List<EggSaveData> eggs = new List<EggSaveData>();
+    public GateQueueSaveData gateQueue = new GateQueueSaveData();
 }
