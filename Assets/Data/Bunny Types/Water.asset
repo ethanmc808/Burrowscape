@@ -15,6 +15,7 @@ MonoBehaviour:
   type: 2
   displayName: Water
   icon: {fileID: 21300000, guid: 2d4c1f794471722459589ba1a2a3b22c, type: 3}
+  eggSprite: {fileID: 21300000, guid: 490bfb42f49d1a64088e7160e2f82095, type: 3}
   prefab: {fileID: 5601990158651218953, guid: 316eea5bedff5aa499004fc2b6a28d5e, type: 3}
   baseHP: 100
   baseAttack: 80

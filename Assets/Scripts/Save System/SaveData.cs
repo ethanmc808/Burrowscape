@@ -162,6 +162,10 @@ public class BunnySaveData
     public string claimedHatcheryRoomInstanceId;
 
     public bool isKidBunny;
+    // See the Kid Bunny Growth plan — mirrors pregnancyElapsed's own shape (resumed via
+    // NPCBunny.RestoreKidGrowthProgress on load rather than restarting from 0). 0/unused when
+    // isKidBunny is false.
+    public float kidGrowthElapsed;
 }
 
 // ---------- Eggs (see the Breeding System plan) ----------

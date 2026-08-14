@@ -597,6 +597,12 @@ public class InvasionManager : MonoBehaviour
 
         foreach (NPCBunny bunny in DwellerRoster.Instance.GetBunniesCurrentlyInRoom(room))
         {
+            // Kid bunnies aren't supposed to fight (see the Kid Bunny Growth plan) — this is the one place
+            // that needed the guard, since a kid can still be physically present in an invaded room via
+            // ordinary idle/relax routing (AssignToJob already blocks Guard Room assignment, but that's a
+            // job-assignment gate, not a "who gets auto-pulled into an active invasion" gate).
+            if (bunny.IsKidBunny) continue;
+
             RoomSpot spot = room.ClaimCombatSpot(bunny);
             Debug.Log($"[VFXDEBUG] TriggerAutoDefend({room.name}): {bunny.name} ClaimCombatSpot -> {(spot != null ? spot.name : "NULL")}");
             if (spot == null) break; // room's CombatSpots are full — remainder stay put

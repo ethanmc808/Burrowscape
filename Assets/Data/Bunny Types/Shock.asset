@@ -15,6 +15,7 @@ MonoBehaviour:
   type: 4
   displayName: Shock
   icon: {fileID: 21300000, guid: 07776f4032e88a94091a06fae3642ba9, type: 3}
+  eggSprite: {fileID: 21300000, guid: 82533e9d4453eef4ebdecc672349ac4c, type: 3}
   prefab: {fileID: 5601990158651218953, guid: 219ee38c1feafcf4f87182643e6800da, type: 3}
   baseHP: 50
   baseAttack: 110

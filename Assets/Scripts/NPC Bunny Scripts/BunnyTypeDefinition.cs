@@ -13,7 +13,7 @@ public class BunnyTypeDefinition : ScriptableObject
     public string displayName;
     [Tooltip("Shown next to the Type label in BunnyInfoUI. Null until custom type-symbol art exists for this type — the icon Image just hides itself in that case.")]
     public Sprite icon;
-    [Tooltip("Egg.cs's SpriteRenderer for this type — a litter's shared Type selects which color egg shows in the Hatchery (see the Breeding System plan). Null until this type's egg art exists; Egg falls back to whatever sprite is already on its prefab's SpriteRenderer if unset, same 'not yet authored isn't an error state' philosophy as icon above.")]
+    [Tooltip("Egg.cs's SpriteRenderer for this type — a litter's shared Type selects which color egg shows in the Hatchery (see the Breeding System plan). Null until this type's egg art exists; Egg falls back to whatever sprite is already on its prefab's SpriteRenderer if unset, same 'not yet authored isn't an error state' philosophy as icon above. This is the ONLY egg sprite — see the Egg Progression plan's decision to skip a separate cracked/hatching-stage sprite and a separate split-open sprite, relying on the hand-authored Animator clips (motion) plus the hatch VFX/SFX (the actual hatch moment) to carry those stages instead.")]
     public Sprite eggSprite;
 
     [Header("Prefab")]

@@ -26,6 +26,13 @@ MonoBehaviour:
   eggIncubationMinSeconds: 30
   eggIncubationMaxSeconds: 30
   kidBunnyScale: 0.7
+  kidGrowthDurationSeconds: 60
+  kidGrowthFadeSeconds: 1.5
   eggPrefab: {fileID: 2697210185167629396, guid: 290f1a5246e6a114f920df282ea65b4a, type: 3}
+  eggPlacementYOffset: 0.3
+  eggHatchingSpriteThreshold: 0.75
+  eggHatchVFXPrefab: {fileID: 143089893350638166, guid: f985b16c7d42f6c409eb380276058694, type: 3}
+  eggHatchVFXLifetimeSeconds: 2
+  eggHatchClip: {fileID: 0}
   fireOrLightTenderHatchSpeedBonus: 0.15
   otherTypeTenderHatchSpeedBonus: 0.05

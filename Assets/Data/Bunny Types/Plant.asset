@@ -15,6 +15,7 @@ MonoBehaviour:
   type: 3
   displayName: Plant
   icon: {fileID: 21300000, guid: d1fe7cea85db38844ac4929e588a5aa4, type: 3}
+  eggSprite: {fileID: 21300000, guid: 7aed0f35b7b062243851d296f238f886, type: 3}
   prefab: {fileID: 5601990158651218953, guid: ff3c68b7fe7054f4998e03f2cce6bcf1, type: 3}
   baseHP: 130
   baseAttack: 70

@@ -234,6 +234,7 @@ public class SaveManager : MonoBehaviour
                 claimedHatcheryRoomInstanceId = bunny.ClaimedHatcheryRoom != null ? bunny.ClaimedHatcheryRoom.InstanceId : "",
 
                 isKidBunny = bunny.IsKidBunny,
+                kidGrowthElapsed = bunny.KidGrowthElapsed,
             };
 
             data.bunnies.Add(saved);
@@ -598,7 +599,10 @@ public class SaveManager : MonoBehaviour
             }
 
             if (bunnyData.isKidBunny)
+            {
                 bunny.SetIsKidBunny(true);
+                bunny.RestoreKidGrowthProgress(bunnyData.kidGrowthElapsed);
+            }
 
             loaded.Add(bunny);
         }

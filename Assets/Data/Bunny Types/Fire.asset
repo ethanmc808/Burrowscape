@@ -15,6 +15,7 @@ MonoBehaviour:
   type: 1
   displayName: Fire
   icon: {fileID: 21300000, guid: 15dc2e5afd5fc364681a6880303570c6, type: 3}
+  eggSprite: {fileID: 21300000, guid: 034d073ac6f0f464d99455a12633f491, type: 3}
   prefab: {fileID: 5601990158651218953, guid: 80889a93d017f144ca81d2cc3d4138dc, type: 3}
   baseHP: 70
   baseAttack: 130

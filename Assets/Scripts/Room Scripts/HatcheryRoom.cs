@@ -228,13 +228,20 @@ public class HatcheryRoom : RoomBase, IJobRoom
             return;
         }
 
+        // Ground-level anchor for spawning, NOT egg.transform.position — Egg.Initialize nudges the egg's
+        // own transform up by BreedingConfig.eggPlacementYOffset to keep its center-pivot sprite from
+        // sinking into the floor, but that offset is purely cosmetic for the egg. Spawning hatchlings from
+        // it too would spawn them floating in midair (they'd visibly drop to the floor on arrival) since
+        // NPCBunny prefabs don't share the egg sprite's pivot problem. ClaimedSpot is the real floor spot.
+        Vector3 hatchGroundPosition = egg.ClaimedSpot.transform.position;
+
         // Small per-sibling offset so multiple hatchlings from one egg don't fully overlap visually —
         // cosmetic only, not load-bearing.
         for (int i = 0; i < egg.LitterMembers.Count; i++)
         {
             LitterMemberData member = egg.LitterMembers[i];
             Vector3 spawnOffset = new Vector3(i * 0.3f, 0f, 0f);
-            Vector3 spawnPosition = egg.transform.position + spawnOffset;
+            Vector3 spawnPosition = hatchGroundPosition + spawnOffset;
 
             GameObject spawnedObject = Instantiate(typeDef.prefab, spawnPosition, Quaternion.identity);
             NPCBunny newBunny = spawnedObject.GetComponent<NPCBunny>();

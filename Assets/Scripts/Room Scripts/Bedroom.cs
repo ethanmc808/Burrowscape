@@ -207,6 +207,23 @@ public class Bedroom : RoomBase, IJobRoom
             // the instant either occupant left, but bail cleanly if it somehow didn't.
             if (maleOccupant == null || femaleOccupant == null) yield break;
 
+            // Both physically settled at their breeding spot, not mid-transit for ANY reason — confirmed
+            // bug 2026-08-12: TryLayEgg walks the female all the way to the Hatchery and back WITHOUT ever
+            // calling NotifyBunnyLeavingToEat (or anything else) on this Bedroom, so unlike every other
+            // job-room interrupt, this coroutine has no idea she's gone and keeps rolling on schedule the
+            // whole time she's away. IsPregnant alone isn't enough to guard against that — it clears the
+            // instant she LAYS (HatcheryRoom.HatchEgg... actually OnArrivedAtHatcherySpot's
+            // ClearPregnancyState), well before she's finished walking back to Working, leaving a real
+            // window where a roll can fire on a bunny mid-walk. BeginMatingSequence's routing assumes a
+            // settled starting point (a claimed spot, or a wander point a RoomPath actually originates
+            // from) — mid-transit, currentSpot is null and currentWanderPoint can be a transient waypoint
+            // like a room's own entrance Transform, which produced "No RoomPath found from LeftEntrance to
+            // MatingSpot" for Puff. Checking CurrentState here is a general guard against every variant of
+            // "not actually here right now," not just this one call site — same reasoning
+            // GetReinforceableBunnies uses CurrentState to gate its own candidate pool.
+            if (maleOccupant.CurrentState != BunnyState.Working || femaleOccupant.CurrentState != BunnyState.Working)
+                continue;
+
             if (femaleOccupant.IsPregnant) continue; // stay parked, don't waste a roll
 
             HatcheryRoom hatchery = BaseManager.Instance != null

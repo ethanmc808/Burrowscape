@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 // The MonoBehaviour singleton holding the trait pool (BunnyTraitDefinition.cs) — split into its own
@@ -89,5 +90,31 @@ public class BunnyTraitCatalog : MonoBehaviour
 
         List<BunnyTraitDefinition> fallback = RollTraits(1);
         return fallback.Count > 0 ? fallback[0] : null;
+    }
+
+    // A kid bunny only ever hatches with one inherited trait (RollInheritedTrait above) — adult wild
+    // spawns get two (RollTraits(2)). Called once by NPCBunny.GrowUp when a kid grows into an adult, to
+    // bring it up to that same two-trait baseline. Same incompatibility rule as RollTraits/
+    // RollReplacementTrait, PLUS excludes anything already in existingTraits so it can never hand back a
+    // duplicate of the trait the bunny already has. Returns null gracefully (same contract as every other
+    // roll method here) if the catalog is empty or nothing left is a valid, non-duplicate pick.
+    public BunnyTraitDefinition RollAdditionalTrait(IReadOnlyList<BunnyTraitDefinition> existingTraits)
+    {
+        List<BunnyTraitDefinition> pool = new List<BunnyTraitDefinition>(traits);
+        if (existingTraits != null)
+            pool.RemoveAll(t => existingTraits.Contains(t));
+
+        while (pool.Count > 0)
+        {
+            int i = Random.Range(0, pool.Count);
+            BunnyTraitDefinition candidate = pool[i];
+            pool.RemoveAt(i);
+
+            bool conflicts = existingTraits != null && existingTraits.Any(k =>
+                k.incompatibleTraitIds.Contains(candidate.id) || candidate.incompatibleTraitIds.Contains(k.id));
+
+            if (!conflicts) return candidate;
+        }
+        return null;
     }
 }

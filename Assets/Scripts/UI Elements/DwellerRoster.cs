@@ -61,10 +61,15 @@ public class DwellerRoster : MonoBehaviour
     // those are driven by their own room's coroutine, which has no idea CurrentState just changed out
     // from under it (same caution CanDepartForForaging already documents for this exact class of state).
     // Also excludes anyone already Defending/Fainted (already helping, or not fit to), Recovering
-    // (hospitalized), Foraging (away), or still queued/awaiting gate approval.
+    // (hospitalized), Foraging (away), or still queued/awaiting gate approval. Also excludes kid bunnies
+    // (see the Kid Bunny Growth plan) — unlike AssignToJob, BeginDefending itself has no IsKidBunny guard
+    // of its own (a manual deploy is a direct RoomBase.ClaimCombatSpot + NPCBunny.BeginDefending call, it
+    // never goes through AssignToJob), so this filter is the ONLY thing standing between a kid and an
+    // active invasion — confirmed bug 2026-08-12: without it, GuardDeployUI would happily let the player
+    // send a kid bunny to fight.
     public List<NPCBunny> GetReinforceableBunnies()
     {
-        return allBunnies.Where(b => b.HasEnteredBase &&
+        return allBunnies.Where(b => b.HasEnteredBase && !b.IsKidBunny &&
             (b.CurrentState == BunnyState.Idle || b.CurrentState == BunnyState.Working || b.CurrentState == BunnyState.Relaxing)
         ).ToList();
     }
@@ -76,7 +81,12 @@ public class DwellerRoster : MonoBehaviour
         // entrance to the job room, skipping the gate/queue entirely. Also exclude bunnies currently out
         // Foraging (parked offscreen — see NPCBunny.DepartForForaging) — they have no job and
         // HasEnteredBase is still true, so without this they'd wrongly appear assignable while away.
-        return allBunnies.Where(b => !b.IsAssignedToJob && b.HasEnteredBase && b.CurrentState != BunnyState.Foraging).ToList();
+        // Also exclude kid bunnies (see the Kid Bunny Growth plan) — AssignToJob itself already rejects
+        // one (isKidBunny guard), but without this filter AssignmentUI still listed them as clickable and
+        // AssignAndClose closed the panel unconditionally regardless of whether the assign succeeded, so
+        // clicking a kid bunny silently did nothing while looking like it worked. Same "hide, don't let
+        // them click into a silent failure" precedent as Bedroom's IsEligibleForBreeding filter just below.
+        return allBunnies.Where(b => !b.IsAssignedToJob && b.HasEnteredBase && !b.IsKidBunny && b.CurrentState != BunnyState.Foraging).ToList();
     }
 
     // Every resident bunny eligible to be sent Foraging — HasEnteredBase (a real dweller, not still

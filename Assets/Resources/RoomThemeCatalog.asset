@@ -63,3 +63,18 @@ MonoBehaviour:
     lowerWallMaterial: {fileID: 2100000, guid: 014b0eb97ae824442bbf7acef963a8e4, type: 2}
     ceilingMaterial: {fileID: 2100000, guid: ec5babf6f83c2c9459ab072d00fe79b7, type: 2}
     floorMaterial: {fileID: 2100000, guid: 014b0eb97ae824442bbf7acef963a8e4, type: 2}
+  - roomTypeId: Hatchery
+    upperWallMaterial: {fileID: 2100000, guid: 906de96ed0b137e429d81e9a664e688a, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: 5484e804de79e1e4594b5f3bc20eecce, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: 906de96ed0b137e429d81e9a664e688a, type: 2}
+    floorMaterial: {fileID: 2100000, guid: 5484e804de79e1e4594b5f3bc20eecce, type: 2}
+  - roomTypeId: Laboratory
+    upperWallMaterial: {fileID: 2100000, guid: aa22570c04aa8e94e9514076722d042d, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: dfbcb5b5542b8e947913fed88c859cac, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: aa22570c04aa8e94e9514076722d042d, type: 2}
+    floorMaterial: {fileID: 2100000, guid: dfbcb5b5542b8e947913fed88c859cac, type: 2}
+  - roomTypeId: GuardRoom
+    upperWallMaterial: {fileID: 2100000, guid: 04861bcca9139e640baecf5ddb1d60ad, type: 2}
+    lowerWallMaterial: {fileID: 2100000, guid: 30f0e70770b543242baf2a5fcd184298, type: 2}
+    ceilingMaterial: {fileID: 2100000, guid: 04861bcca9139e640baecf5ddb1d60ad, type: 2}
+    floorMaterial: {fileID: 2100000, guid: 30f0e70770b543242baf2a5fcd184298, type: 2}

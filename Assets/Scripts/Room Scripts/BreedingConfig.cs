@@ -70,10 +70,28 @@ public class BreedingConfig : ScriptableObject
     [Header("Kid Bunny")]
     [Tooltip("Uniform scale applied to a kid bunny's transform at hatch (NPCBunny.SetIsKidBunny) so it reads as visibly smaller than an adult — same prefab/rig, no separate kid art. 1 = adult size.")]
     [Range(0.1f, 1f)] public float kidBunnyScale = 0.7f;
+    [Tooltip("How long a kid bunny stays a kid before automatically growing up (NPCBunny.GrowUp) — a flat duration, not a random range (see the Kid Bunny Growth plan's decision #1). Set to 60 (1 minute) for quick testing; the real target is 3600 (1 hour).")]
+    public float kidGrowthDurationSeconds = 60f;
+    [Tooltip("How long the visual scale fade from kidBunnyScale up to 1 (adult size) takes once GrowUp fires — purely cosmetic, doesn't gate job/forage eligibility (that unlocks instantly the moment growth completes).")]
+    public float kidGrowthFadeSeconds = 1.5f;
 
     [Header("Egg Prefab")]
     [Tooltip("The single shared Egg prefab (Egg.cs) instantiated by NPCBunny.OnArrivedAtHatcherySpot on lay. One universal prefab, not per-type — the type-specific look comes from Egg applying BunnyTypeDefinition.eggSprite dynamically, not from separate prefabs.")]
     public GameObject eggPrefab;
+    [Tooltip("World-Y nudge applied on top of the claimed HatcherySpot's own position (Egg.Initialize) — the egg sprites are imported with a CENTER pivot, so placing the object exactly at spot-height renders the bottom half of the sprite sinking below the floor. This lifts it by roughly half the sprite's world-space height instead. Approximate, not computed from the sprite's actual pixel dimensions — nudge to taste in Play mode if it's not quite sitting right.")]
+    public float eggPlacementYOffset = 0.25f;
+
+    [Header("Egg Progression (see the Egg Progression plan — hand-authored Animator clips on Egg.cs, not procedural code; this config only holds the pacing split, not the animation itself)")]
+    [Tooltip("How far through incubation (0-1) before Egg fires its CloseToHatching Animator trigger — e.g. 0.75 = the hand-authored 'egg_incubating' breathing loop plays for the first 75% of incubation, then 'egg_closetohatching' takes over for the last 25%. No sprite swap accompanies this — deliberately just the one eggSprite for an egg's whole life (see BunnyTypeDefinition.eggSprite's own comment).")]
+    [Range(0f, 1f)] public float eggHatchingSpriteThreshold = 0.75f;
+
+    [Header("Egg Hatch VFX/SFX (see the Egg Progression plan)")]
+    [Tooltip("One-shot VFX prefab instantiated at the egg's position the instant it hatches (Egg.HatchNow, right before the egg itself is destroyed and HatcheryRoom.HatchEgg spawns the litter). One shared prefab for every type, same 'one universal asset, not per-type' reasoning as eggPrefab above. Carries the whole hatch moment on its own — deliberately no 'split open' animation/sprite (see the Egg Progression plan). Null is a graceful no-op — no VFX authored yet isn't an error state.")]
+    public GameObject eggHatchVFXPrefab;
+    [Tooltip("How long the spawned eggHatchVFXPrefab instance is kept alive before being destroyed — a flat fallback duration rather than reading the particle system's own timing, so any VFX prefab (even a placeholder with unusual Start Lifetime/Duration values) gets cleaned up reliably instead of leaking a stopped-but-not-destroyed GameObject.")]
+    public float eggHatchVFXLifetimeSeconds = 2f;
+    [Tooltip("One-shot SFX played (AudioManager.PlaySFXAtPosition, same pattern as NPCBunny's levelUpClip) at the same moment/position as eggHatchVFXPrefab above. One shared clip for every type. Null is a graceful no-op — PlaySFXAtPosition already skips a null clip.")]
+    public AudioClip eggHatchClip;
 
     [Header("Hatchery Tending (bunnies assigned to a Hatchery's TendingSpots speed up incubation — Fire/Light types more than other types)")]
     [Tooltip("Incubation speed bonus contributed PER actively-tending Fire or Light bunny, summed across everyone currently tending (e.g. 0.15 = +15% per Fire/Light tender, so two give +30%).")]

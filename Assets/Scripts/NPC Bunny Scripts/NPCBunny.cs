@@ -322,21 +322,96 @@ public class NPCBunny : MonoBehaviour, ICombatant
         claimedHatcheryRoom = null;
     }
 
-    // ---------- Kid Bunny (see the Breeding System plan doc) ----------
-    // Set once at hatch (HatcheryRoom.HatchEgg), never cleared — growth-to-adult is explicitly out of
-    // scope for this pass (see the plan's "Explicitly out of scope" section). Gates job assignment and
-    // foraging/questing below; falls back to ordinary idle/relax routing otherwise (no School/Play Room
-    // yet, so a kid bunny behaves like any other unassigned adult except for those two gates).
+    // ---------- Kid Bunny (see the Breeding System plan + the Kid Bunny Growth follow-up) ----------
+    // Set at hatch (HatcheryRoom.HatchEgg) or on load-restore (SaveManager.LoadBunnies), cleared by GrowUp
+    // below once kidGrowthElapsed reaches BreedingConfig.kidGrowthDurationSeconds. Gates job assignment,
+    // foraging/questing, and auto-defend (InvasionManager.TriggerAutoDefend) while true; falls back to
+    // ordinary idle/relax routing otherwise (no School/Play Room yet, so a kid bunny behaves like any
+    // other unassigned adult except for those gates).
     private bool isKidBunny;
+    private float kidGrowthElapsed;
     public bool IsKidBunny => isKidBunny;
+    // Read-only accessor for SaveManager, same pattern as PregnancyElapsed.
+    public float KidGrowthElapsed => kidGrowthElapsed;
+
     // Also scales the sprite/rig down to read as visibly smaller than an adult — same prefab, no separate
-    // kid art. Centralized here (rather than at the HatchEgg call site) so a future growth-to-adult system
-    // can just call SetIsKidBunny(false) and get the adult scale back for free, symmetrically. Scale factor
+    // kid art. Used for the hatch-time/load-restore case ONLY — an instant snap is correct there (no
+    // "growing" moment to animate). GrowUp below deliberately does NOT call this for the false case; it
+    // sets isKidBunny directly and fades the scale smoothly instead (see FadeToAdultScale). Scale factor
     // itself lives on BreedingConfig.kidBunnyScale (tunable), not a local const, so it's Inspector-editable.
     public void SetIsKidBunny(bool value)
     {
         isKidBunny = value;
         transform.localScale = value ? Vector3.one * BreedingConfig.Instance.kidBunnyScale : Vector3.one;
+    }
+
+    // Called by SaveManager.LoadBunnies right after SetIsKidBunny(true), mirroring BeginPregnancy's own
+    // elapsedSoFar parameter — resumes a partially-grown kid's timer instead of restarting it from 0.
+    public void RestoreKidGrowthProgress(float elapsed) => kidGrowthElapsed = elapsed;
+
+    // Fires once kidGrowthElapsed (ticked in Update below) reaches BreedingConfig.kidGrowthDurationSeconds.
+    // Adult wild spawns roll two traits (BunnyTraitCatalog.RollTraits(2)) but a kid only ever hatches with
+    // the one inherited trait (RollInheritedTrait), so growing up rolls a second one now to match that
+    // baseline — random, same incompatibility/no-duplicate rules as any other trait roll (see
+    // RollAdditionalTrait's own comment). Job/forage/quest eligibility and auto-defend all unlock the
+    // instant isKidBunny flips false, below — only the visual scale change is animated (FadeToAdultScale).
+    private void GrowUp()
+    {
+        isKidBunny = false;
+        kidGrowthElapsed = 0f;
+
+        if (BunnyTraitCatalog.Instance != null)
+        {
+            BunnyTraitDefinition secondTrait = BunnyTraitCatalog.Instance.RollAdditionalTrait(Traits);
+            if (secondTrait != null)
+            {
+                Traits = new List<BunnyTraitDefinition>(Traits) { secondTrait };
+
+                // Actually apply the new trait's effect, not just add it to the list for display/future-
+                // breeding purposes — confirmed bug 2026-08-12: without this, a rate-multiplier trait
+                // (Diligent, Energetic, etc.) rolled here would silently never take effect, and Stoic
+                // wouldn't clear the +/- indicator BunnyInfoUI reads off BoostedStat/LoweredStat. Nature's
+                // case (IgnoresNature/Stoic) can't use the same single-trait ApplyOneTraitEffect path —
+                // it doesn't scale one of this bunny's own rates, it suppresses ApplyNatureEffects'
+                // output, which requires Stats to be freshly re-resolved from IV/EV/Level first (same
+                // "resolve clean, then reapply Nature" pattern LevelUp/AddEV already use elsewhere) rather
+                // than reapplied against Stats that already have an earlier Nature pass baked into them.
+                if (secondTrait.effectType == TraitEffectType.IgnoresNature)
+                {
+                    if (typeDefinition != null)
+                    {
+                        Stats = BunnyStatCalculator.Resolve(typeDefinition, Level,
+                            IVHP, IVAttack, IVDefense, IVSpeed, IVLuck,
+                            EVHP, EVAttack, EVDefense, EVSpeed, EVLuck);
+                        ApplyNatureEffects();
+                    }
+                }
+                else
+                {
+                    ApplyOneTraitEffect(secondTrait);
+                }
+            }
+        }
+
+        StartCoroutine(FadeToAdultScale());
+        if (growthFireworksVFX != null) growthFireworksVFX.Play();
+        NotificationManager.Instance?.ShowWithIcon(NotificationType.KidBunnyGrewUp, TypeIcon, BunnyName);
+    }
+
+    // Smooth kidBunnyScale -> 1 fade over BreedingConfig.kidGrowthFadeSeconds, instead of SetIsKidBunny's
+    // instant snap — the growing-up moment is meant to visibly read as growth, not a pop.
+    private IEnumerator FadeToAdultScale()
+    {
+        float duration = Mathf.Max(0.01f, BreedingConfig.Instance.kidGrowthFadeSeconds);
+        Vector3 startScale = transform.localScale;
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            transform.localScale = Vector3.Lerp(startScale, Vector3.one, t / duration);
+            yield return null;
+        }
+        transform.localScale = Vector3.one;
     }
 
     [Header("Mood")]
@@ -397,6 +472,10 @@ public class NPCBunny : MonoBehaviour, ICombatant
 
     [Header("Level-Up SFX (see AudioManager)")]
     [SerializeField] private AudioClip levelUpClip;
+
+    [Header("Kid Bunny Growth (see the Kid Bunny Growth plan)")]
+    [Tooltip("One-shot fireworks-style sparkle burst played once, at the moment GrowUp fires — same 'Play On Awake off, code calls Play() explicitly' recipe as Bedroom.heartsVFX, just per-bunny instead of room-level.")]
+    [SerializeField] private ParticleSystem growthFireworksVFX;
 
     [Header("Proximity Ambient SFX (see AudioManager — only audible near the camera)")]
     [SerializeField] private AudioClip eatingAmbientClip;
@@ -744,6 +823,15 @@ public class NPCBunny : MonoBehaviour, ICombatant
             // in the plan — pregnancy doesn't block work or combat, only foraging/questing).
             if (isPregnant)
                 pregnancyElapsed += Time.deltaTime;
+
+            // Growth ticks the same unconditional way gestation does above — a kid keeps growing whether
+            // idling or relaxing (the only states available to one today; no job/combat states to gate on).
+            if (isKidBunny)
+            {
+                kidGrowthElapsed += Time.deltaTime;
+                if (kidGrowthElapsed >= BreedingConfig.Instance.kidGrowthDurationSeconds)
+                    GrowUp();
+            }
         }
 
         switch (CurrentState)
@@ -1480,40 +1568,53 @@ public class NPCBunny : MonoBehaviour, ICombatant
         XPGainMultiplier = 1f;
 
         foreach (BunnyTraitDefinition trait in Traits)
+            ApplyOneTraitEffect(trait);
+    }
+
+    // Extracted from ApplyTraitEffects so a single NEWLY GAINED trait's effect can be applied on its own
+    // (see NPCBunny.GrowUp) without re-running the whole loop — every case here is a pure multiply-in (or
+    // additive, for RareLootChanceBonus) onto the bunny's current instance fields, so calling this once for
+    // just the new trait composes correctly on top of whatever an earlier trait already did; order never
+    // mattered. ProductionMultiplier/XPGainMultiplier are deliberately NOT reset to 1 here — that reset
+    // only belongs to ApplyTraitEffects' own full-relist pass above, never to a single incremental trait
+    // grant, or it would wipe out an already-held trait's contribution to the same multiplier.
+    private void ApplyOneTraitEffect(BunnyTraitDefinition trait)
+    {
+        switch (trait.effectType)
         {
-            switch (trait.effectType)
-            {
-                case TraitEffectType.EnergyDecayMultiplier:
-                    energyDecayPerSecond *= trait.effectMultiplier;
-                    energyDecayPerSecondWorking *= trait.effectMultiplier;
-                    energyDecayPerSecondQuesting *= trait.effectMultiplier;
-                    energyDecayPerSecondForaging *= trait.effectMultiplier;
-                    break;
-                case TraitEffectType.MoodDecayMultiplier:
-                    moodDecayPerSecondWorking *= trait.effectMultiplier;
-                    moodDecayPerSecondIdlePacing *= trait.effectMultiplier;
-                    break;
-                case TraitEffectType.HungerDecayMultiplier:
-                    hungerDecayPerSecond *= trait.effectMultiplier;
-                    break;
-                case TraitEffectType.ThirstDecayMultiplier:
-                    thirstDecayPerSecond *= trait.effectMultiplier;
-                    break;
-                case TraitEffectType.MoveSpeedMultiplier:
-                    moveSpeed *= trait.effectMultiplier;
-                    break;
-                case TraitEffectType.ProductionMultiplier:
-                    ProductionMultiplier *= trait.effectMultiplier;
-                    break;
-                case TraitEffectType.RareLootChanceBonus:
-                    // Additive, not multiplicative — see ForagingRareLootBonus's own doc comment for why
-                    // this case doesn't match the "*=" shape every other case above uses.
-                    ForagingRareLootBonus += trait.effectMultiplier;
-                    break;
-                case TraitEffectType.XPGainMultiplier:
-                    XPGainMultiplier *= trait.effectMultiplier;
-                    break;
-            }
+            case TraitEffectType.EnergyDecayMultiplier:
+                energyDecayPerSecond *= trait.effectMultiplier;
+                energyDecayPerSecondWorking *= trait.effectMultiplier;
+                energyDecayPerSecondQuesting *= trait.effectMultiplier;
+                energyDecayPerSecondForaging *= trait.effectMultiplier;
+                break;
+            case TraitEffectType.MoodDecayMultiplier:
+                moodDecayPerSecondWorking *= trait.effectMultiplier;
+                moodDecayPerSecondIdlePacing *= trait.effectMultiplier;
+                break;
+            case TraitEffectType.HungerDecayMultiplier:
+                hungerDecayPerSecond *= trait.effectMultiplier;
+                break;
+            case TraitEffectType.ThirstDecayMultiplier:
+                thirstDecayPerSecond *= trait.effectMultiplier;
+                break;
+            case TraitEffectType.MoveSpeedMultiplier:
+                moveSpeed *= trait.effectMultiplier;
+                break;
+            case TraitEffectType.ProductionMultiplier:
+                ProductionMultiplier *= trait.effectMultiplier;
+                break;
+            case TraitEffectType.RareLootChanceBonus:
+                // Additive, not multiplicative — see ForagingRareLootBonus's own doc comment for why
+                // this case doesn't match the "*=" shape every other case above uses.
+                ForagingRareLootBonus += trait.effectMultiplier;
+                break;
+            case TraitEffectType.XPGainMultiplier:
+                XPGainMultiplier *= trait.effectMultiplier;
+                break;
+            // IgnoresNature (Stoic) is deliberately NOT handled here — it doesn't scale one of THIS
+            // bunny's own rates, it suppresses ApplyNatureEffects' output, which needs a full Stats
+            // re-resolve to apply/undo correctly (see GrowUp's own comment). Handled there instead.
         }
     }
 
@@ -3356,7 +3457,33 @@ public class NPCBunny : MonoBehaviour, ICombatant
         isBreedingBlocked = true;
         matingWalkedBehindWall = false; // defensive reset in case an earlier cycle was somehow interrupted mid-sequence
 
-        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, currentRoom, matingSpot, currentFloorIndex);
+        // matingSpot always lives in the Bedroom (assignedJobRoom), NOT necessarily in currentRoom — a
+        // mating roll can succeed while this bunny is physically off elsewhere on an interrupt of its own
+        // (most concretely: mid-detour to the Hatchery laying THIS SAME PAIR's egg from an earlier
+        // successful roll, since Bedroom's BreedingRoutine keeps rolling independently of that). Confirmed
+        // bug 2026-08-12: this used to pass currentRoom as BOTH the start AND target room, which happened
+        // to work whenever she was already sitting in the Bedroom (the common case) but silently took
+        // GetRouteToSpot's same-room branch against the WRONG room whenever she wasn't — Scarlet was at
+        // the Hatchery's HatcherySpot_01 when a second roll fired, producing "No RoomPath found from
+        // HatcherySpot_01 to MatingSpot on Hatchery_4x2x6_Grade1(Clone)" and a straight-line fallback
+        // path that visibly cut through walls back to the Bedroom. assignedJobRoom is the fix — same
+        // "actual destination room, not wherever she happens to be" shape every sibling GetRouteToSpot
+        // call in this class already uses (RequestNewJobSpot, TryLayEgg, etc.).
+        RoomBase bedroomRoom = (RoomBase)assignedJobRoom;
+
+        // Same defensive floor-mismatch guard TryLayEgg uses just above (see its own comment on why
+        // currentRoom.FloorIndex, not the currentFloorIndex field, is the trustworthy read) — without it,
+        // the exact same "away in another room" scenario spanning DIFFERENT floors would fail the same
+        // way: GetRouteToSpot's cross-room branch assumes same-floor, so a genuine floor gap needs the
+        // lift-trip machinery instead.
+        int actualFloorIndex = currentRoom != null ? currentRoom.FloorIndex : currentFloorIndex;
+        if (actualFloorIndex != bedroomRoom.FloorIndex)
+        {
+            TryBeginCrossFloorTripToSpot(bedroomRoom, matingSpot, BunnyState.Mating);
+            return;
+        }
+
+        List<Transform> path = BaseLayoutManager.Instance.GetRouteToSpot(currentRoom, currentSpot, currentWanderPoint, bedroomRoom, matingSpot, actualFloorIndex);
         MoveAlongPath(path, matingSpot, BunnyState.Mating);
     }
 
