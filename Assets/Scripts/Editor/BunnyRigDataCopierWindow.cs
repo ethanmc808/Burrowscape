@@ -64,14 +64,29 @@ public class BunnyRigDataCopierWindow : EditorWindow
     private readonly List<string> prefabSwapResults = new List<string>();
 
 
-    // The 13 body-part sprite names this rig actually has. A GameObject's own name (after stripping a
+    // The 16 body-part sprite names this rig actually has. A GameObject's own name (after stripping a
     // trailing "_1"/"_2" rotation-flip duplicate suffix) must match one of these exactly to be swapped —
-    // this is what correctly leaves shared/generic parts alone (Eyes_Open, Mouth_Eating, Carrot, Z_Sleep,
-    // the Rabbit_Neutral_Eyes_* expression overlays) since none of those match a bare part name.
+    // this is what correctly leaves shared/generic parts alone (Mouth_Eating, Carrot, Z_Sleep) since
+    // none of those match a bare part name. Eyes_Open/Closed/Angry ARE swapped (see EyeStateSubfolders
+    // below for why they need special handling) — Eyes_Fainting is the only eye state deliberately left
+    // out, see the SKIPPED case for it in RunPrefabSpriteSwap.
     private static readonly HashSet<string> KnownPartNames = new HashSet<string>
     {
         "Eyes", "Front Ear", "Mouth", "Head", "Front Arm", "Front Thigh", "Front Foot",
-        "Torso", "Back Arm", "Tail", "Back Ear", "Back Thigh", "Back Foot"
+        "Torso", "Back Arm", "Tail", "Back Ear", "Back Thigh", "Back Foot",
+        "Eyes_Open", "Eyes_Closed", "Eyes_Angry"
+    };
+
+    // Eyes are structurally different from every other part above. "Open" DOES live inside the main
+    // Rabbit_<Type>_Type.psb like everything else, but under the sprite name "Eyes" rather than
+    // "Eyes_Open" — a naming mismatch, not a missing-art problem, aliased in RunPrefabSpriteSwap below.
+    // "Closed" and "Angry" are each a separate hand-drawn expression authored in their own per-state
+    // file entirely (one per type), under BodyParts/Eyes/<State>/Rabbit_<Type>_Eyes_<State>.psb — this
+    // maps each state's GameObject/part name to the subfolder its file lives in.
+    private static readonly Dictionary<string, string> EyeStateSubfolders = new Dictionary<string, string>
+    {
+        { "Eyes_Closed", "Closed" },
+        { "Eyes_Angry", "Angry" },
     };
 
     private static readonly Regex TrailingDuplicateSuffix = new Regex(@"_\d+$");
@@ -214,8 +229,9 @@ public class BunnyRigDataCopierWindow : EditorWindow
             "against the chosen Type's body-part sprites in Base Art/<Type>/Rabbit_<Type>_Type.psb, and " +
             "swaps in that sprite. Also rebuilds each SpriteSkin's bone Transform list from the new " +
             "sprite's own bone order (fixes the 'one part looks deformed' bug caused by SpriteSkin " +
-            "mapping bones by list position, not name). Parts with no exact name match (Eyes_Open, " +
-            "Mouth_Eating, Carrot, Z_Sleep, the Rabbit_Neutral_Eyes_* overlays, etc.) are left untouched.",
+            "mapping bones by list position, not name). Eyes_Open/Closed/Angry are swapped too, pulled " +
+            "from their own per-state files under BodyParts/Eyes/<State>/ as needed. Eyes_Fainting and " +
+            "other shared/generic parts (Mouth_Eating, Carrot, Z_Sleep) are left untouched.",
             MessageType.Info);
 
         targetPrefab = (GameObject)EditorGUILayout.ObjectField("Prefab To Update", targetPrefab, typeof(GameObject), false);
@@ -269,6 +285,32 @@ public class BunnyRigDataCopierWindow : EditorWindow
             }
         }
 
+        // "Eyes_Open"'s sprite lives right here in the main PSB, just under the name "Eyes" instead of
+        // "Eyes_Open" — alias it so the swap loop below can look it up by the GameObject's actual name
+        // like every other part.
+        if (spritesByName.TryGetValue("Eyes", out Sprite eyesOpenSprite))
+        {
+            spritesByName["Eyes_Open"] = eyesOpenSprite;
+        }
+
+        // "Closed"/"Angry" eyes are each their own per-type file outside the main PSB — pull them in now.
+        foreach (KeyValuePair<string, string> eyeState in EyeStateSubfolders)
+        {
+            string partName = eyeState.Key;
+            string stateFolder = eyeState.Value;
+            string statePsbPath = $"{BaseArtFolder}/BodyParts/Eyes/{stateFolder}/Rabbit_{type}_Eyes_{stateFolder}.psb";
+
+            Sprite stateSprite = AssetDatabase.LoadAllAssetsAtPath(statePsbPath).OfType<Sprite>().FirstOrDefault();
+            if (stateSprite != null)
+            {
+                spritesByName[partName] = stateSprite;
+            }
+            else
+            {
+                prefabSwapResults.Add($"WARNING: could not find {statePsbPath} — '{partName}' will be skipped.");
+            }
+        }
+
         // Bone name list per part, straight from the importer's own rig data (the source of truth for
         // bone order — see the "one part looks deformed" bug this is here to avoid).
         AssetImporter psbImporter = AssetImporter.GetAtPath(psbPath);
@@ -285,6 +327,15 @@ public class BunnyRigDataCopierWindow : EditorWindow
             foreach (SpriteRenderer renderer in renderers)
             {
                 string partName = TrailingDuplicateSuffix.Replace(renderer.gameObject.name, "");
+
+                // Every type shares the exact same Fainting sprite (only Neutral has one drawn at all
+                // so far) — deliberately not swapped, reported distinctly from a real "no match" below.
+                if (partName == "Eyes_Fainting")
+                {
+                    prefabSwapResults.Add($"SKIPPED: '{renderer.gameObject.name}' (shared across all types, not swapped)");
+                    skipped++;
+                    continue;
+                }
 
                 if (!KnownPartNames.Contains(partName) || !spritesByName.TryGetValue(partName, out Sprite newSprite))
                 {

@@ -15,8 +15,8 @@ MonoBehaviour:
   type: 5
   displayName: Insect
   icon: {fileID: 21300000, guid: 9e4b741a98aa55c43a5c726d8159d675, type: 3}
-  eggSprite: {fileID: 0}
-  prefab: {fileID: 0}
+  eggSprite: {fileID: 21300000, guid: f8d32a023c500434d97f66b046d63a15, type: 3}
+  prefab: {fileID: 5601990158651218953, guid: 474ac4b49511944478204267e070e9d2, type: 3}
   baseHP: 50
   baseAttack: 70
   baseDefense: 90

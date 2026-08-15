@@ -15,7 +15,8 @@ MonoBehaviour:
   type: 14
   displayName: Pixie
   icon: {fileID: 21300000, guid: d0221a403647b4d45a123ec139a3f771, type: 3}
-  prefab: {fileID: 0}
+  eggSprite: {fileID: 21300000, guid: 3a1f9f0d37c52f64b96b2d9b798db636, type: 3}
+  prefab: {fileID: 5601990158651218953, guid: 167077b9ffa52584bb3961f860c48191, type: 3}
   baseHP: 110
   baseAttack: 50
   baseDefense: 50
@@ -25,6 +26,7 @@ MonoBehaviour:
   isMelee: 0
   attackVFXPrefab: {fileID: 0}
   attackIntervalSeconds: 2
+  attackBasePower: 20
   group: 4
   populationThreshold: 20
   passives: []

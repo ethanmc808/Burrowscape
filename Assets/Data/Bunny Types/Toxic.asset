@@ -15,7 +15,8 @@ MonoBehaviour:
   type: 9
   displayName: Toxic
   icon: {fileID: 21300000, guid: 1967aa08567ab56489621ad2a092eb5e, type: 3}
-  prefab: {fileID: 0}
+  eggSprite: {fileID: 21300000, guid: a4c31d20b91d7d34dbad4a5515701419, type: 3}
+  prefab: {fileID: 5601990158651218953, guid: 00e959643c463914b93552c5e0f8a9d5, type: 3}
   baseHP: 90
   baseAttack: 90
   baseDefense: 90
