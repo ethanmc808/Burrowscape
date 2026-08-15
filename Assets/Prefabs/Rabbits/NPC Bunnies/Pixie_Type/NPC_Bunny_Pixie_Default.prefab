@@ -232,7 +232,7 @@ MonoBehaviour:
   moodGainPerSecondEatingOrDrinking: 0.2
   moodGainPerSecondSleeping: 0.02
   moodDecayPerSecondIdlePacing: 1
-  animator: {fileID: 0}
+  animator: {fileID: 2706181861873576818}
   workAnimIndexParam: WorkAnimIndex
   isMovingParam: IsMoving
   isWorkingParam: IsWorking
@@ -378,11 +378,20 @@ PrefabInstance:
       propertyPath: m_Name
       value: Rabbit_Pixie_Idle
       objectReference: {fileID: 0}
+    - target: {fileID: 8683161879932876800, guid: 1e416c878d5f253488685129874a34b9, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 22100000, guid: a7277216ec0dab9458169c3756689990, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1e416c878d5f253488685129874a34b9, type: 3}
+--- !u!95 &2706181861873576818 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 8683161879932876800, guid: 1e416c878d5f253488685129874a34b9, type: 3}
+  m_PrefabInstance: {fileID: 6705441660463534962}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &6836131983325930718 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 274810252851738540, guid: 1e416c878d5f253488685129874a34b9, type: 3}

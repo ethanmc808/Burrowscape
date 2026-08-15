@@ -232,7 +232,7 @@ MonoBehaviour:
   moodGainPerSecondEatingOrDrinking: 0.2
   moodGainPerSecondSleeping: 0.02
   moodDecayPerSecondIdlePacing: 1
-  animator: {fileID: 0}
+  animator: {fileID: 3122622327189579659}
   workAnimIndexParam: WorkAnimIndex
   isMovingParam: IsMoving
   isWorkingParam: IsWorking
@@ -378,11 +378,20 @@ PrefabInstance:
       propertyPath: m_Name
       value: Rabbit_Toxic_Idle
       objectReference: {fileID: 0}
+    - target: {fileID: 8683161879932876800, guid: d160a399b901cc946afd12f98dde149c, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 22100000, guid: 260f61966fd12a145a69b9402ea8cab4, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d160a399b901cc946afd12f98dde149c, type: 3}
+--- !u!95 &3122622327189579659 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 8683161879932876800, guid: d160a399b901cc946afd12f98dde149c, type: 3}
+  m_PrefabInstance: {fileID: 6040736464416415627}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &5766106944076441639 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 274810252851738540, guid: d160a399b901cc946afd12f98dde149c, type: 3}

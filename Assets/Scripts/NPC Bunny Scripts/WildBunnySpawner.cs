@@ -271,6 +271,48 @@ public class WildBunnySpawner : MonoBehaviour
         SpawnBunnyOfType(chosenType);
     }
 
+    // Debug/testing only — picks which type debugSpawnType below spawns via the "Spawn Chosen Type
+    // (Debug)" context-menu button. Deliberately a separate field from anything gameplay-facing.
+    [Header("Debug: Spawn Specific Type")]
+    [Tooltip("Type spawned by the 'Spawn Chosen Type (Debug)' button below (right-click the component header in Play mode).")]
+    [SerializeField] private BunnyType debugSpawnType;
+
+    [ContextMenu("Spawn Chosen Type (Debug)")]
+    public void DebugSpawnChosenType()
+    {
+        SpawnBunnyOfType(debugSpawnType);
+    }
+
+    // Debug/testing entry point — lets a specific type be spawned on demand (e.g. to eyeball its
+    // animations/sprites in Play mode) without waiting on the population ramp. Deliberately bypasses
+    // GetAvailableTypes' unlock check (the whole point is testing a type BEFORE its threshold is
+    // reached) but still requires a prefab to be assigned, and still goes through the shared
+    // SpawnBunnyOfType(BunnyTypeDefinition) below — same population-cap guard, gate queue, traits/
+    // stats/passives resolution, and reveal-notification bookkeeping as a real wild arrival, so what you
+    // see in Play mode matches what a genuine spawn of that type would look like.
+    public void SpawnBunnyOfType(BunnyType type)
+    {
+        if (bunnyTypes == null)
+        {
+            Debug.LogWarning("WildBunnySpawner: bunnyTypes list is empty — nothing to spawn from.");
+            return;
+        }
+
+        BunnyTypeDefinition match = bunnyTypes.Find(def => def != null && def.type == type);
+        if (match == null)
+        {
+            Debug.LogWarning($"WildBunnySpawner: no BunnyTypeDefinition for {type} in bunnyTypes.");
+            return;
+        }
+        if (match.prefab == null)
+        {
+            Debug.LogWarning($"WildBunnySpawner: {type}'s BunnyTypeDefinition has no prefab assigned — nothing to spawn.");
+            return;
+        }
+
+        SpawnBunnyOfType(match);
+    }
+
     // Shared by the random pick above (AutoSpawnLoop, context-menu) and the explicit
     // startingBunnyOrder entries (SpawnStartingBunnies) — the latter bypass GetAvailableTypes'
     // unlock/prefab filtering since they're an explicit designer-authored sequence, not a random draw.

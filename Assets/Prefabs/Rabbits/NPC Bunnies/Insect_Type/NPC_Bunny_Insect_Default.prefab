@@ -232,7 +232,7 @@ MonoBehaviour:
   moodGainPerSecondEatingOrDrinking: 0.2
   moodGainPerSecondSleeping: 0.02
   moodDecayPerSecondIdlePacing: 1
-  animator: {fileID: 0}
+  animator: {fileID: 1837432135104417729}
   workAnimIndexParam: WorkAnimIndex
   isMovingParam: IsMoving
   isWorkingParam: IsWorking
@@ -378,11 +378,20 @@ PrefabInstance:
       propertyPath: m_Name
       value: Rabbit_Insect_Idle
       objectReference: {fileID: 0}
+    - target: {fileID: 8683161879932876800, guid: f81a01d26be4d8b4c88d0e15513beff6, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 22100000, guid: b2547da94e9fa9e4d8b28fb6281183eb, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f81a01d26be4d8b4c88d0e15513beff6, type: 3}
+--- !u!95 &1837432135104417729 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 8683161879932876800, guid: f81a01d26be4d8b4c88d0e15513beff6, type: 3}
+  m_PrefabInstance: {fileID: 7061388527108749249}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &7074949456768598125 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 274810252851738540, guid: f81a01d26be4d8b4c88d0e15513beff6, type: 3}

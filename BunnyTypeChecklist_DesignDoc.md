@@ -138,7 +138,16 @@ Skip this phase entirely if you're finishing one of the 20 already-enumerated ty
    is authored — see the existing Fire/Plant/Shock/Water override controllers as examples).
 3. Build `NPC_Bunny_{Type}_Default.prefab` (wraps the rig prefab + `NPCBunny` component),
    same `{Type}_Type` folder — this is the prefab that goes on `BunnyTypeDefinition.prefab`
-   and gets Instantiated by the spawner.
+   and gets Instantiated by the spawner. **Gotcha (confirmed 2026-08-15):** `NPCBunny` has
+   `[RequireComponent(typeof(Animator))]`, so Unity auto-adds a *second*, decoy Animator
+   directly onto this wrapper root, separate from the real one on the nested
+   `Rabbit_{Type}_Idle` rig where the SpriteRenderers actually live. `NPCBunny.animator` MUST
+   be manually dragged in the Inspector to point at the **nested rig's** Animator — if left
+   `None`, `Awake()`'s fallback (`GetComponentInChildren<Animator>()`) silently binds to the
+   wrapper's own decoy instead (same-GameObject match wins before it ever checks children).
+   Symptom: Idle looks fine (it's just the Animator's untouched default entry state), but
+   nothing else ever plays — Walking, Attacking, Eating, etc. all silently no-op — because
+   every `UpdateAnimator()` call is landing on an Animator with nothing under it to animate.
 4. Author any type-specific animation clips under
    `Assets/Art/Characters/Bunnies/Animations/{Type}/` (Attacking, etc., as needed).
 
@@ -214,7 +223,9 @@ Not required for the type to be spawnable/playable — purely economic-niche con
   after reload does *not* re-trigger the reveal).
 - Idle/Walking/Eating/Drinking/Sleeping/Working animations all look correct in Play mode —
   watch specifically for a part stretching toward the root bone (the SpriteSkin bone-order
-  bug from Phase 2, step 5).
+  bug from Phase 2, step 5), and for **only Idle ever playing while everything else silently
+  no-ops** (the unwired `NPCBunny.animator` gotcha from Phase 3, step 3 — the single most
+  likely cause if a brand-new type's bunny never leaves its Idle pose).
 - If combat-enabled: the attack fires on cadence, VFX plays exactly once per hit (Play On
   Awake check), damage resolves via `CombatResolver`/`TypeChart`, no errors during an
   invasion.
