@@ -13,7 +13,7 @@ public class WildBunnySpawner : MonoBehaviour
     [SerializeField] private float offscreenSpawnOffsetX = 15f; // positive X = further left (visually) in this project
 
     [Header("Starting Population")]
-    [Tooltip("Exact ordered list of the opening bunnies, spawned in Start() via the same path as a normal wild arrival. Any entry whose type is NOT one of the base 4 (Neutral/Water/Plant/Shock) is treated as a 'new type reveal' (e.g. Fire) — it's held back with a real wait (see startMinWaitMinutes/startMaxWaitMinutes below) instead of the tight starting spacing, and triggers NotificationType.NewBunnyType the first time it spawns.")]
+    [Tooltip("Exact ordered list of the opening bunnies, spawned in Start() via the same path as a normal wild arrival. Meant to be exactly the base 4 (Neutral/Water/Plant/Shock, population 0) — any type beyond that debuts on its own via the guaranteed-debut-spawn mechanic (see GetPendingDebutType) once population crosses its threshold, not via a hardcoded slot in this list.")]
     [SerializeField] private List<BunnyTypeDefinition> startingBunnyOrder;
     [SerializeField] private float startingSpawnDelaySeconds = 0.3f; // gap between each starting bunny so they spawn in a visible line instead of a cluster
 
@@ -87,10 +87,9 @@ public class WildBunnySpawner : MonoBehaviour
 
         if (!loadingFromSave && startingBunnyOrder != null && startingBunnyOrder.Count > 0)
         {
-            // AutoSpawnLoop is deliberately NOT started here — it waits until the starting sequence
-            // (including the held-back Fire reveal) fully finishes. Both use the same
-            // startMinWaitMinutes/startMaxWaitMinutes range, so running them concurrently let
-            // AutoSpawnLoop's random wait occasionally finish first and steal Fire's intended slot.
+            // AutoSpawnLoop is deliberately NOT started here — it waits until the tight opening cluster
+            // finishes first, so the base 4 spawn as a visible line rather than interleaving with the
+            // ramped auto-spawn wait.
             StartCoroutine(SpawnStartingBunniesThenAutoSpawn());
         }
         else if (autoSpawnEnabled)
@@ -109,18 +108,14 @@ public class WildBunnySpawner : MonoBehaviour
         }
     }
 
+    // Plain tight-cluster spawn of exactly the listed entries (meant to be the base 4 only — see
+    // startingBunnyOrder's own tooltip). Any subsequent type's reveal is handled entirely by
+    // GetPendingDebutType inside the normal AutoSpawnLoop that starts right after this finishes, so no
+    // held-back-wait special case is needed here anymore.
     private IEnumerator SpawnStartingBunnies()
     {
         foreach (BunnyTypeDefinition entry in startingBunnyOrder)
         {
-            if (entry != null && !baseStartingTypes.Contains(entry.type))
-            {
-                // New-type reveal (e.g. Fire) — held back with a real wait instead of the tight
-                // starting-cluster spacing, so it reads as its own arrival rather than part of the opening rush.
-                float waitMinutes = Random.Range(startMinWaitMinutes, startMaxWaitMinutes);
-                yield return new WaitForSeconds(waitMinutes * 60f);
-            }
-
             SpawnBunnyOfType(entry);
             yield return new WaitForSeconds(startingSpawnDelaySeconds);
         }
@@ -200,11 +195,10 @@ public class WildBunnySpawner : MonoBehaviour
         }
     }
 
-    // Equal-weight among types that are both population-unlocked and have art (prefab != null) — types
-    // beyond Group 1 exist as data (base stats, thresholds) ahead of their art, per the design doc, and
-    // are simply excluded here until a prefab is assigned. Fails closed (treats as locked) if
-    // BunnyTypeUnlockTracker isn't in the scene, matching RoomUnlockCondition's same fail-closed
-    // handling of a missing PopulationManager.
+    // Types that are both population-unlocked and have art (prefab != null) — types beyond Group 1 exist
+    // as data (base stats, thresholds) ahead of their art, per the design doc, and are simply excluded
+    // here until a prefab is assigned. Fails closed (treats as locked) if BunnyTypeUnlockTracker isn't in
+    // the scene, matching RoomUnlockCondition's same fail-closed handling of a missing PopulationManager.
     private List<BunnyTypeDefinition> GetAvailableTypes()
     {
         List<BunnyTypeDefinition> available = new List<BunnyTypeDefinition>();
@@ -219,6 +213,50 @@ public class WildBunnySpawner : MonoBehaviour
         return available;
     }
 
+    // Guaranteed-debut mechanic (see BunnyDebutSpawn_DesignDoc.md) — whichever available type has never
+    // actually spawned yet (population crossed its threshold, but no bunny of that type has arrived this
+    // session) is guaranteed to be the very next wild arrival, replacing the old approach of hand-placing
+    // a reveal at a fixed position in startingBunnyOrder (which only worked by coincidence when that
+    // type's threshold happened to be 0). If multiple thresholds were crossed since the last spawn (e.g.
+    // a population jump from breeding), only the LOWEST-threshold pending type debuts now — the next
+    // becomes the new pending debut and wins the following spawn, cascading one guaranteed debut per
+    // spawn cycle rather than bursting all at once. Returns null when nothing is pending, so callers fall
+    // through to the normal weighted pick.
+    private BunnyTypeDefinition GetPendingDebutType(List<BunnyTypeDefinition> availableTypes)
+    {
+        BunnyTypeDefinition pending = null;
+        foreach (BunnyTypeDefinition def in availableTypes)
+        {
+            if (typesEverSpawned.Contains(def.type)) continue;
+            if (pending == null || def.populationThreshold < pending.populationThreshold)
+                pending = def;
+        }
+        return pending;
+    }
+
+    // Weighted fallback used whenever no debut is pending (see BunnyDebutSpawn_DesignDoc.md). Neutral
+    // always carries weight 4; every other currently-available type carries weight 1 each, so the ratio
+    // self-adjusts as more types unlock (4/7 at the start, 4/8 once one more type unlocks, 4/9 after
+    // that, and so on) with no hardcoded weight table to maintain.
+    private const int NeutralSpawnWeight = 4;
+    private const int OtherTypeSpawnWeight = 1;
+
+    private BunnyTypeDefinition PickWeightedRandomType(List<BunnyTypeDefinition> availableTypes)
+    {
+        int totalWeight = 0;
+        foreach (BunnyTypeDefinition def in availableTypes)
+            totalWeight += def.type == BunnyType.Neutral ? NeutralSpawnWeight : OtherTypeSpawnWeight;
+
+        int roll = Random.Range(0, totalWeight);
+        int cumulative = 0;
+        foreach (BunnyTypeDefinition def in availableTypes)
+        {
+            cumulative += def.type == BunnyType.Neutral ? NeutralSpawnWeight : OtherTypeSpawnWeight;
+            if (roll < cumulative) return def;
+        }
+        return availableTypes[availableTypes.Count - 1]; // defensive fallback, should never be reached
+    }
+
     [ContextMenu("Spawn Wild Bunny")]
     public void SpawnWildBunny()
     {
@@ -229,7 +267,7 @@ public class WildBunnySpawner : MonoBehaviour
             return;
         }
 
-        BunnyTypeDefinition chosenType = availableTypes[Random.Range(0, availableTypes.Count)];
+        BunnyTypeDefinition chosenType = GetPendingDebutType(availableTypes) ?? PickWeightedRandomType(availableTypes);
         SpawnBunnyOfType(chosenType);
     }
 

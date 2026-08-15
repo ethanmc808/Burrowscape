@@ -22,4 +22,4 @@ MonoBehaviour:
   isLiftSegment: 0
   unlockConditions:
   - type: 1
-    populationThreshold: 7
+    populationThreshold: 15

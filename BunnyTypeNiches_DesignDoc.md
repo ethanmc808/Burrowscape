@@ -29,28 +29,40 @@ bottom).
 
 ## Master table
 
+**Update (2026-08-13, retuned same day): thresholds retimed, group-of-3 clustering
+dropped, Light moved late.** The "Group" column below is now stale — see
+`BunnyTypePopulationCurve_DesignDoc.md` for the authoritative curve (5-pop steps
+early through Air, 10-pop steady midgame Melee through Dark, 30-pop capstone gap to
+Draco) and the current `populationThreshold` on each `BunnyTypeDefinition` asset. The
+"unlock pop." values in this table have been updated to match, including the
+same-day move of Light from 30 (originally in the fast-early cluster) to 100 — it
+reads as more of a late-game type thematically, and since Hatchery is a day-one room
+independent of this pairing, moving Light later costs nothing mechanically. The old
+group-number column is left as-is purely as a historical/organizational label, not a
+live threshold anymore.
+
 | Group (unlock pop.) | Type | Niche | Status |
 |---|---|---|---|
 | 1 (0) | Neutral | "Adaptable" — only Neutral bunnies can re-roll one of their own traits (long per-bunny cooldown); a Passive, dormant until unlocked via Ghost's Ancient Knowledge; has its own dedicated `BunnyInfoUI` element | **Implemented** (dormant — see below) |
 | 1 (0) | Water | Water Room — production bonus (`recommendedTypes`) | **Live in code** |
-| 1 (0) | Fire | Kitchen — bonus TBD | Decided, needs a mechanic |
+| 1 (10) | Fire | Kitchen — bonus TBD | Decided, needs a mechanic |
 | 1 (0) | Plant | Garden Room — production bonus (`recommendedTypes`); also the only type with a real Passive today (Regrowth) | **Live in code** |
 | 1 (0) | Shock | Coal Room — production bonus (`recommendedTypes`) | **Live in code** |
-| 2 (25) | Insect | Storage Room — clears "Clutter" that otherwise eats into the room's own storage capacity | Mulling |
-| 2 (25) | Melee | Guard Room — bigger guard buff when posted | Decided, needs a mechanic |
-| 2 (25) | Stone | Entrance Room — bonus TBD | Decided, needs a mechanic |
-| 3 (50) | Mind | Library (new room) | Named, undesigned |
-| 3 (50) | Toxic | Laboratory (new room) | Named, undesigned |
-| 3 (50) | Ice | Cold Room (new room) — big carrot-capacity boost, heavy power draw, Ice workers cut the draw | Mulling |
-| 4 (75) | Sound | Radio Station (new room) — **required**, not just recommended | Named, undesigned |
-| 4 (75) | Air | Discovery Expedition (reveals new Foraging locations) + Lookout Duty (early-warning post at the Entrance) | **Locked** (mechanic details still open, see below) |
-| 4 (75) | Earth | Digs the base deeper underground once enough Earth types are in the colony (population-count effect, no room) | Named, undesigned |
-| 5 (100) | Pixie | Hospital Room — heal-rate bonus (`recommendedTypes`) | **Live in code** |
+| 2 (15) | Insect | Storage Room — clears "Clutter" that otherwise eats into the room's own storage capacity | Mulling |
+| 2 (50) | Melee | Guard Room — bigger guard buff when posted | Decided, needs a mechanic |
+| 2 (30) | Stone | Entrance Room — bonus TBD | Decided, needs a mechanic |
+| 3 (35) | Mind | Library (new room) | Named, undesigned |
+| 3 (25) | Toxic | Laboratory (new room) | Named, undesigned |
+| 3 (80) | Ice | Cold Room (new room) — big carrot-capacity boost, heavy power draw, Ice workers cut the draw | Mulling |
+| 4 (70) | Sound | Radio Room (new room) — **Bonus**, not Exclusive; any type can staff it, Sound just gets the bonus. Supersedes this row's earlier "required, not just recommended" framing — see `BunnyTypePopulationCurve_DesignDoc.md` | Named, undesigned |
+| 4 (40) | Air | Discovery Expedition (reveals new Foraging locations) + Lookout Duty (early-warning post at the Entrance) | **Locked** (mechanic details still open, see below) |
+| 4 (60) | Earth | Digs the base deeper underground once enough Earth types are in the colony (population-count effect, no room) | Named, undesigned |
+| 5 (20) | Pixie | Hospital Room — heal-rate bonus (`recommendedTypes`) | **Live in code** |
 | 5 (100) | Light | Hatchery Room — hatch-speed bonus | **Live in code**, needs a small edit (see below) |
-| 6 (150) | Metal | Crafting Room (future room, not yet designed) | Named, undesigned |
-| 6 (150) | Ghost | Shrine Room (Ghost-only) generates Ancient Knowledge → unlocks type Passives; separately, hard-mode-only Revive | Mulling (most fleshed out) |
-| 6 (150) | Dark | Population count gates/paces the entire Wish System, base-wide | **Locked** |
-| 7 (200) | Draco | 3x (tunable) gold from Foraging + enemy-defeats; unlocks the Vault Room (raises the gold cap) | **Locked** |
+| 6 (90) | Metal | Crafting Room (future room, not yet designed) | Named, undesigned |
+| 6 (110) | Ghost | Shrine Room (Ghost-only) generates Ancient Knowledge → unlocks type Passives; separately, hard-mode-only Revive | Mulling (most fleshed out) |
+| 6 (120) | Dark | Population count gates/paces the entire Wish System, base-wide | **Locked** |
+| 7 (150) | Draco | 3x (tunable) gold from Foraging + enemy-defeats; unlocks the Vault Room (raises the gold cap) | **Locked** |
 
 ## Per-type detail
 
@@ -67,7 +79,7 @@ spends Ancient Knowledge to discover it (see the Ghost section below). Mechanica
 design of its own: it's simply one concrete, named example of the "Ghost unlocks Passives for every type"
 system already planned, rather than a special case. Practical effect: **Neutral bunnies are just a solid,
 mid-stat generic bunny (400 total, see the stat buff below) with no special trick at all until the player
-has reached Group 6 (population 150) and specifically chosen to spend Knowledge unlocking Neutral's
+has reached Group 6 (population 110, Ghost's threshold as of the 2026-08-13 retiming) and specifically chosen to spend Knowledge unlocking Neutral's
 passive** rather than one of the other 19 types'. Worth being deliberate about that pacing — every other
 type's Passive is a bonus layered on top of a niche they already have from the moment they're unlocked
 (Plant has Garden Room *and*, once discovered, Regrowth); Neutral has no other niche at all, so this is its
@@ -160,7 +172,10 @@ Moved off Hatchery (see Light below) onto Kitchen. Kitchen exists today only as 
 
 `HatcheryRoom.HatchSpeedMultiplier` currently reads `tender.Type == BunnyType.Fire || tender.Type ==
 BunnyType.Light` for the hatch-speed bonus. Now that Fire has moved to Kitchen, this should drop to
-`BunnyType.Light` alone.
+`BunnyType.Light` alone. **Doubly relevant as of 2026-08-13**: Fire's population threshold moved from 0
+to 10 during the population-curve retiming (see `BunnyTypePopulationCurve_DesignDoc.md`), so this stale
+check no longer even lines up with when Fire becomes available — still not fixed, flagged again here so
+it isn't lost.
 
 ### Insect — Storage Room "Clutter" (Mulling)
 
@@ -210,10 +225,13 @@ New room. Maps cleanly onto existing `RoomBase` fields:
   `typeMatchProductionBonus`.
 - Naming not settled (Cold Room vs. "Cold Storage," the name a `RoomBase.cs` comment already anticipated).
 
-### Sound — Radio Station (Named, undesigned)
+### Sound — Radio Room (Named, undesigned)
 
-User's own original example — **required**, not just recommended, for the room to function at all (same
-family as Ghost/Shrine below). No mechanic beyond that framing exists yet.
+**Update (2026-08-13): Bonus pairing, not Exclusive.** User's own original example was framed as
+**required**, not just recommended, for the room to function at all (same family as Ghost/Shrine below) —
+confirmed superseded during the population-curve retiming pass (see `BunnyTypePopulationCurve_
+DesignDoc.md`). Radio Room is a normal Bonus pairing: any type can staff it, Sound just gets whatever the
+bonus turns out to be. No mechanic beyond that framing exists yet.
 
 ### Air — Discovery Expedition + Lookout Duty (Locked shape, some numbers still open)
 
@@ -318,7 +336,7 @@ that doc for the full success-formula/spawn/outcome design):
   side-system bonus (an earlier "Dark passively reduces invasion frequency" idea was rejected for being
   exactly that kind of low-stakes passive).
 - Deliberately kept as a single, standalone niche — no additional active ability layered on top, since
-  Dark unlocks late (Group 6, population 150) and is meant to read as a fun bonus rather than a key system,
+  Dark unlocks late (Group 6, population 120) and is meant to read as a fun bonus rather than a key system,
   in contrast with Ghost's more central/tangible role.
 
 ### Draco — Gold multiplier + Vault Room (Locked)
@@ -327,10 +345,15 @@ that doc for the full success-formula/spawn/outcome design):
   (tunable, starting around 3x). Requires new baseline content first — enemies currently drop **no** gold
   at all on defeat, so every existing pest (snail, mole, worm, rat, snake, slime, etc.) needs a base
   gold-on-kill value authored before Draco's multiplier means anything.
-- **Vault Room**: unlocks once the player has ever owned at least one Draco (a new sticky "has-owned" flag
-  — none of the existing `UnlockConditionType` cases, `PopulationAtLeast`/`PermanentFlag`/`TechUnlock`,
-  check "owns a bunny of type X," only population thresholds). Gets Grade 1/2/3 tiers like every other
-  room, for consistency.
+- **Vault Room**: **Update (2026-08-13):** unlocks via the same `PopulationAtLeast=150` condition as
+  Draco's own type unlock — confirmed during the population-curve retiming pass, superseding the
+  originally-proposed "has ever owned a Draco" sticky flag below. Simpler, zero new
+  `UnlockConditionType` case needed, and keeps every paired room's unlock mechanism identical (see
+  `BunnyTypePopulationCurve_DesignDoc.md`). Gets Grade 1/2/3 tiers like every other room, for consistency.
+  ~~Originally proposed: unlocks once the player has ever owned at least one Draco (a new sticky
+  "has-owned" flag — none of the existing `UnlockConditionType` cases,
+  `PopulationAtLeast`/`PermanentFlag`/`TechUnlock`, check "owns a bunny of type X," only population
+  thresholds).~~
 - Vault Room's sole function is contributing to a brand-new `GoldManager.goldStorageMax` — gold has never
   been capped before this. The default cap independent of ever building a Vault is a generous **99,999**,
   deliberately meant to almost never bind in normal play (a "flex/display ceiling" rather than a real

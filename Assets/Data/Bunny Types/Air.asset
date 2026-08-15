@@ -25,6 +25,6 @@ MonoBehaviour:
   isMelee: 0
   attackVFXPrefab: {fileID: 0}
   attackIntervalSeconds: 2
-  group: 5
-  populationThreshold: 100
+  group: 8
+  populationThreshold: 40
   passives: []

@@ -16,11 +16,13 @@ using System.Linq;
 //     shape as the one above but scoped to LaboratoryRoom prefabs only (kept separate rather than merged
 //     into the continuous-producer group so a stray Apply on one group can never touch the other).
 //   - recommendedTypes / xpRecommendedTypes: a per-room GRID — genuinely different per room (Garden=Plant,
-//     Water=Water, Coal=Shock, Laboratory=Toxic), edited inline per row and applied immediately, same
-//     live-edit pattern as BunnyBaseStatsWindow. HideInInspector on the field itself keeps this the only
-//     place it's editable, so a stray edit can't land on the wrong prefab. Both grids iterate every
-//     discovered room generically by field name, so LaboratoryRoom (which declares fields with these same
-//     names) is included with no extra code beyond the discovery chain and SuggestedDefaults entry below.
+//     Water=Water, Coal=Shock; Laboratory not yet authored), edited inline per row and applied
+//     immediately, same live-edit pattern as BunnyBaseStatsWindow. recommendedTypes now lives on RoomBase
+//     (consolidated 2026-08-13, no longer HideInInspector — also plainly visible/editable in each room's
+//     own default Inspector, this grid remains a convenience). Both grids iterate every discovered room
+//     generically by field name (xpRecommendedTypes stays declared directly on RoomBase, same as
+//     recommendedTypes now is), so LaboratoryRoom is included with no extra code beyond the discovery
+//     chain and SuggestedDefaults entry below.
 public class WorkRoomProductionTuner : EditorWindow
 {
     private const string RoomPrefabRoot = "Assets/Prefabs/Rooms";

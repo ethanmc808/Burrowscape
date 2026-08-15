@@ -25,9 +25,8 @@ public class LaboratoryRoom : RoomBase, IJobRoom
     [SpotNamePrefix("BrewSpot")]
     [SerializeField] private List<RoomSpot> brewSpots;
 
-    [Header("Worker Speed Scaling — edited EXCLUSIVELY via Burrowscape > Work Room Production Tuner, same reasoning as GardenRoom.diminishingReturnsRate/recommendedTypes/typeMatchProductionBonus.")]
+    [Header("Worker Speed Scaling — edited EXCLUSIVELY via Burrowscape > Work Room Production Tuner, same reasoning as GardenRoom.diminishingReturnsRate/typeMatchProductionBonus. recommendedTypes itself now lives on RoomBase (consolidated), still also editable via the same Tuner window's per-room grid.")]
     [SerializeField] private float diminishingReturnsRate = 0.7f;
-    [HideInInspector] [SerializeField] private List<BunnyType> recommendedTypes = new List<BunnyType>();
     [SerializeField] private float typeMatchBrewSpeedBonus = 0.25f;
 
     [Tooltip("How many completed brews GetRecentlyCrafted() keeps around for the UI's Recently Crafted list.")]

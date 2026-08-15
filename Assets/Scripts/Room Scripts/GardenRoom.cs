@@ -14,13 +14,12 @@ public class GardenRoom : RoomBase, IJobRoom   // CHANGED from : MonoBehaviour
     [SerializeField] private int carrotsPerProduction = 1;
 
     [Header("Worker Production Scaling")]
-    // See Docs/DiminishingReturnsProduction_Design.md. All three fields below are edited EXCLUSIVELY via
-    // Burrowscape > Work Room Production Tuner, never through this component's own Inspector — rate/bonus
-    // are broadcast identically to every work room from there, and recommendedTypes is a per-room grid
-    // edited in the same window (kept out of the default Inspector via HideInInspector specifically so a
-    // stray edit on the wrong prefab can't happen).
+    // See Docs/DiminishingReturnsProduction_Design.md. diminishingReturnsRate/typeMatchProductionBonus
+    // are edited EXCLUSIVELY via Burrowscape > Work Room Production Tuner, never through this component's
+    // own Inspector — broadcast identically to every work room from there. recommendedTypes itself now
+    // lives on RoomBase (consolidated — see its own comment there), but is still also editable via the
+    // same Tuner window's per-room grid.
     [SerializeField] private float diminishingReturnsRate = 0.7f;
-    [HideInInspector] [SerializeField] private List<BunnyType> recommendedTypes = new List<BunnyType>();
     [SerializeField] private float typeMatchProductionBonus = 0.25f;
 
     [Header("Room Ambient (see AudioManager — proximity-based, both audible only near the camera)")]

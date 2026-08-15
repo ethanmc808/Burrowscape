@@ -48,6 +48,21 @@ public class RoomBase : MonoBehaviour
     [SerializeField] protected bool contributesToCarrotStorage = false;
     [SerializeField] protected int carrotStorageCapacityAmount = 0; // this room's contribution to CarrotManager's storage cap — only meaningful when contributesToCarrotStorage is true
 
+    // Consolidated here from being duplicated per-room (WaterRoom/GardenRoom/CoalRoom/HospitalRoom/
+    // LaboratoryRoom each declared their own copy) — see BunnyTypePopulationCurve_DesignDoc.md's room
+    // pairing section. Which bunny type(s), if any, get this room's type-match bonus; the actual bonus
+    // amount and what it applies to (production rate, heal rate, brew speed, ...) stays declared on the
+    // specific room script, since that differs by room type — only the "which type is paired" list is
+    // shared. Same "no script of their own required, since this lives on RoomBase" reasoning as
+    // contributesToCarrotStorage above: any future room (Kitchen, Guard Room, Entrance Room, ...)
+    // inherits this field for free the moment it gets its own room script, no further consolidation
+    // needed. Deliberately visible in the default Inspector (not HideInInspector) — Water/Garden/Coal/
+    // Laboratory are still also editable via Burrowscape > Work Room Production Tuner's dedicated grid,
+    // but most future one-off pairings won't have an equivalent tool.
+    [Header("Type-Match Bonus Pairing")]
+    [SerializeField] protected List<BunnyType> recommendedTypes = new List<BunnyType>();
+    public IReadOnlyList<BunnyType> RecommendedTypes => recommendedTypes;
+
     [Header("Worker Decay Rates (while Working in this room)")]
     [SerializeField] protected float workerEnergyDecayPerSecond = 0.2f; // matches NPCBunny's prior flat default
     [SerializeField] protected float workerMoodDecayPerSecond = 0f;

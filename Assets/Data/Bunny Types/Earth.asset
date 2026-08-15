@@ -27,6 +27,6 @@ MonoBehaviour:
   attackVFXPrefab: {fileID: 0}
   attackIntervalSeconds: 2
   attackBasePower: 20
-  group: 4
-  populationThreshold: 75
+  group: 10
+  populationThreshold: 60
   passives: []

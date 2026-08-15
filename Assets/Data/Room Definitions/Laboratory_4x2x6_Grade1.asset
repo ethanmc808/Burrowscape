@@ -20,4 +20,6 @@ MonoBehaviour:
   grade: 1
   goldCost: 0
   isLiftSegment: 0
-  unlockConditions: []
+  unlockConditions:
+  - type: 1
+    populationThreshold: 25

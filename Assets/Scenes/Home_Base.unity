@@ -12144,7 +12144,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 50c14458dc61c044e83551af47b8d868, type: 2}
   - {fileID: 11400000, guid: 7a45be255e328f040b25fe964127ed14, type: 2}
   - {fileID: 11400000, guid: 43835d6779ee71e459b1b74955a3996c, type: 2}
-  - {fileID: 11400000, guid: 4583e48c1c4d7d8439edcf222091f67f, type: 2}
   startingSpawnDelaySeconds: 0.45
   autoSpawnEnabled: 1
   capCheckPollSeconds: 5

@@ -19,10 +19,8 @@ public class HospitalRoom : RoomBase, IJobRoom
     [Header("Healing")]
     [SerializeField] private float hpGainPerSecondHospital = 2f;
     [SerializeField] private float healTickInterval = 1f;
-    [Tooltip("0.25 = 1.25x heal rate while the active nurse's Type is in recommendedTypes — same default bonus every recommended-type room boost uses (see GardenRoom.typeMatchProductionBonus).")]
+    [Tooltip("0.25 = 1.25x heal rate while the active nurse's Type is in recommendedTypes (now declared on RoomBase, consolidated — see its own comment there; already authored as Pixie on this prefab).")]
     [SerializeField] private float typeMatchHealBonus = 0.25f;
-    [Tooltip("Pixie is the intended recommended type for this room (per design) — no art yet, but the type itself already exists in the BunnyType enum, so this is just data.")]
-    [SerializeField] private List<BunnyType> recommendedTypes = new List<BunnyType> { BunnyType.Pixie };
 
     private NPCBunny activeNurse;
     private Coroutine healRoutine;
