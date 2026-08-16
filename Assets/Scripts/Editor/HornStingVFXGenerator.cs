@@ -35,6 +35,20 @@ using System.IO;
 //
 // Safe to re-run: no-ops (logs and returns) if the prefab already exists, so it won't stomp hand-tuning
 // done afterward in the Inspector. Delete AttackInstance_HornSting.prefab first to regenerate from scratch.
+//
+// STALE SINCE 2026-08-15 HAND-TUNING: the saved prefab has since been restructured in-Editor beyond what
+// this method builds — a "RootScale" wrapper was inserted between the AttackInstance root and Horn_Travel
+// (uniform 0.5 scale), and a second particle system ("Horn_Trail", not created by this script at all) was
+// added alongside Horn_Travel as the actual visual trail, wired as AttackInstance.trailFollower — Horn_
+// Travel's own native Trails module (built below) ended up disabled in favor of it. If you ever delete-and-
+// regenerate, you'll need to redo that restructuring by hand afterward; this method alone no longer
+// reproduces the current look. Same "own velocity fights the script-driven position" bug bit Horn_Trail too
+// — its InitialModule.startSpeed was left at Unity's stock nonzero default (never zeroed the way Horn_
+// Travel's is below), so its particles visually drifted forward off their correctly-lagging spawn point and
+// the trail appeared to catch up to and overtake the horn. Fixed by zeroing Start Speed directly in the
+// prefab. Any particle system parented under this prefab whose position is driven by script (trailFollower
+// or the AttackInstance transform itself) needs BOTH Start Speed and Velocity over Lifetime at 0 — either
+// one alone is enough to reintroduce this class of bug.
 public static class HornStingVFXGenerator
 {
     private const string SpriteFolder = "Assets/Art/Attacks/BaseArt";
