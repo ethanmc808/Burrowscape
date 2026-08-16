@@ -342,7 +342,7 @@ MonoBehaviour:
   targetObject: {fileID: 46793771}
   targetTypeOverride: {fileID: 11400000, guid: 448d9deb71f429248beb1633ce992c46, type: 2}
   fireKey: 32
-  autoRepeat: 0
+  autoRepeat: 1
   autoRepeatInterval: 0.5
 --- !u!4 &308166392
 Transform:
@@ -791,7 +791,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5159284197772474666, guid: 474ac4b49511944478204267e070e9d2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.66
+      value: -4.51
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 474ac4b49511944478204267e070e9d2, type: 3}
       propertyPath: m_LocalPosition.y
@@ -803,7 +803,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 474ac4b49511944478204267e070e9d2, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 474ac4b49511944478204267e070e9d2, type: 3}
       propertyPath: m_LocalRotation.x
@@ -811,7 +811,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 474ac4b49511944478204267e070e9d2, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 474ac4b49511944478204267e070e9d2, type: 3}
       propertyPath: m_LocalRotation.z
@@ -823,7 +823,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 474ac4b49511944478204267e070e9d2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 180
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5159284197772474666, guid: 474ac4b49511944478204267e070e9d2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
