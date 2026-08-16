@@ -22,10 +22,10 @@ MonoBehaviour:
   baseDefense: 90
   baseSpeed: 100
   baseLuck: 70
-  attackName: 
+  attackName: Horn Sting
   isMelee: 0
-  attackVFXPrefab: {fileID: 0}
-  attackIntervalSeconds: 2
+  attackVFXPrefab: {fileID: 1076574715758183151, guid: 95d2b4678ea7dd14ab6ffe7baf13190f, type: 3}
+  attackIntervalSeconds: 0.5
   attackBasePower: 20
   group: 3
   populationThreshold: 15

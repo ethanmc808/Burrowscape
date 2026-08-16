@@ -60,6 +60,23 @@ public class AttackInstance : MonoBehaviour
     private Vector3 basePosition;
     private float totalTravelDistance;
 
+    // Reused scratch buffer for UpdateFacingRotation's live-particle rewrite below — grown on demand,
+    // never shrunk, so a short-lived low-count VFX like Horn Sting doesn't allocate every frame.
+    private ParticleSystem.Particle[] facingParticleBuffer = new ParticleSystem.Particle[16];
+
+    // Opt-in for a DIRECTIONAL sprite (e.g. Horn Sting's triangle) where facing actually matters — every
+    // existing ranged attack (Fire Ball, Sludge Hurl, Bubble Beam, Giga Drain) uses a round/blob shape
+    // specifically so CombatEngagement.ReleaseAttack's fixed Quaternion.identity spawn rotation never
+    // needed correcting (a circle reads the same from any angle, and the travel motion itself conveys
+    // direction). Off by default so none of those are affected. When true, rotates the WHOLE instance once
+    // at Launch() — not continuously — to face its actual travel direction; art must be authored pointing
+    // along local +X (i.e. "facing right" at zero rotation), matching this codebase's existing "authored
+    // assuming the attacker faces right" convention for melee (see meleeImpactOffset above). A one-time
+    // rotation at launch (rather than re-aiming every frame) is deliberate: combat targets are stationary
+    // at their flank/queue spot for the duration of one attack, so nothing is lost, and it sidesteps any
+    // risk of visible mid-flight swiveling if that assumption ever changes.
+    [SerializeField] private bool rotateToFaceTravelDirection;
+
     // Giga Drain-style moves travel backwards from the normal attacker->target flow (visually "pulled"
     // from the target back to the attacker, e.g. a drain/heal effect). When true, this instance spawns at
     // the target's position and homes toward the attacker instead. Purely a carrier-motion flag — Resolve()
@@ -158,6 +175,9 @@ public class AttackInstance : MonoBehaviour
         totalTravelDistance = Vector3.Distance(basePosition, homingPos);
         elapsedSinceLaunch = 0f;
 
+        if (rotateToFaceTravelDirection && !isStationary)
+            UpdateFacingRotation(basePosition, homingPos);
+
         if (launchSFX != null)
             AudioManager.EnsureInstance().PlaySFXAtPosition(launchSFX, transform.position);
 
@@ -222,6 +242,9 @@ public class AttackInstance : MonoBehaviour
             transform.position = basePosition;
         }
 
+        if (rotateToFaceTravelDirection)
+            UpdateFacingRotation(basePosition, targetPos);
+
         positionHistory.Add(transform.position);
         TrimPositionHistory();
 
@@ -230,6 +253,59 @@ public class AttackInstance : MonoBehaviour
 
         if (Vector3.Distance(basePosition, targetPos) <= arrivalThreshold)
             Resolve();
+    }
+
+    // Called once at Launch() (immediate correct facing) and every frame during travel (continuous
+    // re-aiming, matching how targetPos itself is already re-read from the live target every frame — a
+    // moving target should visibly redirect BOTH where the attack goes and which way it's pointing, not
+    // just the former). Rotates the whole Transform (used by local-space Velocity over Lifetime to fly
+    // the right way) AND explicitly rewrites every child ParticleSystem's rendered rotation — a
+    // Billboard-rendered particle always faces the camera and takes its own in-plane rotation from the
+    // particle's Start Rotation / live Particle.rotation, NOT from the parent Transform's rotation, so
+    // that has to be set here too or a directional sprite (e.g. Horn Sting's triangle) never visibly
+    // reorients at all. Rewrites ALREADY-LIVE particles (not just future ones) via GetParticles/
+    // SetParticles so an already-airborne horn also re-aims if the target moves mid-flight, not just
+    // whichever horn hasn't launched yet.
+    private void UpdateFacingRotation(Vector3 fromPos, Vector3 towardPos)
+    {
+        Vector3 direction = towardPos - fromPos;
+        if (direction.sqrMagnitude <= 0.0001f) return;
+
+        float angleDegrees = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.Euler(0f, 0f, angleDegrees); // drives local-space Velocity over Lifetime — must stay the true, un-negated angle so travel direction is correct
+
+        // Gotcha confirmed 2026-08-15: MainModule.startRotation is in RADIANS, but the live per-particle
+        // Particle.rotation (read/written via GetParticles/SetParticles below) is in DEGREES — a real
+        // inconsistency in Unity's own particle API, not a typo here. Using angleRadians for BOTH looked
+        // like it "worked" (Start Rotation showed a real, correctly-converted value, e.g. -12.5°) while
+        // every already-alive particle got silently overwritten with an almost-zero rotation
+        // (-12.5° worth of radians is only -0.218 when misread as degrees) on the very next frame's
+        // GetParticles/SetParticles pass — net effect: looked completely static.
+        //
+        // Second gotcha, also confirmed 2026-08-15: once rotation actually started rendering, a real
+        // downward attack pointed up instead — Billboard particle rotation is inverted relative to
+        // Transform.eulerAngles.z for this render/alignment setup. Negated ONLY for the particle-facing
+        // value below, not the Transform rotation above (which must stay true/un-negated — it's what
+        // local-space Velocity over Lifetime uses to actually fly the right way; only the drawn sprite's
+        // facing was backward, not the travel direction).
+        float particleFacingDegrees = -angleDegrees;
+        float particleFacingRadians = particleFacingDegrees * Mathf.Deg2Rad;
+        foreach (ParticleSystem ps in GetComponentsInChildren<ParticleSystem>(true))
+        {
+            ParticleSystem.MainModule psMain = ps.main;
+            psMain.startRotation = particleFacingRadians; // orientation for particles not yet emitted — radians
+
+            int liveCount = ps.particleCount;
+            if (liveCount == 0) continue;
+
+            if (liveCount > facingParticleBuffer.Length)
+                facingParticleBuffer = new ParticleSystem.Particle[Mathf.Max(liveCount, facingParticleBuffer.Length * 2)];
+
+            int written = ps.GetParticles(facingParticleBuffer);
+            for (int i = 0; i < written; i++)
+                facingParticleBuffer[i].rotation = particleFacingDegrees; // Particle.rotation is DEGREES, not radians
+            ps.SetParticles(facingParticleBuffer, written);
+        }
     }
 
     // Walks backward through positionHistory from the newest sample, accumulating segment distance until
