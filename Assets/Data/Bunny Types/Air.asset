@@ -15,16 +15,20 @@ MonoBehaviour:
   type: 12
   displayName: Air
   icon: {fileID: 21300000, guid: f7460c668dedf4345bd070e3973a622e, type: 3}
-  prefab: {fileID: 0}
+  eggSprite: {fileID: 21300000, guid: c1cd6e94ee3176646a9c2da81526ba45, type: 3}
+  prefab: {fileID: 5601990158651218953, guid: 3a6a7a8c8283172408a3155026d6dedf, type: 3}
   baseHP: 60
   baseAttack: 70
   baseDefense: 60
   baseSpeed: 150
   baseLuck: 30
-  attackName: 
+  attackName: Tornado
   isMelee: 0
-  attackVFXPrefab: {fileID: 0}
-  attackIntervalSeconds: 2
+  attackVFXPrefab: {fileID: 86018943188814172, guid: a77d6a2685eb15341a9f37a5001eceeb, type: 3}
+  attackIntervalSeconds: 3
+  attacksPerBurst: 1
+  burstPauseSeconds: 0
+  attackBasePower: 45
   group: 8
   populationThreshold: 40
   passives: []

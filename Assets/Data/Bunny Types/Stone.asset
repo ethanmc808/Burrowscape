@@ -15,17 +15,19 @@ MonoBehaviour:
   type: 7
   displayName: Stone
   icon: {fileID: 21300000, guid: 9fea8a2a5b31ece499ea1ab1652df81b, type: 3}
-  eggSprite: {fileID: 0}
-  prefab: {fileID: 0}
+  eggSprite: {fileID: 21300000, guid: 34ebe306047b6454285adf4c022916d8, type: 3}
+  prefab: {fileID: 5601990158651218953, guid: 2094ba0ea45c4724ca0cf1dbd098cabc, type: 3}
   baseHP: 90
   baseAttack: 80
   baseDefense: 130
   baseSpeed: 30
   baseLuck: 60
-  attackName: 
+  attackName: Rock Throw
   isMelee: 0
   attackVFXPrefab: {fileID: 0}
   attackIntervalSeconds: 2
+  attacksPerBurst: 1
+  burstPauseSeconds: 0
   attackBasePower: 20
   group: 6
   populationThreshold: 30

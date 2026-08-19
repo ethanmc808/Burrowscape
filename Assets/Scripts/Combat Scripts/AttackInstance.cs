@@ -39,6 +39,17 @@ public class AttackInstance : MonoBehaviour
     [SerializeField] private bool useArcMotion;
     [SerializeField] private float arcHeight = 2f;
 
+    // Tornado-style opt-in: every other ranged attack homes toward target.VisualCenter (a live bounds
+    // encapsulation that's correct for a projectile that should land center-of-body), but a tall funnel
+    // shape that visually drifts upward as it travels ends up with its own on-screen base floating above
+    // the ground by the time it arrives if it's still homing toward center-of-body. Homing toward
+    // target.CombatTransform.position instead — the target's stable ground pivot, same one melee's
+    // meleeImpactOffset anchors to and VisualCenter deliberately avoids for flank positioning (see that
+    // field's comment) — keeps the funnel's base planted at the target's feet on arrival. Defaults false so
+    // every existing ranged attack (Fire Ball, Bubble Beam, Giga Drain, Horn Sting, Sparkle Spell, etc.)
+    // is unaffected.
+    [SerializeField] private bool homeToTargetBase;
+
     // Trail particle systems (e.g. Sludge_Trail) sit at the same local (0,0,0) as the core sprite by
     // default, so their spawn point rides in perfect lockstep with it — world-space sim still spreads
     // already-spawned particles out fine, but every newly spawned particle is born exactly on top of the
@@ -120,7 +131,11 @@ public class AttackInstance : MonoBehaviour
     // end uses VisualCenter (auto-computed from live sprite bounds, see ICombatant.VisualCenter) so the
     // bolt always lands center-of-body on whatever it hits, with no per-enemy tuning needed.
     public Vector3 AttackerOrigin => attacker != null ? attacker.AttackOrigin : transform.position;
-    public Vector3 TargetOrigin => target != null ? target.VisualCenter : transform.position;
+    public Vector3 TargetOrigin => target != null ? GetTargetHomingPosition(target) : transform.position;
+
+    // Single source of truth for "where does this attack actually aim on the target" — see
+    // homeToTargetBase's own field comment for why Tornado needs the ground pivot instead of VisualCenter.
+    private Vector3 GetTargetHomingPosition(ICombatant t) => homeToTargetBase ? t.CombatTransform.position : t.VisualCenter;
 
     // Fires once Launch() has actually assigned attacker/target — child VFX components (e.g.
     // LightningBoltFlash) that need AttackerTransform/TargetTransform should hook their positioning logic
@@ -171,7 +186,7 @@ public class AttackInstance : MonoBehaviour
         basePosition = transform.position;
         positionHistory.Clear();
         positionHistory.Add(transform.position);
-        Vector3 homingPos = reverseDirection ? attacker.AttackOrigin : target.VisualCenter;
+        Vector3 homingPos = reverseDirection ? attacker.AttackOrigin : GetTargetHomingPosition(target);
         totalTravelDistance = Vector3.Distance(basePosition, homingPos);
         elapsedSinceLaunch = 0f;
 
@@ -228,7 +243,7 @@ public class AttackInstance : MonoBehaviour
         // Reversed carriers home toward the attacker instead of the target (see reverseDirection above) —
         // AttackOrigin (this bunny's own tunable point, e.g. hands/mouth), not VisualCenter, so where the
         // orb is "caught" is as tunable as where a normal attack's projectile spawns from.
-        Vector3 targetPos = reverseDirection ? attacker.AttackOrigin : target.VisualCenter;
+        Vector3 targetPos = reverseDirection ? attacker.AttackOrigin : GetTargetHomingPosition(target);
 
         basePosition = Vector3.MoveTowards(basePosition, targetPos, travelSpeed * Time.deltaTime);
 
@@ -292,6 +307,15 @@ public class AttackInstance : MonoBehaviour
         float particleFacingRadians = particleFacingDegrees * Mathf.Deg2Rad;
         foreach (ParticleSystem ps in GetComponentsInChildren<ParticleSystem>(true))
         {
+            // Mesh-rendered particles (e.g. Horn Sting's cone, added 2026-08-18) don't have a billboard's
+            // "always faces camera, ignores parent rotation" problem — they already inherit this
+            // Transform's rotation (set above) correctly and natively. Rewriting their per-particle
+            // rotation here would apply the inverted-for-billboard math this loop exists for to something
+            // that was never bent the way Billboard/Stretch/HorizontalBillboard/VerticalBillboard is, which
+            // would just reintroduce a facing bug rather than fix one. Skip those renderers entirely.
+            ParticleSystemRenderer renderer = ps.GetComponent<ParticleSystemRenderer>();
+            if (renderer != null && renderer.renderMode == ParticleSystemRenderMode.Mesh) continue;
+
             ParticleSystem.MainModule psMain = ps.main;
             psMain.startRotation = particleFacingRadians; // orientation for particles not yet emitted — radians
 

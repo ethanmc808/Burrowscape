@@ -16,9 +16,11 @@ public class WildBunnyNames : MonoBehaviour
 {
     public static WildBunnyNames Instance { get; private set; }
 
-    // Only the 5 types with art today (see BunnyType's Group 1 comment in NPCBunny.cs) have pools.
-    // Add a new entry here when a future type gets its own — GetPool falls back to null (-> "Unnamed")
-    // until it does.
+    // Originally only the 5 types with art at launch (see BunnyType's Group 1 comment in NPCBunny.cs)
+    // had pools; Insect/Pixie/Toxic joined below as their art/combat work wrapped up 2026-08-16. Add a
+    // new entry here when a future type gets its own — GetPool falls back to null (-> "Unnamed") until
+    // it does. Names authored by Ethan throughout, not generated here — see WildBunnyNames_DesignDoc.md's
+    // Non-goals.
     [SerializeField]
     private List<TypeNamePool> namePools = new List<TypeNamePool>
     {
@@ -37,7 +39,7 @@ public class WildBunnyNames : MonoBehaviour
         new TypeNamePool
         {
             type = BunnyType.Water,
-            maleNames = new[] { "Marlin", "Finn", "Torrent", "Reef", "Kelp", "Wade", "Brook", "Cove", "Drake", "Riptide", "Squall", "Ripple", "Stingray", "Undertow", "Kai", "Pirate", "Barnacle", "Skiff", "Eel", "Deluge", "Fathom", "Puddle", "Splash", "Abyss", "Whirlpool" },
+            maleNames = new[] { "Marlin", "Finn", "Torrent", "Reef", "Kelp", "Wade", "Brook", "Cove", "Drake", "Riptide", "Squall", "Ripple", "Stingray", "Undertow", "Kai", "Pirate", "Barnacle", "Skipper", "Eel", "Deluge", "Fathom", "Puddle", "Splash", "Abyss", "Whirlpool" },
             femaleNames = new[] { "Marina", "Coral", "Delta", "Misty", "Pearl", "Brooke", "Harbor", "Lagoon", "Wave", "Dew", "Ocean", "Bubbles", "Kelpie", "Siren", "Rain", "Cascade", "Aqua", "Lorelei", "Dory", "Shelly", "River", "Sea", "Dewdrop", "Bayou", "Foam" }
         },
         new TypeNamePool
@@ -51,6 +53,24 @@ public class WildBunnyNames : MonoBehaviour
             type = BunnyType.Shock,
             maleNames = new[] { "Volt", "Bolt", "Spark", "Ampere", "Ohm", "Watt", "Jolt", "Static", "Surge", "Flash", "Lightning", "Zap", "Storm", "Thunder", "Fuse", "Coil", "Circuit", "Arc", "Ion", "Blitz", "Neon", "Gauge", "Ray", "Shock", "Zeus" },
             femaleNames = new[] { "Electra", "Beam", "Sparkle", "Nova", "Livewire", "Flicker", "Photon", "Bright", "Dazzle", "Galvan", "Glow", "Aurora", "Sizzle", "Tesla", "Corona", "Fusion", "Xenia", "Volta", "Kirlian", "Faraday", "Voltage", "Crackle", "Luma", "Wired", "Shimmer" }
+        },
+        new TypeNamePool
+        {
+            type = BunnyType.Insect,
+            maleNames = new[] { "Buzz", "Sting", "Beetle", "Locust", "Hornet", "Wasp", "Grub", "Ant", "Stag", "Roach", "Hercules", "Skitter", "Chitin", "Drone", "Pincer", "Mandible", "Termite", "Gnat", "Scarab", "Wriggler", "Chafer", "Skeeter", "Cricket", "Buggy", "Buzzy" },
+            femaleNames = new[] { "Cicada", "Weevil", "Mantis", "Bee", "Ladybug", "Luna", "Monarch", "Antenna", "Honey", "Nectar", "Chrysalis", "Silky", "Flutter", "Papillon", "Cecropia", "Cocoon", "Waspina", "Glowworm", "Iris", "Vespa", "Dragonfly", "Beetlelyn", "Mothina", "Lacewing", "Rolipoli" }
+        },
+        new TypeNamePool
+        {
+            type = BunnyType.Toxic,
+            maleNames = new[] { "Venom", "Toxin", "Sludge", "Fume", "Blight", "Rot", "Gas", "Bane", "Wolfsbane", "Grime", "Ooze", "Vial", "Fester", "Mercury", "Arsen", "Cesium", "Nox", "Acid", "Reek", "Sulfur", "Leech", "Scum", "Basilisk", "Plague", "Cyanide" },
+            femaleNames = new[] { "Circe", "Medea", "Hecate", "Locusta", "Belladonna", "Miasma", "Wormwood", "Cobra", "Mamba", "Widow", "Scorpia", "Vipera", "Fatalis", "Corrosia", "Effluvia", "Contagia", "Malaise", "Necra", "Sable", "Adder", "Vex", "Nyxia", "Toxique", "Pestilenza", "Rue" }
+        },
+        new TypeNamePool
+        {
+            type = BunnyType.Pixie,
+            maleNames = new[] { "Puck", "Oberon", "Robin", "Tamlin", "Doon", "Sprig", "Wisp", "Flit", "Glint", "Sprite", "Elfin", "Corrigan", "Feylan", "Gossamer", "Goodfellow", "Whistlewick", "Dewkin", "Pipkin", "Fenwick", "Lob", "Hob", "Grig", "Bogle", "Peregrine", "Tod" },
+            femaleNames = new[] { "Fiona", "Aine", "Nimue", "Melusine", "Faela", "Sylph", "Peri", "Fata", "Brownie", "Glisten", "Twinkle", "Starling", "Moonbeam", "Petalwing", "Rosalind", "Elowen", "Brighid", "Liriel", "Selene", "Fawn", "Wrenna", "Larkspur", "Cloudwisp", "Freya", "Danu" }
         },
     };
 

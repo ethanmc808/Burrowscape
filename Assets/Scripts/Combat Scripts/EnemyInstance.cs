@@ -108,6 +108,10 @@ public class EnemyInstance : MonoBehaviour, ICombatant
     // that's a separate, not-yet-built concern and doesn't touch this field).
     private ICombatant currentTarget;
     private float attackCooldownRemaining;
+    // Per-instance burst-cadence counter for CombatEngagement.TryBeginAttack — see
+    // BunnyTypeDefinition.attacksPerBurst/burstPauseSeconds. Unused (stays 0) for any type that leaves
+    // attacksPerBurst at its default of 1.
+    private int attacksFiredInBurst;
     // Snapshotted by Update when a wind-up starts, consumed by ReleasePendingAttack (called via an
     // Animation Event on this enemy's Attacking clip, at its "release" frame) — see CombatEngagement's
     // own comment for why firing is split into these two phases instead of instant-on-cooldown.
@@ -285,7 +289,7 @@ public class EnemyInstance : MonoBehaviour, ICombatant
         if (Time.frameCount % 30 == 0)
             Debug.Log($"[VFXDEBUG] EnemyInstance.Update({name}): defendersInRoom={string.Join(", ", defendersInRoom.Select(b => $"{b.name}:{b.CurrentState}"))} poolCount={candidatePool.Count} currentTarget={(currentTarget != null ? currentTarget.CombatGameObject?.name : "NULL")} cooldown={attackCooldownRemaining:F2}");
 
-        bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, candidatePool, out ICombatant attackTarget);
+        bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, ref attacksFiredInBurst, candidatePool, out ICombatant attackTarget);
 
         // TryBeginAttack re-acquires the closest alive candidate into currentTarget EVERY call regardless
         // of cooldown (see its own comment) — correct for WHO to eventually shoot, but facing off that live
@@ -374,7 +378,7 @@ public class EnemyInstance : MonoBehaviour, ICombatant
         }
 
         List<ICombatant> candidatePool = new List<ICombatant> { gate };
-        bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, candidatePool, out ICombatant attackTarget);
+        bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, ref attacksFiredInBurst, candidatePool, out ICombatant attackTarget);
 
         // Single-candidate pool (only ever the gate) so this can't actually hit the target-churn race
         // Update() has to guard against, but routed through the same ComputeFacing helper for consistency.
@@ -490,7 +494,7 @@ public class EnemyInstance : MonoBehaviour, ICombatant
             SetMoving(false); // Flanking — standing in place, attacking below
 
             List<ICombatant> pinnedPool = new List<ICombatant> { claimedTarget };
-            bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, pinnedPool, out ICombatant attackTarget);
+            bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentTarget, ref attackCooldownRemaining, ref attacksFiredInBurst, pinnedPool, out ICombatant attackTarget);
             if (!startedWindUp) return;
 
             pendingAttackTarget = attackTarget;

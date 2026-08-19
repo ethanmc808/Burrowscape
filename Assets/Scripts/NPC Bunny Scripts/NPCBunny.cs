@@ -647,6 +647,10 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // a separate, not-yet-built concern and doesn't touch this field).
     private ICombatant currentCombatTarget;
     private float attackCooldownRemaining;
+    // Per-instance burst-cadence counter for CombatEngagement.TryBeginAttack — see
+    // BunnyTypeDefinition.attacksPerBurst/burstPauseSeconds. Unused (stays 0) for any type that leaves
+    // attacksPerBurst at its default of 1.
+    private int attacksFiredInBurst;
     // Snapshotted by HandleDefending when a wind-up starts, consumed by ReleasePendingAttack (called via
     // an Animation Event on this type's Attacking clip, at its "release" frame) — see CombatEngagement's
     // own comment for why firing is split into these two phases instead of instant-on-cooldown.
@@ -4238,7 +4242,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
         }
 
         List<ICombatant> candidatePoolList = InvasionManager.Instance.GetEnemiesInRoom(defendingRoom).Cast<ICombatant>().ToList();
-        bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentCombatTarget, ref attackCooldownRemaining, candidatePoolList, out ICombatant attackTarget);
+        bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentCombatTarget, ref attackCooldownRemaining, ref attacksFiredInBurst, candidatePoolList, out ICombatant attackTarget);
 
         // TryBeginAttack re-acquires the closest alive candidate into currentCombatTarget EVERY call
         // regardless of cooldown (see its own comment) — correct for WHO to eventually shoot, but facing
@@ -4288,7 +4292,7 @@ public class NPCBunny : MonoBehaviour, ICombatant
             // closest now" the way ranged does (CombatEngagement's own header comment) — it's physically
             // committed to the one target it walked up to and claimed a slot on.
             List<ICombatant> pinnedPool = new List<ICombatant> { claimedFlankTarget };
-            bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentCombatTarget, ref attackCooldownRemaining, pinnedPool, out ICombatant attackTarget);
+            bool startedWindUp = CombatEngagement.TryBeginAttack(this, ref currentCombatTarget, ref attackCooldownRemaining, ref attacksFiredInBurst, pinnedPool, out ICombatant attackTarget);
             if (!startedWindUp) return;
 
             pendingAttackTarget = attackTarget;
@@ -4371,6 +4375,9 @@ public class NPCBunny : MonoBehaviour, ICombatant
     // the real "release" frame, the same path actual combat uses.
     public void TestFireAttack(ICombatant target)
     {
+        // TEMP — chasing "no attack animation plays at all" from VFXPreviewHarness. Confirms TestFireAttack
+        // is actually being reached and whether animator/isAttackingParam are set up to receive the trigger.
+        Debug.Log($"[VFXDEBUG] TestFireAttack({name}): animator={(animator != null ? "set" : "NULL")}, isAttackingParam=\"{isAttackingParam}\"");
         pendingAttackTarget = target;
         if (animator != null)
             animator.SetTrigger(isAttackingParam);

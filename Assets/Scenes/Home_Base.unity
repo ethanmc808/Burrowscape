@@ -12148,17 +12148,18 @@ MonoBehaviour:
   autoSpawnEnabled: 1
   capCheckPollSeconds: 5
   startPopulation: 6
-  capPopulation: 250
+  capPopulation: 100
   startMinWaitMinutes: 0.5
   startMaxWaitMinutes: 1
-  capMinWaitMinutes: 60
-  capMaxWaitMinutes: 80
+  capMinWaitMinutes: 10
+  capMaxWaitMinutes: 12
   startMinLevel: 1
   startMaxLevel: 3
   capMinLevel: 40
   capMaxLevel: 50
   minStartingNeed: 65
   maxStartingNeed: 100
+  debugSpawnType: 0
 --- !u!1 &903016436
 GameObject:
   m_ObjectHideFlags: 0
@@ -18370,7 +18371,7 @@ MonoBehaviour:
     - Kai
     - Pirate
     - Barnacle
-    - Skiff
+    - Skipper
     - Eel
     - Deluge
     - Fathom
@@ -18510,6 +18511,165 @@ MonoBehaviour:
     - Luma
     - Wired
     - Shimmer
+  - type: 5
+    maleNames:
+    - Buzz
+    - Sting
+    - Beetle
+    - Locust
+    - Hornet
+    - Wasp
+    - Grub
+    - Ant
+    - Stag
+    - Roach
+    - Hercules
+    - Skitter
+    - Chitin
+    - Drone
+    - Pincer
+    - Mandible
+    - Termite
+    - Gnat
+    - Scarab
+    - Wriggler
+    - Chafer
+    - Skeeter
+    - Cricket
+    - Buggy
+    - Buzzy
+    femaleNames:
+    - Cicada
+    - Weevil
+    - Mantis
+    - Bee
+    - Ladybug
+    - Luna
+    - Monarch
+    - Antenna
+    - Honey
+    - Nectar
+    - Chrysalis
+    - Silky
+    - Flutter
+    - Papillon
+    - Cecropia
+    - Cocoon
+    - Waspina
+    - Glowworm
+    - Iris
+    - Vespa
+    - Dragonfly
+    - Beetlelyn
+    - Mothina
+    - Lacewing
+    - Rolipoli
+  - type: 9
+    maleNames:
+    - Venom
+    - Toxin
+    - Sludge
+    - Fume
+    - Blight
+    - Rot
+    - Gas
+    - Bane
+    - Wolfsbane
+    - Grime
+    - Ooze
+    - Vial
+    - Fester
+    - Mercury
+    - Arsen
+    - Cesium
+    - Nox
+    - Acid
+    - Reek
+    - Sulfur
+    - Leech
+    - Scum
+    - Basilisk
+    - Plague
+    - Cyanide
+    femaleNames:
+    - Circe
+    - Medea
+    - Hecate
+    - Locusta
+    - Belladonna
+    - Miasma
+    - Wormwood
+    - Cobra
+    - Mamba
+    - Widow
+    - Scorpia
+    - Vipera
+    - Fatalis
+    - Corrosia
+    - Effluvia
+    - Contagia
+    - Malaise
+    - Necra
+    - Sable
+    - Adder
+    - Vex
+    - Nyxia
+    - Toxique
+    - Pestilenza
+    - Rue
+  - type: 14
+    maleNames:
+    - Puck
+    - Oberon
+    - Robin
+    - Tamlin
+    - Doon
+    - Sprig
+    - Wisp
+    - Flit
+    - Glint
+    - Sprite
+    - Elfin
+    - Corrigan
+    - Feylan
+    - Gossamer
+    - Goodfellow
+    - Whistlewick
+    - Dewkin
+    - Pipkin
+    - Fenwick
+    - Lob
+    - Hob
+    - Grig
+    - Bogle
+    - Peregrine
+    - Tod
+    femaleNames:
+    - Fiona
+    - Aine
+    - Nimue
+    - Melusine
+    - Faela
+    - Sylph
+    - Peri
+    - Fata
+    - Brownie
+    - Glisten
+    - Twinkle
+    - Starling
+    - Moonbeam
+    - Petalwing
+    - Rosalind
+    - Elowen
+    - Brighid
+    - Liriel
+    - Selene
+    - Fawn
+    - Wrenna
+    - Larkspur
+    - Cloudwisp
+    - Freya
+    - Danu
 --- !u!4 &1233478486
 Transform:
   m_ObjectHideFlags: 0

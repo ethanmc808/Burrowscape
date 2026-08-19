@@ -77,7 +77,12 @@ public static class CombatEngagement
     // The caller is responsible for triggering its own Animator on a true return (ICombatant deliberately
     // has no Animator reference — animation is each concrete type's own concern, not shared targeting
     // logic's) and remembering attackTarget until its Animation Event calls ReleaseAttack.
-    public static bool TryBeginAttack(ICombatant self, ref ICombatant target, ref float cooldownRemaining, IEnumerable<ICombatant> candidatePool, out ICombatant attackTarget)
+    // attacksFiredInBurst is the caller's own per-instance counter (mirrors cooldownRemaining's ref shape)
+    // tracking progress through attackSource.attacksPerBurst — see BunnyTypeDefinition.attacksPerBurst/
+    // burstPauseSeconds. Lives on the caller (NPCBunny/EnemyInstance), not here or on BunnyTypeDefinition
+    // itself, since the latter is a shared ScriptableObject asset and multiple combatants of the same type
+    // attacking simultaneously would stomp a single shared counter.
+    public static bool TryBeginAttack(ICombatant self, ref ICombatant target, ref float cooldownRemaining, ref int attacksFiredInBurst, IEnumerable<ICombatant> candidatePool, out ICombatant attackTarget)
     {
         attackTarget = null;
 
@@ -91,6 +96,21 @@ public static class CombatEngagement
         if (attackSource == null || attackSource.attackVFXPrefab == null) return false;
 
         cooldownRemaining = attackSource.attackIntervalSeconds;
+
+        // Burst grouping: attacksPerBurst <= 1 (every existing type, until one opts in) skips this
+        // entirely, so cooldownRemaining behaves exactly as before. Otherwise, count this wind-up toward
+        // the current burst and, once it completes the Nth attack, tack burstPauseSeconds onto the cooldown
+        // just started and reset the counter for the next burst.
+        if (attackSource.attacksPerBurst > 1)
+        {
+            attacksFiredInBurst++;
+            if (attacksFiredInBurst >= attackSource.attacksPerBurst)
+            {
+                attacksFiredInBurst = 0;
+                cooldownRemaining += attackSource.burstPauseSeconds;
+            }
+        }
+
         attackTarget = target;
         return true;
     }

@@ -15,12 +15,20 @@ MonoBehaviour:
   type: 8
   displayName: Mind
   icon: {fileID: 21300000, guid: 6183bb8e0e89cc141a90b5765050359a, type: 3}
-  prefab: {fileID: 0}
+  eggSprite: {fileID: 21300000, guid: 0b7f02edfe585da43a9fa1c977487187, type: 3}
+  prefab: {fileID: 5601990158651218953, guid: 46c46675ef2f078499590b1e664b5e01, type: 3}
   baseHP: 60
   baseAttack: 110
   baseDefense: 50
   baseSpeed: 60
   baseLuck: 100
+  attackName: Brain Blast
+  isMelee: 0
+  attackVFXPrefab: {fileID: 0}
+  attackIntervalSeconds: 2
+  attacksPerBurst: 1
+  burstPauseSeconds: 0
+  attackBasePower: 20
   group: 7
   populationThreshold: 35
   passives: []

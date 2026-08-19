@@ -252,7 +252,7 @@ MonoBehaviour:
   drinkingAmbientClip: {fileID: 8300000, guid: 3d16c5a044da1af448cc00c6cf8062e9, type: 3}
   sleepingAmbientClip: {fileID: 8300000, guid: 3b3dd7f18ffc5b240b8492feb2de6515, type: 3}
   bunnyScaleRoot: {fileID: 5325006013901068792}
-  attackOriginOffset: {x: 0, y: 1, z: 0}
+  attackOriginOffset: {x: 0.4, y: 0.2, z: 0}
   bunnyFacesLeftByDefault: 1
   wanderPauseDuration: 3
   noSpotWarningCooldown: 5

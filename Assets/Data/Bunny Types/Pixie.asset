@@ -22,10 +22,12 @@ MonoBehaviour:
   baseDefense: 50
   baseSpeed: 80
   baseLuck: 120
-  attackName: 
+  attackName: Sparkle Spell
   isMelee: 0
-  attackVFXPrefab: {fileID: 0}
+  attackVFXPrefab: {fileID: 4762921071787421021, guid: 7eed9901833047f48ade87337cba2654, type: 3}
   attackIntervalSeconds: 2
+  attacksPerBurst: 1
+  burstPauseSeconds: 0
   attackBasePower: 20
   group: 4
   populationThreshold: 20

@@ -38,6 +38,10 @@ public class BunnyTypeDefinition : ScriptableObject
     public GameObject attackVFXPrefab;
     [Tooltip("How often this type can fire its attack once engaged, in seconds — per-type rather than a shared global value, since attack animations run different lengths (Fire Ball is much quicker than Giga Drain). Speed does NOT affect this — Speed only affects hit/evasion chance (see CombatMath.GetHitChance); this is purely the animation-driven cadence.")]
     public float attackIntervalSeconds = 2f;
+    [Tooltip("How many attacks (each spaced attackIntervalSeconds apart) fire before this type takes a longer pause — e.g. 3 here means attack, attack, attack, THEN pause, then repeat. 1 (default) means every attack is followed by the same pause, i.e. no burst grouping at all — a no-op for every type that doesn't want this. Origin: Horn Sting's 2-then-pause cadence was originally an accident of attackIntervalSeconds landing just under the Attacking animation's own Exit-Time-plus-transition-duration round trip (see project_burrowscape_hornsting_attack_vfx memory) — these two fields formalize that as an explicit, tunable pattern instead of relying on animation-timing luck.")]
+    public int attacksPerBurst = 1;
+    [Tooltip("Extra pause (in seconds, ON TOP of the normal attackIntervalSeconds gap) inserted after the attacksPerBurst-th attack in a burst, before the next burst starts. Ignored when attacksPerBurst is 1. 0 (default) is a no-op.")]
+    public float burstPauseSeconds = 0f;
     [Tooltip("This type's signature attack's Base Power at level 1-9 (tier 0) — see CombatMath.GetBasePower, which multiplies this by the level tier (x1 at 1-9, x2 at 10-19, ... x5 at 40+; same tier shape for every type). Per-type rather than a shared global 20, since attackIntervalSeconds varies a lot by type (Fire fires every 1s, Plant every 5s) — at equal Base Power a slow attacker does far less DPS than a fast one. Ethan's explicit call: hand-tune this per type rather than auto-deriving it from interval, since base Attack stat also differs by type. Tune directly here or via the Bunny Base Stats Editor grid.")]
     public int attackBasePower = 20;
 
